@@ -1,6 +1,4 @@
-------------------------------------------------------------------
--- OrX - Is There Anybody Out There
-------------------------------------------------------------------
+OrX - Is There Anybody Out There
 
 OrX brings Geo Caching and Scuba Diving as well as the joy of Wind to KSP
 
@@ -88,7 +86,7 @@ License and Attribution
 ------------------------------------------------------------------
 ------------------------------------------------------------------
 
-OrX incorporates the vessel spawning system released with Vessel Mover under the MIT License and is contained witnin the OrX.spawn namespace ... To comply with the requirements of the MIT license, the following permission notice, applicable to those parts of the code only, is included below:
+OrX incorporates the vessel spawning system released with Vessel Mover under the MIT License and is contained witnin the OrX.spawn and namespace ... To comply with the requirements of the MIT license, the following permission notice, applicable to those parts of the code only, is included below:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -114,7 +112,7 @@ All credit goes to @BahamutoD for creating BD Armory and many thanks go to the B
 
 All other code contained within OrX is licensed GPLv3
 
-Copyright Â© 2019 DoctorDavinci
+Copyright © 2019 DoctorDavinci
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
