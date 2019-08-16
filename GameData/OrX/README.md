@@ -1,4 +1,6 @@
-OrX - Is There Anybody Out There
+------------------------------------------------------------------
+-- OrX - Is There Anybody Out There
+------------------------------------------------------------------
 
 OrX brings Geo Caching and Scuba Diving as well as the joy of Wind to KSP
 
