@@ -91,9 +91,13 @@ namespace OrX.parts
             {
                 if (setupOrXModule)
                 {
-                    Debug.Log(" ========================== setupOrXModule =======================");
-
                     setupOrXModule = false;
+
+                    Debug.Log(" ========================== setupOrXModule =======================");
+                    if (!orx)
+                    {
+                        OrXLog.instance.AddToVesselList(this.vessel);
+                    }
                     id = FlightGlobals.ActiveVessel.id;
                     kerbalName = this.vessel.vesselName;
                     var kerbal = this.part.FindModuleImplementing<KerbalEVA>();

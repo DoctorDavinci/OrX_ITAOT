@@ -16,11 +16,25 @@ namespace OrX
         public static Dictionary<AddedTech, List<string>> UnlockedTech;
         public static Dictionary<AddedTech, List<string>> TechDatabase;
 
+        public static Dictionary<AddedVessels, List<Guid>> OwnedVessels;
+        public static Dictionary<AddedVessels, List<Guid>> CraftDatabase;
+        public enum AddedVessels
+        {
+            ownedCraft,
+            None
+        }
+
         public enum AddedTech
         {
             addedTech,
             None
         }
+
+        Guid _id = Guid.Empty;
+
+        public bool mission = false;
+        public bool story = false;
+        public bool building = false;
 
         public bool unlockTech = false;
         public bool unlockedScuba = true;
@@ -36,6 +50,8 @@ namespace OrX
         public bool addTech = true;
         public bool addInfected = true;
         public bool addLock = true;
+        private int loggedVesselCount = 0;
+        private int errorCount = 0;
 
         private void Awake()
         {
@@ -54,28 +70,151 @@ namespace OrX
                 UnlockedTech.Add(AddedTech.addedTech, new List<string>());
             }
 
+            CraftDatabase = new Dictionary<AddedVessels, List<Guid>>();
+            CraftDatabase.Add(AddedVessels.ownedCraft, new List<Guid>());
+
+            if (CraftDatabase != null)
+            {
+                CraftDatabase = new Dictionary<AddedVessels, List<Guid>>();
+                CraftDatabase.Add(AddedVessels.ownedCraft, new List<Guid>());
+            }
+
+            GameEvents.onVesselChange.Add(onVesselChange);
             GameEvents.onCrewOnEva.Add(onEVA);
             CheckUpgrades();
         }
 
-        private void onEVA(GameEvents.FromToAction<Part, Part> data)
+        #region Checks
+
+        public void onVesselChange(Vessel data)
         {
-            StartCoroutine(CheckForOrXModules());
+            bool error = false;
+
+            if (!story && !mission)
+            {
+                if (data.rootPart.Modules.Contains<ModuleOrXMission>())
+                {
+                    var mom = data.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                    if (!mom.completed)
+                    {
+                        List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+                        while (v.MoveNext())
+                        {
+                            try
+                            {
+                                if (v.Current == null) continue;
+                                if (!v.Current.loaded || v.Current.packed) continue;
+                                if (v.Current.id != data.id && !v.Current.HoldPhysics && v.Current.parts.Count >= 1)
+                                {
+                                    FlightGlobals.ForceSetActiveVessel(v.Current);
+                                    break;
+                                }
+                                else
+                                {
+                                    if (v.Current.id != data.id && !v.Current.HoldPhysics && v.Current.isEVA)
+                                    {
+                                        var orx = v.Current.rootPart.FindModuleImplementing<ModuleOrX>();
+                                        if (orx != null)
+                                        {
+                                            if (!orx.orx)
+                                            {
+                                                FlightGlobals.ForceSetActiveVessel(v.Current);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                error = true;
+                            }
+                        }
+                        v.Dispose();
+
+                        if (error && errorCount <= 2)
+                        {
+                            errorCount += 1;
+                            Debug.Log("[OrX LOG] === ERROR #" + errorCount + " - onVesselChange ... RETRYING");
+                            onVesselChange(data);
+                        }
+                        else
+                        {
+                            Debug.Log("[OrX LOG] === ERROR #" + errorCount + " - onVesselChange ... STOPPING");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if ((story || mission) && !FlightGlobals.ActiveVessel.HoldPhysics)
+                {
+                    bool added = false;
+                    bool forcedVesselSwitch = false;
+                    int count = 0;
+                    Guid guid = data.id;
+
+                    List<Guid>.Enumerator craft = CraftDatabase[AddedVessels.ownedCraft].GetEnumerator();
+                    while (craft.MoveNext())
+                    {
+                        count += 1;
+                        if (craft.Current == data.id)
+                        {
+                            added = true;
+                        }
+
+                        if (loggedVesselCount == count)
+                        {
+                            guid = craft.Current;
+                        }
+                    }
+                    craft.Dispose();
+
+                    if (!added)
+                    {
+                        List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+                        while (v.MoveNext())
+                        {
+                            if (v.Current == null) continue;
+                            if (!v.Current.loaded || v.Current.packed) continue;
+                            if (v.Current.id == guid)
+                            {
+                                FlightGlobals.ForceSetActiveVessel(v.Current);
+                                forcedVesselSwitch = true;
+                            }
+                        }
+                        v.Dispose();
+                    }
+
+                    if (forcedVesselSwitch)
+                    {
+                        loggedVesselCount += 1;
+
+                        if (loggedVesselCount >= count)
+                        {
+                            loggedVesselCount = 1;
+                        }
+                    }
+                }
+            }
+
+            if (data.isActiveVessel)
+            {
+                Debug.Log("[OrX Log] === ERROR === VESSEL UNOWNED BUT IS STILL ACTIVE VESSEL ===");
+
+            }
         }
 
-        IEnumerator CheckForOrXModules()
+        private void onEVA(GameEvents.FromToAction<Part, Part> data)
         {
             if (!FlightGlobals.ActiveVessel.packed && !FlightGlobals.ActiveVessel.HoldPhysics)
             {
                 if (FlightGlobals.ActiveVessel.isEVA)
                 {
-                    yield return new WaitForEndOfFrame();
-
-                    Debug.Log("[OrX Log] === Adding OrX Module ===");
-
                     var OrXmodule = FlightGlobals.ActiveVessel.rootPart.FindModuleImplementing<ModuleOrX>();
                     if (OrXmodule == null)
                     {
+                        Debug.Log("[OrX Log] === Adding OrX Module to " + FlightGlobals.ActiveVessel.vesselName);
                         FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleOrX", true);
                         OrXmodule = FlightGlobals.ActiveVessel.rootPart.FindModuleImplementing<ModuleOrX>();
 
@@ -93,14 +232,10 @@ namespace OrX
                 }
                 else
                 {
-                    yield return new WaitForEndOfFrame();
-                    StartCoroutine(CheckForOrXModules());
                 }
             }
             else
             {
-                yield return new WaitForEndOfFrame();
-                StartCoroutine(CheckForOrXModules());
             }
         }
 
@@ -228,6 +363,147 @@ namespace OrX
                     }
                 }
             }
+
+            ImportVesselList();
+        }
+
+        public void AddToVesselList(Vessel data)
+        {
+            if (story || mission)
+            {
+                bool added = false;
+
+                List<Guid>.Enumerator craft = CraftDatabase[AddedVessels.ownedCraft].GetEnumerator();
+                while (craft.MoveNext())
+                {
+                    if (craft.Current == data.id)
+                    {
+                        added = true;
+                    }
+                }
+                craft.Dispose();
+
+                if (!added)
+                {
+                    OwnedVessels[AddedVessels.ownedCraft].Add(data.id);
+                    ExportVesselList();
+                }
+            }
+        }
+
+        public void RemoveFromVesselList(Vessel data)
+        {
+            if (story || mission)
+            {
+                bool added = false;
+
+                List<Guid>.Enumerator craft = CraftDatabase[AddedVessels.ownedCraft].GetEnumerator();
+                while (craft.MoveNext())
+                {
+                    if (craft.Current == data.id)
+                    {
+                        added = true;
+                    }
+                }
+                craft.Dispose();
+
+                if (!added)
+                {
+                    OwnedVessels[AddedVessels.ownedCraft].Remove(data.id);
+                    ExportVesselList();
+                }
+            }
+        }
+
+        public void CheckVesselList(Vessel data)
+        {
+            if (!FlightGlobals.ActiveVessel.isEVA && (story || mission))
+            {
+                bool added = false;
+                bool forcedVesselSwitch = false;
+                int count = 0;
+                Guid guid = data.id;
+
+                List<Guid>.Enumerator craft = CraftDatabase[AddedVessels.ownedCraft].GetEnumerator();
+                while (craft.MoveNext())
+                {
+                    count += 1;
+                    if (craft.Current == data.id)
+                    {
+                        added = true;
+                    }
+
+                    if (loggedVesselCount == count)
+                    {
+                        guid = craft.Current;
+                    }
+                }
+                craft.Dispose();
+
+                if (!added)
+                {
+                    List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+                    while (v.MoveNext())
+                    {
+                        if (v.Current == null) continue;
+                        if (!v.Current.loaded || v.Current.packed) continue;
+                        if (v.Current.id == guid)
+                        {
+                            FlightGlobals.ForceSetActiveVessel(v.Current);
+                            forcedVesselSwitch = true;
+                        }
+                    }
+                    v.Dispose();
+                }
+
+                if (forcedVesselSwitch)
+                {
+                    loggedVesselCount += 1;
+
+                    if (loggedVesselCount >= count)
+                    {
+                        loggedVesselCount = 1;
+                    }
+                }
+            }
+        }
+
+        private void ExportVesselList()
+        {
+            ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrXVesselList.data");
+            if (file == null)
+            {
+                file = new ConfigNode();
+            }
+            else
+            {
+                file.ClearData();
+            }
+
+            ConfigNode ul = file.AddNode(HighLogic.CurrentGame.ToString());
+            List<Guid>.Enumerator craft = CraftDatabase[AddedVessels.ownedCraft].GetEnumerator();
+            while (craft.MoveNext())
+            {
+                ul.AddValue("guid", craft.Current);
+            }
+            craft.Dispose();
+            file.Save("GameData/OrX/Plugin/PluginData/OrXVesselList.data");
+        }
+
+        private void ImportVesselList()
+        {
+            ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrXVesselList.data");
+            if (file != null)
+            {
+                ConfigNode ul = file.GetNode("OrX");
+                bool added = false;
+                Guid id = Guid.Empty;
+
+                foreach (ConfigNode.Value cv in ul.values)
+                {
+                    OwnedVessels[AddedVessels.ownedCraft].Add(new Guid(cv.value));
+                }
+            }
         }
 
         public void AddTech(string t)
@@ -260,31 +536,7 @@ namespace OrX
             return added;
         }
 
-        public void Update()
-        {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
-            {
-                if (!unlockedScuba)
-                {
-                    if (FlightGlobals.ActiveVessel.isEVA)
-                    {
-                        if (FlightGlobals.ActiveVessel.Splashed && FlightGlobals.ActiveVessel.altitude <= -100)
-                        {
-                            unlockedScuba = true;
-                            UnlockScuba();
-                        }
-                    }
-                }
-
-                if (unlockedWind && !OrXWindGUI.instance.HasAddedButton)
-                {
-                    OrXWindGUI.instance.AddToolbarButton();
-                }
-            }
-        }
-
-        /////////////////////////////////////////////////
-        ///
+        #endregion
 
         #region Tech Locks
 

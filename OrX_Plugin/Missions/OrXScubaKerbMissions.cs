@@ -183,7 +183,7 @@ namespace OrX
             if (GUI.Button(saveRect, "Cancel", HighLogic.Skin.button))
             {
                 DisableGui();
-                OrXMissions.instance.EnableGui();
+                OrXMissions.instance.EnableScubaGui();
             }
         }
 

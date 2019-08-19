@@ -92,6 +92,19 @@ namespace OrX.spawn
             Debug.Log("[Spawn OrX HoloCache] Spawning: " + craftFile);
             StartCoroutine(SpawnCraftRoutine(craftFileLoc));
         }
+        public string missionCraftLoc = string.Empty;
+
+        public void SpawnMissionHolo(string hcLoc, Vector3 loc, bool hc)
+        {
+            missionCraftLoc = hcLoc;
+            SpawnCoords = loc;
+            holo = hc;
+            emptyholo = false;
+            loadingCraft = true;
+            timer = true;
+            Debug.Log("[Spawn OrX HoloCache] Spawning Mission Craft");
+            StartCoroutine(SpawnCraftRoutine(missionCraftLoc));
+        }
 
         private IEnumerator SpawnCraftRoutine(string craftUrl, List<ProtoCrewMember> crewData = null)
         {
@@ -104,7 +117,6 @@ namespace OrX.spawn
             else
             {
                 worldPos = SpawnCoords;
-                holo = true;
             }
             Vector3 gpsPos = WorldPositionToGeoCoords(worldPos, FlightGlobals.currentMainBody);
             yield return new WaitForFixedUpdate();
@@ -440,16 +452,28 @@ namespace OrX.spawn
             //v.situation = Vessel.Situations.LANDED;
             v.GoOffRails();
             v.IgnoreGForces(120);
-            var hc = v.FindPartModuleImplementing<ModuleOrXHoloCache>();
-            if (hc != null && !emptyholo)
-            {                
-                hc.powerDown = false;
-                hc.spawned = true;
 
-                if (hc.sth)
+            if (holo)
+            {
+                var hc = v.FindPartModuleImplementing<ModuleOrXHoloCache>();
+                if (hc != null && !emptyholo)
                 {
+                    hc.powerDown = false;
                     hc.spawned = true;
-                    hc.spawn = true;
+
+                    if (hc.sth)
+                    {
+                        hc.spawned = true;
+                        hc.spawn = true;
+                    }
+                }
+            }
+            else
+            {
+                var mom = v.FindPartModuleImplementing<ModuleOrXMission>();
+                if (mom == null)
+                {
+                    v.rootPart.AddModule("ModuleOrXMission");
                 }
             }
 

@@ -5,8 +5,6 @@ using System.IO;
 using System;
 using KSP.UI.Screens;
 using OrX.spawn;
-using System.Linq;
-using OrX.parts;
 
 namespace OrX
 {
@@ -312,7 +310,7 @@ namespace OrX
                     {
                         if (!openHoloCache && opening)
                         {
-                            double targetDistance = Vector3d.Distance(FlightGlobals.ActiveVessel.GetWorldPos3D(), this.vessel.GetWorldPos3D());
+                            double targetDistance = Vector3d.Distance(FlightGlobals.ActiveVessel.GetWorldPos3D(), this.vessel.GetTransform().position);
 
                             if (targetDistance <= 2 && this.vessel.LandedOrSplashed)
                             {
@@ -524,18 +522,17 @@ namespace OrX
             Debug.Log("[OrX HoloCache] GPS Latitude: " + lat);
             Debug.Log("[OrX HoloCache] GPS Longitude: " + lon);
             Debug.Log("[OrX HoloCache] GPS Altitude: " + alt);
-            Debug.Log("[OrX HoloCache] STH: " + _sth);
+            Debug.Log("[OrX HoloCache] STH: " + sth);
             Debug.Log("[OrX HoloCache] Unlocked: " + _unlocked);
 
-            OrXTargetManager.instance.HoloCacheName = HoloCacheName;
-            //OrXTargetManager.instance.Vreport(this.vessel);
-            OrXTargetManager.instance.resetHoloCache = true;
-            OrXTargetManager.instance.holoCache = this.vessel;
-            OrXTargetManager.instance.craftToSpawn = HoloCacheName;
-            OrXTargetManager.instance._lat = lat;
-            OrXTargetManager.instance._lon = lon;
-            OrXTargetManager.instance._alt = alt;
-            OrXTargetManager.instance.sth = _sth;
+            OrXHoloCache.instance.HoloCacheName = HoloCacheName;
+            OrXHoloCache.instance.resetHoloCache = true;
+            OrXHoloCache.instance.holoCache = this.vessel;
+            OrXHoloCache.instance.craftToSpawn = HoloCacheName;
+            OrXHoloCache.instance._lat = lat;
+            OrXHoloCache.instance._lon = lon;
+            OrXHoloCache.instance._alt = alt;
+            OrXHoloCache.instance.sth = sth;
 
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName))
             {
@@ -547,7 +544,6 @@ namespace OrX
                 file = new ConfigNode();
                 file.AddNode("OrX");
                 file.AddValue("name", HoloCacheName);
-                ConfigNode ul = file.GetNode("OrX");
                 file.Save("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
             }
             ConfigNode node = null;
@@ -623,7 +619,7 @@ namespace OrX
                 this.vessel.SetPosition(new Vector3(0, ShipSize.y + 2, 0));
                 ConfigNode craftConstruct = new ConfigNode("Craft");
                 craftConstruct = ConstructToSave.SaveShip();
-                CleanEditorNodes(craftConstruct); // Thanx Claw!!!!!
+                ConfigNodeClean(craftConstruct); // Thanx Claw!!!!!
                 this.vessel.SetRotation(or);
                 this.vessel.SetPosition(op);
                 ConfigNode HCnode = node.GetNode("HoloCache" + hcCount);
@@ -783,7 +779,7 @@ namespace OrX
                                 try
                                 {
                                     Vector3d vLoc = v.Current.GetWorldPos3D();
-                                    double targetDistance = Vector3d.Distance(this.vessel.GetWorldPos3D(), vLoc);
+                                    double targetDistance = Vector3d.Distance(this.vessel.GetTransform().position, vLoc);
 
                                     if (targetDistance <= 5000 && v.Current.parts.Count != 1)
                                     {
@@ -803,7 +799,7 @@ namespace OrX
                                         v.Current.SetPosition(new Vector3(0, ShipSize.y + 2, 0));
                                         craftConstruct = new ConfigNode("Craft");
                                         craftConstruct = ConstructToSave.SaveShip();
-                                        CleanEditorNodes(craftConstruct); // Thanx Claw!!!!!
+                                        ConfigNodeClean(craftConstruct); // Thanx Claw!!!!!
                                         v.Current.SetRotation(or);
                                         v.Current.SetPosition(op);
                                         Debug.Log("[Module OrX HoloCache] Saving: " + v.Current.vesselName);
@@ -1144,7 +1140,7 @@ namespace OrX
             FlightGlobals.ActiveVessel.SetPosition(new Vector3(0, ShipSize.y + 2, 0));
             ConfigNode craftConstruct = new ConfigNode("Craft");
             craftConstruct = ConstructToSave.SaveShip();
-            CleanEditorNodes(craftConstruct); // Thanx Claw!!!!!
+            ConfigNodeClean(craftConstruct); // Thanx Claw!!!!!
             FlightGlobals.ActiveVessel.SetRotation(or);
             FlightGlobals.ActiveVessel.SetPosition(op);
             craftConstruct.CopyTo(file);
@@ -1169,7 +1165,7 @@ namespace OrX
             OrXSpawn.instance.orx = true;
             OrXSpawn.instance.infected = false;
             OrXSpawn.instance.infectedCount = 1;
-            OrXSpawn.instance.SpawnCoords = this.vessel.GetWorldPos3D();
+            OrXSpawn.instance.SpawnCoords = this.vessel.GetTransform().position;
             OrXSpawn.instance.SpawnInfected();
             yield return new WaitForEndOfFrame();
         }
@@ -1199,47 +1195,47 @@ namespace OrX
         //public string HoloCacheName = string.Empty;
         public bool sthTargets = false;
 
-        private void CleanEditorNodes(ConfigNode craftConstruct)
+        private void ConfigNodeClean(ConfigNode craft)
         {
-            craftConstruct.SetValue("EngineIgnited", "False");
-            craftConstruct.SetValue("currentThrottle", "0");
-            craftConstruct.SetValue("Staged", "False");
-            craftConstruct.SetValue("sensorActive", "False");
-            craftConstruct.SetValue("throttle", "0");
-            craftConstruct.SetValue("generatorIsActive", "False");
-            craftConstruct.SetValue("persistentState", "STOWED");
+            craft.SetValue("EngineIgnited", "False");
+            craft.SetValue("currentThrottle", "0");
+            craft.SetValue("Staged", "False");
+            craft.SetValue("sensorActive", "False");
+            craft.SetValue("throttle", "0");
+            craft.SetValue("generatorIsActive", "False");
+            craft.SetValue("persistentState", "STOWED");
 
-            string ModuleName = craftConstruct.GetValue("name");
+            string ModuleName = craft.GetValue("name");
 
-            // Turn off or remove specific things
             if ("ModuleScienceExperiment" == ModuleName)
             {
-                craftConstruct.RemoveNodes("ScienceData");
+                craft.RemoveNodes("ScienceData");
             }
             else if ("ModuleScienceExperiment" == ModuleName)
             {
-                craftConstruct.SetValue("Inoperable", "False");
-                craftConstruct.RemoveNodes("ScienceData");
+                craft.SetValue("Inoperable", "False");
+                craft.RemoveNodes("ScienceData");
             }
             else if ("Log" == ModuleName)
             {
-                craftConstruct.ClearValues();
+                craft.ClearValues();
             }
 
 
-            for (int IndexNodes = 0; IndexNodes < craftConstruct.nodes.Count; IndexNodes++)
+            for (int IndexNodes = 0; IndexNodes < craft.nodes.Count; IndexNodes++)
             {
-                CleanEditorNodes(craftConstruct.nodes[IndexNodes]);
+                ConfigNodeClean(craft.nodes[IndexNodes]);
             }
         }
 
-        private void PristineNodes(ConfigNode craftConstruct)
+        /*
+        private void ScrubConfigNodes(ConfigNode craft)
         {
-            if (null == craftConstruct) { return; }
+            if (null == craft) { return; }
 
-            if ("PART" == craftConstruct.name)
+            if ("PART" == craft.name)
             {
-                string PartName = ((craftConstruct.GetValue("part")).Split('_'))[0];
+                string PartName = ((craft.GetValue("part")).Split('_'))[0];
 
                 Debug.Log("PART: " + PartName);
 
@@ -1249,40 +1245,97 @@ namespace OrX
 
                 NewPart.InitializeModules();
 
-                craftConstruct.ClearNodes();
+                craft.ClearNodes();
 
                 // EVENTS, ACTIONS, PARTDATA, MODULE, RESOURCE
 
                 Debug.Log("EVENTS");
-                NewPart.Events.OnSave(craftConstruct.AddNode("EVENTS"));
+                NewPart.Events.OnSave(craft.AddNode("EVENTS"));
                 Debug.Log("ACTIONS");
-                NewPart.Actions.OnSave(craftConstruct.AddNode("ACTIONS"));
+                NewPart.Actions.OnSave(craft.AddNode("ACTIONS"));
                 Debug.Log("PARTDATA");
-                NewPart.OnSave(craftConstruct.AddNode("PARTDATA"));
+                NewPart.OnSave(craft.AddNode("PARTDATA"));
                 Debug.Log("MODULE");
                 for (int IndexModules = 0; IndexModules < NewPart.Modules.Count; IndexModules++)
                 {
-                    NewPart.Modules[IndexModules].Save(craftConstruct.AddNode("MODULE"));
+                    NewPart.Modules[IndexModules].Save(craft.AddNode("MODULE"));
                 }
                 Debug.Log("RESOURCE");
                 for (int IndexResources = 0; IndexResources < NewPart.Resources.Count; IndexResources++)
                 {
-                    NewPart.Resources[IndexResources].Save(craftConstruct.AddNode("RESOURCE"));
+                    NewPart.Resources[IndexResources].Save(craft.AddNode("RESOURCE"));
                 }
-
-                //craftConstruct.AddNode(CompiledNodes);
 
                 return;
             }
-            for (int IndexNodes = 0; IndexNodes < craftConstruct.nodes.Count; IndexNodes++)
+            for (int IndexNodes = 0; IndexNodes < craft.nodes.Count; IndexNodes++)
             {
-                PristineNodes(craftConstruct.nodes[IndexNodes]);
+                ScrubConfigNodes(craft.nodes[IndexNodes]);
             }
         }
+
+    */
 
         /// <summary>
         /// ////////////////////////////////////////////////////////
         /// </summary>
+
+        #region HoloCache GUI
+        /// <summary>
+        /// GUI
+        /// </summary>
+
+        private void Start()
+        {
+            _windowRect = new Rect(Screen.width - 320 - WindowWidth, 200, WindowWidth, _windowHeight);
+            GameEvents.onHideUI.Add(GameUiDisableOrXHoloCache);
+            GameEvents.onShowUI.Add(GameUiEnableOrXHoloCache);
+            _gameUiToggle = true;
+        }
+
+        private void OnGUI()
+        {
+            if (GuiEnabledOrX_HoloCache && _gameUiToggle)
+            {
+                _windowRect = GUI.Window(384766702, _windowRect, GuiWindowOrX_HoloCache, "");
+            }
+
+            if (GuiEnabledOrX_HoloCache2 && isSetup)
+            {
+                GuiEnabledOrX_HoloCache = false;
+                craftBrowserOpen = false;
+                _windowRect = GUI.Window(38572892, _windowRect, GuiWindowOrX_HoloCache2, "");
+            }
+
+            if (craftBrowserOpen && _gameUiToggle)
+            {
+                GuiEnabledOrX_HoloCache2 = false;
+                GuiEnabledOrX_HoloCache = false;
+                _windowRect = GUI.Window(38922892, _windowRect, GuiWindowOrX_CraftBrowser, "");
+            }
+        }
+
+        private const float WindowWidthAppend = 250;
+
+        private const float WindowWidth = 250;
+        private const float DraggableHeight = 40;
+        private const float LeftIndent = 12;
+        private const float ContentTop = 20;
+        public bool GuiEnabledOrX_HoloCache = false;
+        public bool GuiEnabledOrX_HoloCache2 = false;
+        public static bool HasAddedButton;
+        private readonly float _incrButtonWidth = 26;
+        private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
+        private readonly float entryHeight = 20;
+        private float _contentWidth;
+        private bool _gameUiToggle;
+        private float _windowHeight = 250;
+        private Rect _windowRect;
+
+        public float _hp = 0;
+        private float _oxygen = 0.0f;
+
+        private bool blueprintsAdded = false;
 
         public static Rect WindowRectBrowser;
         public static Rect WindowRectCS;
@@ -1392,63 +1445,6 @@ namespace OrX
             WindowRectCS.height = (2 * 5) + (entryCount * craftEntryHeight);
         }
 
-        #region HoloCache GUI
-        /// <summary>
-        /// GUI
-        /// </summary>
-
-        private const float WindowWidthAppend = 250;
-
-        private const float WindowWidth = 250;
-        private const float DraggableHeight = 40;
-        private const float LeftIndent = 12;
-        private const float ContentTop = 20;
-        public bool GuiEnabledOrX_HoloCache = false;
-        public bool GuiEnabledOrX_HoloCache2 = false;
-        public static bool HasAddedButton;
-        private readonly float _incrButtonWidth = 26;
-        private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
-        private readonly float entryHeight = 20;
-        private float _contentWidth;
-        private bool _gameUiToggle;
-        private float _windowHeight = 250;
-        private Rect _windowRect;
-
-        public float _hp = 0;
-        private float _oxygen = 0.0f;
-
-        private bool blueprintsAdded = false;
-
-        private void Start()
-        {
-            _windowRect = new Rect(Screen.width - 320 - WindowWidth, 200, WindowWidth, _windowHeight);
-            GameEvents.onHideUI.Add(GameUiDisableOrXHoloCache);
-            GameEvents.onShowUI.Add(GameUiEnableOrXHoloCache);
-            _gameUiToggle = true;
-        }
-
-        private void OnGUI()
-        {
-            if (GuiEnabledOrX_HoloCache && _gameUiToggle)
-            {
-                _windowRect = GUI.Window(384766702, _windowRect, GuiWindowOrX_HoloCache, "");
-            }
-
-            if (GuiEnabledOrX_HoloCache2 && isSetup)
-            {
-                GuiEnabledOrX_HoloCache = false;
-                craftBrowserOpen = false;
-                _windowRect = GUI.Window(38572892, _windowRect, GuiWindowOrX_HoloCache2, "");
-            }
-
-            if (craftBrowserOpen && _gameUiToggle)
-            {
-                GuiEnabledOrX_HoloCache2 = false;
-                GuiEnabledOrX_HoloCache = false;
-                _windowRect = GUI.Window(38922892, _windowRect, GuiWindowOrX_CraftBrowser, "");
-            }
-        }
-
         private void GuiWindowOrX_HoloCache(int OrX_HoloCache)
         {
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
@@ -1465,8 +1461,9 @@ namespace OrX
 
                 if (OrXLog.instance.addLocalVessels)
                 {
-                    DrawLocalBlueprints(line);
-                    line++;
+                    //DrawLocalBlueprints(line);
+                    //line++;
+                    //line++;
                 }
             }
 
@@ -1483,13 +1480,13 @@ namespace OrX
 
             if (OrXLog.instance.addInfected)
             {
-                DrawInfected(line);
-                line++;
+                //DrawInfected(line);
+                //line++;
                 if (spawnInfected)
                 {
-                    DrawInfectedCount(line);
-                    line++;
-                    line += 0.5f;
+                    //DrawInfectedCount(line);
+                    //line++;
+                    //line += 0.5f;
                 }
             }
 
@@ -1510,7 +1507,6 @@ namespace OrX
             DrawHoloCacheName(line);
             line++;
             DrawSave(line);
-            line++;
             line++;
             DrawCancel(line);
 
@@ -1553,10 +1549,9 @@ namespace OrX
 
                 if (spawnInfected)
                 {
-                    DrawInfected(line);
-                    line++;
+                   // DrawInfected(line);
+                   // line++;
                 }
-                line++;
             }
 
             DrawCloseGui(line);
@@ -1879,9 +1874,11 @@ namespace OrX
             }
             else
             {
-                if (GUI.Button(saveRect, "LOCKED", OrXCraftSkin.box))
+                if (GUI.Button(saveRect, "UNLOCK", OrXCraftSkin.box))
                 {
                     unlocked = true;
+                    Password = "OrX";
+                    Password_ = "OrX";
                 }
             }
         }

@@ -20,14 +20,11 @@ namespace OrX.wind
                 if (mls != null)
                 {
                     deflectionLiftCoeff = mls.deflectionLiftCoeff;
-                    if (deflectionLiftCoeff >= 1)
-                    {
-                        modifier = (deflectionLiftCoeff / deflectionLiftCoeff) / (deflectionLiftCoeff / deflectionLiftCoeff);
-                    }
-                    else
-                    {
-                        modifier = deflectionLiftCoeff;
-                    }
+                    modifier = deflectionLiftCoeff;
+                }
+                else
+                {
+                    Destroy(this);
                 }
             }
             base.OnStart(state);
