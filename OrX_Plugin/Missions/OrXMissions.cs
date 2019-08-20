@@ -29,6 +29,7 @@ namespace OrX
         private bool _gameUiToggle;
         private float _windowHeight = 250;
         private Rect _windowRect;
+        private Rect _scoreRect_;
         public double distance = 0;
 
         private bool scubaKerb = false;
@@ -150,7 +151,7 @@ namespace OrX
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedSceneIsFlight && (OrXLog.instance.mission || OrXLog.instance.story))
             {
                 if (FlightGlobals.ActiveVessel.altitude <= maxDepth)
                 {
@@ -167,7 +168,9 @@ namespace OrX
 
         private void Start()
         {
-            _windowRect = new Rect((Screen.width / 4) * 2 - (WindowWidth * 3) + 10, 50, WindowWidth, _windowHeight);
+            ResetData();
+            _scoreRect_ = new Rect((Screen.width / 2) - (WindowWidth /2), 50, WindowWidth, _windowHeight);
+            _windowRect = new Rect((Screen.width / 2) - (WindowWidth * 3) + 10, 50, WindowWidth, _windowHeight);
             GameEvents.onHideUI.Add(GameUiDisableOrXMissions);
             GameEvents.onShowUI.Add(GameUiEnableOrXMissions);
             _gameUiToggle = true;
@@ -176,6 +179,7 @@ namespace OrX
 
         public void StartMissionBuilder(Vector3 data, Guid _id)
         {
+            ResetData();
             OrXLog.instance.building = true;
             building = true;
             id = _id;
@@ -183,7 +187,77 @@ namespace OrX
             _lat = data.x;
             _lon = data.y;
             _alt = data.z;
+            showScores = false;
+            GuiEnabledOrXMissions = false;
+            PlayOrXMission = false;
             craftBrowserOpen = true;
+        }
+
+        private void ResetData()
+        {
+            m0 = false;
+            m1 = false;
+            m2 = false;
+            m3 = false;
+            m4 = false;
+            m5 = false;
+            m6 = false;
+            m7 = false;
+            m8 = false;
+            m9 = false;
+
+            nameSB0 = string.Empty;
+            timeSB0 = string.Empty;
+            nameSB1 = string.Empty;
+            timeSB1 = string.Empty;
+            nameSB2 = string.Empty;
+            timeSB2 = string.Empty;
+            nameSB3 = string.Empty;
+            timeSB3 = string.Empty;
+            nameSB4 = string.Empty;
+            timeSB4 = string.Empty;
+            nameSB5 = string.Empty;
+            timeSB5 = string.Empty;
+            nameSB6 = string.Empty;
+            timeSB6 = string.Empty;
+            nameSB7 = string.Empty;
+            timeSB7 = string.Empty;
+            nameSB8 = string.Empty;
+            timeSB8 = string.Empty;
+            nameSB9 = string.Empty;
+            timeSB9 = string.Empty;
+
+            _file = null;
+            _mission = null;
+            _scoreboard_ = null;
+
+            scoreboard0 = null;
+            scoreboard1 = null;
+            scoreboard2 = null;
+            scoreboard3 = null;
+            scoreboard4 = null;
+            scoreboard5 = null;
+            scoreboard6 = null;
+            scoreboard7 = null;
+            scoreboard8 = null;
+            scoreboard9 = null;
+
+            coordCount = 0;
+            _scoreboard.Clear();
+            stageTimes.Clear();
+            CoordDatabase.Clear();
+
+            missionDescription0 = string.Empty;
+            missionDescription1 = string.Empty;
+            missionDescription2 = string.Empty;
+            missionDescription3 = string.Empty;
+            missionDescription4 = string.Empty;
+            missionDescription5 = string.Empty;
+            missionDescription6 = string.Empty;
+            missionDescription7 = string.Empty;
+            missionDescription8 = string.Empty;
+            missionDescription9 = string.Empty;
+
         }
 
         public void WrapText(string s)
@@ -387,6 +461,7 @@ namespace OrX
 
         public void StartMission(string hcn, int mc, Vessel v) /// LOAD .orx
         {
+            ResetData();
             OrXLog.instance.mission = true;
             building = false;
             missionCraft = v;
@@ -407,112 +482,6 @@ namespace OrX
                 _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
                 _mission = _file.GetNode("mission" + mCount);
                 _scoreboard_ = _mission.GetNode("scoreboard");
-
-                foreach (ConfigNode score in _scoreboard_.nodes)
-                {
-                    if (score.name.Contains("challenger"))
-                    {
-                        double totalTime = 0;
-                        string cName = string.Empty;
-                        double _maxDepth = 0;
-                        double _topSurfaceSpeed = 0;
-
-                        foreach (ConfigNode.Value _score in score.values)
-                        {
-                            if (_score.name == "challengersName")
-                            {
-                                cName = _score.value;
-                            }
-
-                            if (_score.name == "stage")
-                            {
-                                string[] data = _score.value.Split(new char[] { ',' });
-
-                                totalTime += double.Parse(data[1]);
-                                if (_maxDepth >= double.Parse(data[2]))
-                                {
-                                    _maxDepth = double.Parse(data[2]);
-                                }
-
-                                _topSurfaceSpeed = double.Parse(data[3]);
-                            }
-                        }
-
-                        challengerList.Add(cName + "," + totalTime + "," + _maxDepth + "," + _topSurfaceSpeed);
-                    }
-                }
-
-                double totalTimeGold = 0;
-                double totalTimeSilver = 0;
-                double totalTimeBronze = 0;
-
-                string cNameGold = string.Empty;
-                string cNameSilver = string.Empty;
-                string cNameBronze = string.Empty;
-
-                double _maxDepthGold = 0;
-                double _maxDepthSilver = 0;
-                double _maxDepthBronze = 0;
-
-                List<string>.Enumerator sl = challengerList.GetEnumerator();
-                while (sl.MoveNext())
-                {
-                    string[] data = sl.Current.Split(new char[] { ',' });
-
-                    if (cNameGold != string.Empty)
-                    {
-                        cNameGold = data[0];
-                        totalTimeGold = double.Parse(data[1]);
-                        _maxDepthGold = double.Parse(data[2]);
-
-                    }
-                    else
-                    {
-                        if (double.Parse(data[1]) <= totalTimeBronze)
-                        {
-                            if (double.Parse(data[1]) <= totalTimeSilver)
-                            {
-                                if (double.Parse(data[1]) <= totalTimeGold)
-                                {
-                                    totalTimeBronze = totalTimeSilver;
-                                    totalTimeSilver = totalTimeGold;
-                                    totalTimeGold = double.Parse(data[1]);
-
-                                    _maxDepthBronze = _maxDepthSilver;
-                                    _maxDepthSilver = _maxDepthGold;
-                                    _maxDepthGold = double.Parse(data[2]);
-
-                                    cNameBronze = cNameSilver;
-                                    cNameSilver = cNameGold;
-                                    cNameGold = data[0];
-
-                                }
-                                else
-                                {
-                                    totalTimeBronze = totalTimeSilver;
-                                    totalTimeSilver = double.Parse(data[1]);
-
-                                    _maxDepthBronze = _maxDepthSilver;
-                                    _maxDepthSilver = double.Parse(data[2]);
-
-                                    cNameBronze = cNameSilver;
-                                    cNameSilver = data[0];
-                                }
-                            }
-                            else
-                            {
-                                totalTimeBronze = double.Parse(data[1]);
-                                _maxDepthBronze = double.Parse(data[2]);
-                                cNameBronze = data[0];
-                            }
-                        }
-                    }
-                }
-                sl.Dispose();
-
-                Gold = cNameGold + " - Time: " + totalTimeGold;
-                Silver = cNameSilver + " - Time: " + totalTimeSilver;
-                Bronze = cNameBronze + " - Time: " + totalTimeBronze;
 
                 ConfigNode node = _file.GetNode("OrX");
                 foreach (ConfigNode spawnCheck in node.nodes)
@@ -775,12 +744,6 @@ namespace OrX
                     }
                 }
 
-                ConfigNode scoreboard = mission.GetNode("scoreboard");
-                foreach (ConfigNode.Value entry in scoreboard.values)
-                {
-                    _scoreboard.Add(entry.value);
-                }
-
                 List<string>.Enumerator firstCoords = CoordDatabase.GetEnumerator();
                 while (firstCoords.MoveNext())
                 {
@@ -800,11 +763,1195 @@ namespace OrX
                     }
                 }
                 firstCoords.Dispose();
+
+                if (_scoreboard_.nodes.Contains("scoreboard0"))
+                {
+                    // DO NOTHING
+                }
+                else  // ADD NEW PODIUM LIST
+                {
+                    _scoreboard_.AddNode("scoreboard0");
+                    _scoreboard_.AddNode("scoreboard1");
+                    _scoreboard_.AddNode("scoreboard2");
+                    _scoreboard_.AddNode("scoreboard3");
+                    _scoreboard_.AddNode("scoreboard4");
+                    _scoreboard_.AddNode("scoreboard5");
+                    _scoreboard_.AddNode("scoreboard6");
+                    _scoreboard_.AddNode("scoreboard7");
+                    _scoreboard_.AddNode("scoreboard8");
+                    _scoreboard_.AddNode("scoreboard9");
+
+                    scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+                    scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+                    scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+                    scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+                    scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+                    scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+                    scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+                    scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+                    scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+                    scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+                    scoreboard0.AddValue("name", "<empty>");
+                    scoreboard0.AddValue("time", "");
+                    scoreboard1.AddValue("name", "<empty>");
+                    scoreboard1.AddValue("time", "");
+                    scoreboard2.AddValue("name", "<empty>");
+                    scoreboard2.AddValue("time", "");
+                    scoreboard3.AddValue("name", "<empty>");
+                    scoreboard3.AddValue("time", "");
+                    scoreboard4.AddValue("name", "<empty>");
+                    scoreboard4.AddValue("time", "");
+                    scoreboard5.AddValue("name", "<empty>");
+                    scoreboard5.AddValue("time", "");
+                    scoreboard6.AddValue("name", "<empty>");
+                    scoreboard6.AddValue("time", "");
+                    scoreboard7.AddValue("name", "<empty>");
+                    scoreboard7.AddValue("time", "");
+                    scoreboard8.AddValue("name", "<empty>");
+                    scoreboard8.AddValue("time", "");
+                    scoreboard9.AddValue("name", "<empty>");
+                    scoreboard9.AddValue("time", "");
+                }
+
+                // CHECK PODIUM LIST
+
+                scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+                scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+                scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+                scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+                scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+                scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+                scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+                scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+                scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+                scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+                foreach (ConfigNode.Value cv in scoreboard0.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB0 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB0 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard1.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB1 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB1 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard2.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB2 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB2 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard3.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB3 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB3 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard4.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB4 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB4 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard5.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB5 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB5 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard6.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB6 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB6 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard7.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB7 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB7 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard8.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB8 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB8 = cv.value;
+                    }
+                }
+
+                foreach (ConfigNode.Value cv in scoreboard9.values)
+                {
+                    if (cv.name == "name")
+                    {
+                        nameSB9 = cv.value;
+                    }
+
+                    if (cv.name == "time")
+                    {
+                        timeSB9 = cv.value;
+                    }
+                }
+
                 building = false;
+                
+                showScores = true;
                 PlayOrXMission = true; /// PUT AT END OF METHOD
                 _gameUiToggle = true;
+                if (missionType != "GEO-CACHE")
+                {
+                    showScores = true;
+                }
             }
         }
+
+        ConfigNode _file;
+        ConfigNode _mission;
+        ConfigNode _scoreboard_;
+
+        ConfigNode scoreboard0;
+        ConfigNode scoreboard1;
+        ConfigNode scoreboard2;
+        ConfigNode scoreboard3;
+        ConfigNode scoreboard4;
+        ConfigNode scoreboard5;
+        ConfigNode scoreboard6;
+        ConfigNode scoreboard7;
+        ConfigNode scoreboard8;
+        ConfigNode scoreboard9;
+
+        string nameSB0 = string.Empty;
+        string timeSB0 = string.Empty;
+        string nameSB1 = string.Empty;
+        string timeSB1 = string.Empty;
+        string nameSB2 = string.Empty;
+        string timeSB2 = string.Empty;
+        string nameSB3 = string.Empty;
+        string timeSB3 = string.Empty;
+        string nameSB4 = string.Empty;
+        string timeSB4 = string.Empty;
+        string nameSB5 = string.Empty;
+        string timeSB5 = string.Empty;
+        string nameSB6 = string.Empty;
+        string timeSB6 = string.Empty;
+        string nameSB7 = string.Empty;
+        string timeSB7 = string.Empty;
+        string nameSB8 = string.Empty;
+        string timeSB8 = string.Empty;
+        string nameSB9 = string.Empty;
+        string timeSB9 = string.Empty;
+
+        private void GetScoreboardData()
+        {
+            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            _mission = _file.GetNode("mission" + mCount);
+            _scoreboard_ = _mission.GetNode("scoreboard");
+
+            if (_scoreboard_.nodes.Contains("scoreboard0"))
+            {
+                // DO NOTHING
+            }
+            else  // ADD NEW PODIUM LIST
+            {
+                _scoreboard_.AddNode("scoreboard0");
+                _scoreboard_.AddNode("scoreboard1");
+                _scoreboard_.AddNode("scoreboard2");
+                _scoreboard_.AddNode("scoreboard3");
+                _scoreboard_.AddNode("scoreboard4");
+                _scoreboard_.AddNode("scoreboard5");
+                _scoreboard_.AddNode("scoreboard6");
+                _scoreboard_.AddNode("scoreboard7");
+                _scoreboard_.AddNode("scoreboard8");
+                _scoreboard_.AddNode("scoreboard9");
+
+                scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+                scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+                scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+                scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+                scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+                scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+                scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+                scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+                scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+                scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+                scoreboard0.AddValue("name", "<empty>");
+                scoreboard0.AddValue("time", "");
+                scoreboard1.AddValue("name", "<empty>");
+                scoreboard1.AddValue("time", "");
+                scoreboard2.AddValue("name", "<empty>");
+                scoreboard2.AddValue("time", "");
+                scoreboard3.AddValue("name", "<empty>");
+                scoreboard3.AddValue("time", "");
+                scoreboard4.AddValue("name", "<empty>");
+                scoreboard4.AddValue("time", "");
+                scoreboard5.AddValue("name", "<empty>");
+                scoreboard5.AddValue("time", "");
+                scoreboard6.AddValue("name", "<empty>");
+                scoreboard6.AddValue("time", "");
+                scoreboard7.AddValue("name", "<empty>");
+                scoreboard7.AddValue("time", "");
+                scoreboard8.AddValue("name", "<empty>");
+                scoreboard8.AddValue("time", "");
+                scoreboard9.AddValue("name", "<empty>");
+                scoreboard9.AddValue("time", "");
+            }
+
+            // CHECK PODIUM LIST
+
+            scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+            scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+            scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+            scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+            scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+            scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+            scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+            scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+            scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+            scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+            foreach (ConfigNode.Value cv in scoreboard0.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB0 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB0 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard1.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB1 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB1 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard2.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB2 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB2 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard3.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB3 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB3 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard4.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB4 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB4 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard5.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB5 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB5 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard6.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB6 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB6 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard7.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB7 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB7 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard8.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB8 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB8 = cv.value;
+                }
+            }
+
+            foreach (ConfigNode.Value cv in scoreboard9.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameSB9 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    timeSB9 = cv.value;
+                }
+            }
+        }
+
+        private void SaveScore()
+        {
+            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            _mission = _file.GetNode("mission" + mCount);
+            _scoreboard_ = _mission.GetNode("scoreboard");
+
+            if (_scoreboard_.nodes.Contains("scoreboard0"))
+            {
+                // DO NOTHING
+            }
+            else
+            {
+                // ADD NEW PODIUM LIST
+                _scoreboard_.AddNode("scoreboard0");
+                _scoreboard_.AddNode("scoreboard1");
+                _scoreboard_.AddNode("scoreboard2");
+                _scoreboard_.AddNode("scoreboard3");
+                _scoreboard_.AddNode("scoreboard4");
+                _scoreboard_.AddNode("scoreboard5");
+                _scoreboard_.AddNode("scoreboard6");
+                _scoreboard_.AddNode("scoreboard7");
+                _scoreboard_.AddNode("scoreboard8");
+                _scoreboard_.AddNode("scoreboard9");
+
+                scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+                scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+                scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+                scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+                scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+                scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+                scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+                scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+                scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+                scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+                scoreboard0.AddValue("name", "<empty>");
+                scoreboard0.AddValue("time", "");
+                scoreboard1.AddValue("name", "<empty>");
+                scoreboard1.AddValue("time", "");
+                scoreboard2.AddValue("name", "<empty>");
+                scoreboard2.AddValue("time", "");
+                scoreboard3.AddValue("name", "<empty>");
+                scoreboard3.AddValue("time", "");
+                scoreboard4.AddValue("name", "<empty>");
+                scoreboard4.AddValue("time", "");
+                scoreboard5.AddValue("name", "<empty>");
+                scoreboard5.AddValue("time", "");
+                scoreboard6.AddValue("name", "<empty>");
+                scoreboard6.AddValue("time", "");
+                scoreboard7.AddValue("name", "<empty>");
+                scoreboard7.AddValue("time", "");
+                scoreboard8.AddValue("name", "<empty>");
+                scoreboard8.AddValue("time", "");
+                scoreboard9.AddValue("name", "<empty>");
+                scoreboard9.AddValue("time", "");
+            }
+
+            // GET CHALLENGER TOTAL TIME AND CREAT STAGE TIME LIST
+            int stageCount = 0;
+
+            ConfigNode tempChallengerEntry = null;
+            double totalTimeChallenger = 0;
+            List<string>.Enumerator st = stageTimes.GetEnumerator();
+            while (st.MoveNext())
+            {
+                stageCount += 1;
+                string[] data = st.Current.Split(new char[] { ',' });
+                totalTimeChallenger += double.Parse(data[1]);
+                tempChallengerEntry.AddValue("stage" + stageCount, double.Parse(data[1]));
+            }
+            tempChallengerEntry.AddValue("totalTime", totalTimeChallenger);
+
+            // CHECK PODIUM LIST
+
+            scoreboard0 = _scoreboard_.GetNode("scoreboard0");
+            scoreboard1 = _scoreboard_.GetNode("scoreboard1");
+            scoreboard2 = _scoreboard_.GetNode("scoreboard2");
+            scoreboard3 = _scoreboard_.GetNode("scoreboard3");
+            scoreboard4 = _scoreboard_.GetNode("scoreboard4");
+            scoreboard5 = _scoreboard_.GetNode("scoreboard5");
+            scoreboard6 = _scoreboard_.GetNode("scoreboard6");
+            scoreboard7 = _scoreboard_.GetNode("scoreboard7");
+            scoreboard8 = _scoreboard_.GetNode("scoreboard8");
+            scoreboard9 = _scoreboard_.GetNode("scoreboard9");
+
+
+            bool ammendListscoreboard0 = false;
+            string nameToRemovescoreboard0 = string.Empty;
+            double totalTimescoreboard0 = 0;
+            foreach (ConfigNode.Value cv in scoreboard0.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard0 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard0 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard0)
+                        {
+                            ammendListscoreboard0 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard0 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard1 = false;
+            string nameToRemovescoreboard1 = string.Empty;
+            double totalTimescoreboard1 = 0;
+            foreach (ConfigNode.Value cv in scoreboard1.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard1 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard1 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard1)
+                        {
+                            ammendListscoreboard1 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard1 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard2 = false;
+            string nameToRemovescoreboard2= string.Empty;
+            double totalTimescoreboard2 = 0;
+            foreach (ConfigNode.Value cv in scoreboard2.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard2 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard2 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard2)
+                        {
+                            ammendListscoreboard2 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard2 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard3 = false;
+            string nameToRemovescoreboard3 = string.Empty;
+            double totalTimescoreboard3 = 0;
+            foreach (ConfigNode.Value cv in scoreboard3.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard3 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard3 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard3)
+                        {
+                            ammendListscoreboard3 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard3 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard4 = false;
+            string nameToRemovescoreboard4 = string.Empty;
+            double totalTimescoreboard4 = 0;
+            foreach (ConfigNode.Value cv in scoreboard4.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard4 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard4 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard4)
+                        {
+                            ammendListscoreboard4 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard4 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard5= false;
+            string nameToRemovescoreboard5 = string.Empty;
+            double totalTimescoreboard5 = 0;
+            foreach (ConfigNode.Value cv in scoreboard5.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard5 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard5 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard5)
+                        {
+                            ammendListscoreboard5 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard5 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard6 = false;
+            string nameToRemovescoreboard6 = string.Empty;
+            double totalTimescoreboard6 = 0;
+            foreach (ConfigNode.Value cv in scoreboard6.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard6 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard6 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard6)
+                        {
+                            ammendListscoreboard6 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard6 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard7 = false;
+            string nameToRemovescoreboard7 = string.Empty;
+            double totalTimescoreboard7 = 0;
+            foreach (ConfigNode.Value cv in scoreboard7.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard7 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard7 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard7)
+                        {
+                            ammendListscoreboard7 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard7 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard8 = false;
+            string nameToRemovescoreboard8 = string.Empty;
+            double totalTimescoreboard8 = 0;
+            foreach (ConfigNode.Value cv in scoreboard8.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard8 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard8 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard8)
+                        {
+                            ammendListscoreboard8 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard8 = true;
+                    }
+                }
+            }
+
+            bool ammendListscoreboard9 = false;
+            string nameToRemovescoreboard9 = string.Empty;
+            double totalTimescoreboard9 = 0;
+            foreach (ConfigNode.Value cv in scoreboard9.values)
+            {
+                if (cv.name == "name")
+                {
+                    nameToRemovescoreboard9 = cv.value;
+                }
+
+                if (cv.name == "time")
+                {
+                    if (cv.value != "" || cv.value != string.Empty)
+                    {
+                        totalTimescoreboard9 = double.Parse(cv.value);
+                        if (totalTimeChallenger <= totalTimescoreboard9)
+                        {
+                            ammendListscoreboard9 = true;
+                        }
+                    }
+                    else
+                    {
+                        ammendListscoreboard9 = true;
+                    }
+                }
+            }
+
+
+            // EDIT PODIUM LIST SCORES IF NEDED
+
+            if (ammendListscoreboard0)
+            {
+                scoreboard9.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard8.values)
+                {
+                    scoreboard9.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard8.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard7.values)
+                {
+                    scoreboard8.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard7.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard6.values)
+                {
+                    scoreboard7.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard6.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard5.values)
+                {
+                    scoreboard6.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard5.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard4.values)
+                {
+                    scoreboard5.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard4.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard3.values)
+                {
+                    scoreboard4.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard3.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard2.values)
+                {
+                    scoreboard3.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard2.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard1.values)
+                {
+                    scoreboard2.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard1.ClearData();
+                foreach (ConfigNode.Value cv in scoreboard0.values)
+                {
+                    scoreboard1.AddValue(cv.name, cv.value);
+                }
+
+                scoreboard0.ClearData();
+                foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                {
+                    scoreboard0.AddValue(cv.name, cv.value);
+                }
+            }
+            else
+            {
+                if (ammendListscoreboard1)
+                {
+                    scoreboard9.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard8.values)
+                    {
+                        scoreboard9.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard8.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard7.values)
+                    {
+                        scoreboard8.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard7.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard6.values)
+                    {
+                        scoreboard7.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard6.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard5.values)
+                    {
+                        scoreboard6.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard5.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard4.values)
+                    {
+                        scoreboard5.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard4.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard3.values)
+                    {
+                        scoreboard4.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard3.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard2.values)
+                    {
+                        scoreboard3.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard2.ClearData();
+                    foreach (ConfigNode.Value cv in scoreboard1.values)
+                    {
+                        scoreboard2.AddValue(cv.name, cv.value);
+                    }
+
+                    scoreboard1.ClearData();
+                    foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                    {
+                        scoreboard1.AddValue(cv.name, cv.value);
+                    }
+                }
+                else
+                {
+                    if (ammendListscoreboard2)
+                    {
+                        scoreboard9.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard8.values)
+                        {
+                            scoreboard9.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard8.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard7.values)
+                        {
+                            scoreboard8.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard7.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard6.values)
+                        {
+                            scoreboard7.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard6.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard5.values)
+                        {
+                            scoreboard6.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard5.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard4.values)
+                        {
+                            scoreboard5.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard4.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard3.values)
+                        {
+                            scoreboard4.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard3.ClearData();
+                        foreach (ConfigNode.Value cv in scoreboard2.values)
+                        {
+                            scoreboard3.AddValue(cv.name, cv.value);
+                        }
+
+                        scoreboard2.ClearData();
+                        foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                        {
+                            scoreboard2.AddValue(cv.name, cv.value);
+                        }
+                    }
+                    else
+                    {
+                        if (ammendListscoreboard3)
+                        {
+                            scoreboard9.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard8.values)
+                            {
+                                scoreboard9.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard8.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard7.values)
+                            {
+                                scoreboard8.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard7.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard6.values)
+                            {
+                                scoreboard7.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard6.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard5.values)
+                            {
+                                scoreboard6.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard5.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard4.values)
+                            {
+                                scoreboard5.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard4.ClearData();
+                            foreach (ConfigNode.Value cv in scoreboard3.values)
+                            {
+                                scoreboard4.AddValue(cv.name, cv.value);
+                            }
+
+                            scoreboard3.ClearData();
+                            foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                            {
+                                scoreboard3.AddValue(cv.name, cv.value);
+                            }
+                        }
+                        else
+                        {
+                            if (ammendListscoreboard4)
+                            {
+                                scoreboard9.ClearData();
+                                foreach (ConfigNode.Value cv in scoreboard8.values)
+                                {
+                                    scoreboard9.AddValue(cv.name, cv.value);
+                                }
+
+                                scoreboard8.ClearData();
+                                foreach (ConfigNode.Value cv in scoreboard7.values)
+                                {
+                                    scoreboard8.AddValue(cv.name, cv.value);
+                                }
+
+                                scoreboard7.ClearData();
+                                foreach (ConfigNode.Value cv in scoreboard6.values)
+                                {
+                                    scoreboard7.AddValue(cv.name, cv.value);
+                                }
+
+                                scoreboard6.ClearData();
+                                foreach (ConfigNode.Value cv in scoreboard5.values)
+                                {
+                                    scoreboard6.AddValue(cv.name, cv.value);
+                                }
+
+                                scoreboard5.ClearData();
+                                foreach (ConfigNode.Value cv in scoreboard4.values)
+                                {
+                                    scoreboard5.AddValue(cv.name, cv.value);
+                                }
+
+                                scoreboard4.ClearData();
+                                foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                {
+                                    scoreboard4.AddValue(cv.name, cv.value);
+                                }
+                            }
+                            else
+                            {
+                                if (ammendListscoreboard5)
+                                {
+                                    scoreboard9.ClearData();
+                                    foreach (ConfigNode.Value cv in scoreboard8.values)
+                                    {
+                                        scoreboard9.AddValue(cv.name, cv.value);
+                                    }
+
+                                    scoreboard8.ClearData();
+                                    foreach (ConfigNode.Value cv in scoreboard7.values)
+                                    {
+                                        scoreboard8.AddValue(cv.name, cv.value);
+                                    }
+
+                                    scoreboard7.ClearData();
+                                    foreach (ConfigNode.Value cv in scoreboard6.values)
+                                    {
+                                        scoreboard7.AddValue(cv.name, cv.value);
+                                    }
+
+                                    scoreboard6.ClearData();
+                                    foreach (ConfigNode.Value cv in scoreboard5.values)
+                                    {
+                                        scoreboard6.AddValue(cv.name, cv.value);
+                                    }
+
+                                    scoreboard5.ClearData();
+                                    foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                    {
+                                        scoreboard5.AddValue(cv.name, cv.value);
+                                    }
+                                }
+                                else
+                                {
+                                    if (ammendListscoreboard6)
+                                    {
+                                        scoreboard9.ClearData();
+                                        foreach (ConfigNode.Value cv in scoreboard8.values)
+                                        {
+                                            scoreboard9.AddValue(cv.name, cv.value);
+                                        }
+
+                                        scoreboard8.ClearData();
+                                        foreach (ConfigNode.Value cv in scoreboard7.values)
+                                        {
+                                            scoreboard8.AddValue(cv.name, cv.value);
+                                        }
+
+                                        scoreboard7.ClearData();
+                                        foreach (ConfigNode.Value cv in scoreboard6.values)
+                                        {
+                                            scoreboard7.AddValue(cv.name, cv.value);
+                                        }
+
+                                        scoreboard6.ClearData();
+                                        foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                        {
+                                            scoreboard6.AddValue(cv.name, cv.value);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (ammendListscoreboard7)
+                                        {
+                                            scoreboard9.ClearData();
+                                            foreach (ConfigNode.Value cv in scoreboard8.values)
+                                            {
+                                                scoreboard9.AddValue(cv.name, cv.value);
+                                            }
+
+                                            scoreboard8.ClearData();
+                                            foreach (ConfigNode.Value cv in scoreboard7.values)
+                                            {
+                                                scoreboard8.AddValue(cv.name, cv.value);
+                                            }
+
+                                            scoreboard7.ClearData();
+                                            foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                            {
+                                                scoreboard7.AddValue(cv.name, cv.value);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (ammendListscoreboard8)
+                                            {
+                                                scoreboard9.ClearData();
+                                                foreach (ConfigNode.Value cv in scoreboard8.values)
+                                                {
+                                                    scoreboard9.AddValue(cv.name, cv.value);
+                                                }
+
+                                                scoreboard8.ClearData();
+                                                foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                                {
+                                                    scoreboard8.AddValue(cv.name, cv.value);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (ammendListscoreboard9)
+                                                {
+                                                    scoreboard9.ClearData();
+                                                    foreach (ConfigNode.Value cv in tempChallengerEntry.values)
+                                                    {
+                                                        scoreboard9.AddValue(cv.name, cv.value);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // NO CHANGE TO PODIUM
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+        }
+
+
+
+
 
         public void StartEndGame()
         {
@@ -911,7 +2058,7 @@ namespace OrX
                     }
                 }
                 missionCoords.Dispose();
-                
+
                 if (node.HasNode("OrXHoloCacheCoords" + hcCount))
                 {
                     foreach (ConfigNode n in node.GetNodes("OrXHoloCacheCoords" + hcCount))
@@ -1126,298 +2273,6 @@ namespace OrX
         private int ec = 0;
         public bool building = false;
 
-        private void StartSaveScore()
-        {
-            ec = 0;
-            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
-            _mission = _file.GetNode("mission" + mCount);
-            _scoreboard_ = _mission.GetNode("scoreboard");
-            SaveScore();
-        }
-
-        ConfigNode _file;
-        ConfigNode _mission;
-        ConfigNode _scoreboard_;
-
-        private void SaveScore()
-        {
-
-
-
-
-            double totalTimeGold = 0;
-            double totalTimeSilver = 0;
-            double totalTimeBronze = 0;
-            double totalTimeChallenger = 0;
-
-            string cNameGold = string.Empty;
-            string cNameSilver = string.Empty;
-            string cNameBronze = string.Empty;
-
-            double _maxDepthGold = 0;
-            double _maxDepthSilver = 0;
-            double _maxDepthBronze = 0;
-
-            double topSpeedGold = 0;
-            double topSpeedSilver = 0;
-            double topSpeedBronze = 0;
-
-            List<string>.Enumerator st = stageTimes.GetEnumerator();
-            while (st.MoveNext())
-            {
-                string[] data = st.Current.Split(new char[] { ',' });
-
-                totalTimeChallenger += double.Parse(data[1]);
-            }
-
-            string[] dataG = Gold.Split(new char[] { ',' });
-            string[] dataS = Silver.Split(new char[] { ',' });
-            string[] dataB = Bronze.Split(new char[] { ',' });
-
-            if (totalTimeChallenger <= double.Parse(dataB[1]))
-            {
-                if (totalTimeChallenger <= double.Parse(dataS[1]))
-                {
-                    if (totalTimeChallenger <= double.Parse(dataG[1]))
-                    {
-                        totalTimeBronze = totalTimeSilver;
-                        totalTimeSilver = totalTimeGold;
-                        totalTimeGold = totalTimeChallenger;
-
-                        _maxDepthBronze = _maxDepthSilver;
-                        _maxDepthSilver = _maxDepthGold;
-                        _maxDepthGold = maxDepth;
-
-                        cNameBronze = cNameSilver;
-                        cNameSilver = cNameGold;
-                        cNameGold = challengersName;
-
-                        topSpeedBronze = topSpeedSilver;
-                        topSpeedSilver = topSpeedGold;
-                        topSpeedGold = topSurfaceSpeed;
-                    }
-                    else
-                    {
-                        totalTimeBronze = totalTimeSilver;
-                        totalTimeSilver = totalTimeChallenger;
-
-                        _maxDepthBronze = _maxDepthSilver;
-                        _maxDepthSilver = maxDepth;
-
-                        cNameBronze = cNameSilver;
-                        cNameSilver = challengersName;
-
-                        topSpeedBronze = topSpeedSilver;
-                        topSpeedSilver = topSurfaceSpeed;
-                    }
-                }
-                else
-                {
-                    totalTimeBronze = totalTimeChallenger;
-                    _maxDepthBronze = maxDepth;
-                    cNameBronze = challengersName;
-                    topSpeedBronze = topSurfaceSpeed;
-                }
-            }
-
-
-            List<string>.Enumerator sl = challengerList.GetEnumerator();
-            while (sl.MoveNext())
-            {
-                string[] data = sl.Current.Split(new char[] { ',' });
-
-
-
-
-                if (totalTimeChallenger <= totalTimeBronze)
-                {
-                    if (totalTimeChallenger <= totalTimeSilver)
-                    {
-                        if (totalTimeChallenger <= totalTimeGold)
-                        {
-                            totalTimeBronze = totalTimeSilver;
-                            totalTimeSilver = totalTimeGold;
-                            totalTimeGold = totalTimeChallenger;
-
-                            _maxDepthBronze = _maxDepthSilver;
-                            _maxDepthSilver = _maxDepthGold;
-                            _maxDepthGold = maxDepth;
-
-                            cNameBronze = cNameSilver;
-                            cNameSilver = cNameGold;
-                            cNameGold = challengersName;
-
-                            topSpeedBronze = topSpeedSilver;
-                            topSpeedSilver = topSpeedGold;
-                            topSpeedGold = topSurfaceSpeed;
-                        }
-                        else
-                        {
-                            totalTimeBronze = totalTimeSilver;
-                            totalTimeSilver = totalTimeChallenger;
-
-                            _maxDepthBronze = _maxDepthSilver;
-                            _maxDepthSilver = maxDepth;
-
-                            cNameBronze = cNameSilver;
-                            cNameSilver = challengersName;
-
-                            topSpeedBronze = topSpeedSilver;
-                            topSpeedSilver = topSurfaceSpeed;
-                        }
-                    }
-                    else
-                    {
-                        totalTimeBronze = totalTimeChallenger;
-                        _maxDepthBronze = maxDepth;
-                        cNameBronze = challengersName;
-                        topSpeedBronze = topSurfaceSpeed;
-                    }
-                }
-            }
-            sl.Dispose();
-
-
-
-
-            ec = 0;
-            foreach (ConfigNode score in _scoreboard_.nodes)
-            {
-                if (score.name.Contains("challenger"))
-                {
-                    double totalTime = 0;
-                    string cName = string.Empty;
-                    double _maxDepth = 0;
-                    double _topSurfaceSpeed = 0;
-
-                    foreach (ConfigNode.Value v in score.values)
-                    {
-                        if (v.name == "challengersName")
-                        {
-                            if (v.value == challengersName)
-                            {
-                                // IF CHALLENGER HAS A BETTER SCORE THAN BEFORE EDIT THE ENTRY
-                            }
-                            else
-                            {
-                                cName = v.value;
-                            }
-                        }
-
-                        if (v.name == "stage")
-                        {
-                            string[] data = v.value.Split(new char[] { ',' });
-
-                            totalTime += double.Parse(data[1]);
-                            if (_maxDepth >= double.Parse(data[2]))
-                            {
-                                _maxDepth = double.Parse(data[2]);
-                            }
-                            _topSurfaceSpeed = double.Parse(data[3]);
-
-                        }
-
-
-
-
-
-                    }
-
-
-
-                }
-            }
-
-            double totalTimeGold = 0;
-            double totalTimeSilver = 0;
-            double totalTimeBronze = 0;
-
-            string cNameGold = string.Empty;
-            string cNameSilver = string.Empty;
-            string cNameBronze = string.Empty;
-
-            double _maxDepthGold = 0;
-            double _maxDepthSilver = 0;
-            double _maxDepthBronze = 0;
-
-            List<string>.Enumerator sl = challengerList.GetEnumerator();
-            while (sl.MoveNext())
-            {
-                string[] data = sl.Current.Split(new char[] { ',' });
-
-                if (cNameGold != string.Empty)
-                {
-                    cNameGold = data[0];
-                    totalTimeGold = double.Parse(data[1]);
-                    _maxDepthGold = double.Parse(data[2]);
-
-                }
-                else
-                {
-                    if (double.Parse(data[1]) <= totalTimeBronze)
-                    {
-                        if (double.Parse(data[1]) <= totalTimeSilver)
-                        {
-                            if (double.Parse(data[1]) <= totalTimeGold)
-                            {
-                                totalTimeBronze = totalTimeSilver;
-                                totalTimeSilver = totalTimeGold;
-                                totalTimeGold = double.Parse(data[1]);
-
-                                _maxDepthBronze = _maxDepthSilver;
-                                _maxDepthSilver = _maxDepthGold;
-                                _maxDepthGold = double.Parse(data[2]);
-
-                                cNameBronze = cNameSilver;
-                                cNameSilver = cNameGold;
-                                cNameGold = data[0];
-
-                            }
-                            else
-                            {
-                                totalTimeBronze = totalTimeSilver;
-                                totalTimeSilver = double.Parse(data[1]);
-
-                                _maxDepthBronze = _maxDepthSilver;
-                                _maxDepthSilver = double.Parse(data[2]);
-
-                                cNameBronze = cNameSilver;
-                                cNameSilver = data[0];
-                            }
-                        }
-                        else
-                        {
-                            totalTimeBronze = double.Parse(data[1]);
-                            _maxDepthBronze = double.Parse(data[2]);
-                            cNameBronze = data[0];
-                        }
-                    }
-                }
-            }
-            sl.Dispose();
-
-            Gold = cNameGold + " - Time: " + totalTimeGold;
-            Silver = cNameSilver + " - Time: " + totalTimeSilver;
-            Bronze = cNameBronze + " - Time: " + totalTimeBronze;
-
-            _scoreboard_.AddNode("challenger" + ec);
-            ConfigNode challenger = _scoreboard_.GetNode("challenger" + ec);
-            challenger.AddValue("challengersName", challengersName);
-            int s = 0;
-            List<string>.Enumerator scores = stageTimes.GetEnumerator();
-            while (scores.MoveNext())
-            {
-                s += 1;
-                challenger.AddValue("stage" + s, scores.Current);
-                ec = 0;
-                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
-                _file.ClearData();
-                _mission.ClearData();
-                _scoreboard_.ClearData();
-            }
-        }
-
-        List<string> challengerList;
 
         private void StartChallenge()
         {
@@ -1467,6 +2322,11 @@ namespace OrX
                 _windowRect = GUI.Window(492265212, _windowRect, GuiWindowOrXMissions, "");
             }
 
+            if (editDescription)
+            {
+                _scoreRect_ = GUI.Window(269255922, _scoreRect_, GuiOrXEditDescription, "");
+            }
+
             if (craftBrowserOpen && _gameUiToggle)
             {
                 building = true;
@@ -1480,6 +2340,11 @@ namespace OrX
                 building = false;
                 GuiEnabledOrXMissions = false;
                 _windowRect = GUI.Window(260075212, _windowRect, GuiWindowPlayOrXMission, "");
+            }
+            
+            if (showScores && PlayOrXMission)
+            {
+                _scoreRect_ = GUI.Window(269271212, _scoreRect_, GuiWindowOrXScoreboard, "");
             }
         }
         private void EnableGui()
@@ -1501,6 +2366,224 @@ namespace OrX
         {
             _gameUiToggle = false;
         }
+
+
+        #region Scoreboard
+
+        bool showScores = false;
+
+        private void GuiWindowOrXScoreboard(int OrX_Scoreboard) 
+        {
+            GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
+            float line = 0;
+            _contentWidth = WindowWidth - 2 * LeftIndent;
+
+            DrawScoreboard(line);
+            line++;
+            line++;
+            DrawScoreboard0(line);
+            line++;
+            DrawScoreboard1(line);
+            line++;
+            DrawScoreboard2(line);
+            line++;
+            DrawScoreboard3(line);
+            line++;
+            DrawScoreboard4(line);
+            line++;
+            DrawScoreboard5(line);
+            line++;
+            DrawScoreboard6(line);
+            line++;
+            DrawScoreboard7(line);
+            line++;
+            DrawScoreboard8(line);
+            line++;
+            DrawScoreboard9(line);
+            line++;
+            line++;
+            DrawCloseScoreboard(line);
+
+            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+            _windowRect.height = _windowHeight;
+        }
+
+        private void DrawScoreboard(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 14,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionName + " Scoreboard", titleStyle);
+        }
+        private void DrawScoreboard0(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB0 + " - " + String.Format("{0:0.00}", timeSB0), titleStyle);
+        }
+        private void DrawScoreboard1(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB1 + " - " + String.Format("{0:0.00}", timeSB1), titleStyle);
+        }
+        private void DrawScoreboard2(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB2 + " - " + String.Format("{0:0.00}", timeSB2), titleStyle);
+        }
+        private void DrawScoreboard3(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB3 + " - " + String.Format("{0:0.00}", timeSB3), titleStyle);
+        }
+        private void DrawScoreboard4(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB4 + " - " + String.Format("{0:0.00}", timeSB4), titleStyle);
+        }
+        private void DrawScoreboard5(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB5 + " - " + String.Format("{0:0.00}", timeSB5), titleStyle);
+        }
+        private void DrawScoreboard6(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB6 + " - " + String.Format("{0:0.00}", timeSB6), titleStyle);
+        }
+        private void DrawScoreboard7(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB7 + " - " + String.Format("{0:0.00}", timeSB7), titleStyle);
+        }
+        private void DrawScoreboard8(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB8 + " - " + String.Format("{0:0.00}", timeSB8), titleStyle);
+        }
+        private void DrawScoreboard9(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), nameSB9 + " - " + String.Format("{0:0.00}", timeSB9), titleStyle);
+        }
+
+        private void DrawCloseScoreboard(float line)
+        {
+            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
+            if (GUI.Button(saveRect, "CLOSE", HighLogic.Skin.button))
+            {
+                showScores = false;
+            }
+        }
+
+        #endregion
 
         #region Craft Browser
 
@@ -1681,7 +2764,6 @@ namespace OrX
 
             DrawPlayHoloCacheName(line);
             line++;
-            line++;
             DrawPlayTitle(line);
             line++;
             DrawPlayMissionType(line);
@@ -1696,13 +2778,6 @@ namespace OrX
                 DrawPlayBlueprintsAdded(line);
                 line++;
             }
-            line++;
-            DrawPlayGold(line);
-            line++;
-            DrawPlaySilver(line);
-            line++;
-            DrawPlayBronze(line);
-            line++;
             line++;
 
             if (m0)
@@ -1784,52 +2859,6 @@ namespace OrX
             _windowRect.height = _windowHeight;
         }
 
-        private void DrawPlayGold(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Gold: " + Gold, titleStyle);
-        }
-        private void DrawPlaySilver(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Silver: " + Silver, titleStyle);
-        }
-        private void DrawPlayBronze(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Bronze: " + Bronze, titleStyle);
-        }
-
         private void DrawPlayHoloCacheName(float line)
         {
             var centerLabel = new GUIStyle
@@ -1845,6 +2874,8 @@ namespace OrX
 
             GUI.Label(new Rect(0, 0, WindowWidth, 20), HoloCacheName, titleStyle);
         }
+
+
         private void DrawPlayTitle(float line)
         {
             var centerLabel = new GUIStyle
@@ -1968,6 +2999,216 @@ namespace OrX
 
         #endregion
 
+        #region Edit Description Window
+
+
+        private void GuiOrXEditDescription(int OrX_EditDescription)
+        {
+            GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
+            float line = 0;
+            _contentWidth = WindowWidth - 2 * LeftIndent;
+
+            DrawEditTitle(line);
+            line++;
+            line++;
+            DrawDescription0(line);
+            line++;
+            DrawDescription1(line);
+            line++;
+            DrawDescription2(line);
+            line++;
+            DrawDescription3(line);
+            line++;
+            DrawDescription4(line);
+            line++;
+            DrawDescription5(line);
+            line++;
+            DrawDescription6(line);
+            line++;
+            DrawDescription7(line);
+            line++;
+            DrawDescription8(line);
+            line++;
+            DrawDescription9(line);
+            line++;
+            line++;
+            DrawClearDescription(line);
+            line++;
+            DrawSaveDescription(line);
+            
+
+            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+            _windowRect.height = _windowHeight;
+        }
+
+        private void DrawEditTitle(float line)
+        {
+            var centerLabel = new GUIStyle
+            {
+                alignment = TextAnchor.UpperCenter,
+                normal = { textColor = Color.white }
+            };
+            var titleStyle = new GUIStyle(centerLabel)
+            {
+                fontSize = 14,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Description Editor", titleStyle);
+        }
+
+        private void DrawClearDescription(float line)
+        {
+            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
+            if (GUI.Button(saveRect, "CLEAR DESCRIPTION", HighLogic.Skin.button))
+            {
+                description = string.Empty;
+            }
+        }
+
+        private void DrawSaveDescription(float line)
+        {
+            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
+            if (GUI.Button(saveRect, "SAVE", HighLogic.Skin.button))
+            {
+                description = string.Empty;
+            }
+        }
+
+        private void DrawDescription0(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription0 = GUI.TextField(fwdFieldRect, missionDescription0);
+        }
+        private void DrawDescription1(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription1 = GUI.TextField(fwdFieldRect, missionDescription1);
+        }
+        private void DrawDescription2(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription2 = GUI.TextField(fwdFieldRect, missionDescription2);
+        }
+        private void DrawDescription3(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription3 = GUI.TextField(fwdFieldRect, missionDescription3);
+        }
+        private void DrawDescription4(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription4 = GUI.TextField(fwdFieldRect, missionDescription4);
+        }
+        private void DrawDescription5(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription5 = GUI.TextField(fwdFieldRect, missionDescription5);
+        }
+        private void DrawDescription6(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription6 = GUI.TextField(fwdFieldRect, missionDescription6);
+        }
+        private void DrawDescription7(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription7 = GUI.TextField(fwdFieldRect, missionDescription7);
+        }
+        private void DrawDescription8(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription8 = GUI.TextField(fwdFieldRect, missionDescription8);
+        }
+        private void DrawDescription9(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "",
+                leftLabel);
+            float textFieldWidth = 220;
+            var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
+                ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            missionDescription9 = GUI.TextField(fwdFieldRect, missionDescription9);
+        }
+
+
+        #endregion
+
         #region GuiWindowOrXMissions
 
         private void GuiWindowOrXMissions(int OrXMissions)
@@ -1998,79 +3239,8 @@ namespace OrX
                 line++;
                 DrawEditDescription(line);
                 line++;
-
-                if (editDescription)
-                {
-                    DrawClearDescription(line);
-                    line++;
-                    DrawDescription(line);
-                    line++;
-
-                }
                 line++;
 
-                if (m0)
-                {
-                    DrawDescription0(line);
-                    line++;
-                    if (m1)
-                    {
-                        DrawDescription1(line);
-                        line++;
-
-                        if (m2)
-                        {
-                            DrawDescription2(line);
-                            line++;
-
-                            if (m3)
-                            {
-                                DrawDescription3(line);
-                                line++;
-
-                                if (m4)
-                                {
-                                    DrawDescription4(line);
-                                    line++;
-
-                                    if (m5)
-                                    {
-                                        DrawDescription5(line);
-                                        line++;
-
-                                        if (m6)
-                                        {
-                                            DrawDescription6(line);
-                                            line++;
-
-                                            if (m7)
-                                            {
-                                                DrawDescription7(line);
-                                                line++;
-
-                                                if (m8)
-                                                {
-                                                    DrawDescription8(line);
-                                                    line++;
-
-                                                    if (m9)
-                                                    {
-                                                        DrawDescription9(line);
-                                                        line++;
-
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                line++;
-                line++;
                 DrawSave(line);
                 line++;
                 DrawCancel(line);
@@ -2286,165 +3456,6 @@ namespace OrX
                     editDescription = false;
                 }
             }
-        }
-        private void DrawClearDescription(float line)
-        {
-            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "CLEAR DESCRIPTION", HighLogic.Skin.button))
-            {
-                description = string.Empty;
-            }
-        }
-
-        private void DrawDescription0(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription0, titleStyle);
-        }
-        private void DrawDescription1(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription1, titleStyle);
-        }
-        private void DrawDescription2(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription2, titleStyle);
-        }
-        private void DrawDescription3(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription3, titleStyle);
-        }
-        private void DrawDescription4(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription4, titleStyle);
-        }
-        private void DrawDescription5(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription5, titleStyle);
-        }
-        private void DrawDescription6(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription6, titleStyle);
-        }
-        private void DrawDescription7(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription7, titleStyle);
-        }
-        private void DrawDescription8(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription8, titleStyle);
-        }
-        private void DrawDescription9(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionDescription9, titleStyle);
         }
 
         private void DrawAddCoords(float line)
