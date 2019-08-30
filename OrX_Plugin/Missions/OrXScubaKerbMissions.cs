@@ -71,30 +71,13 @@ namespace OrX
 
             DrawTitle(line);
             line++;
-
-            DrawText(line);
-            line++;
-
-            DrawStart(line);
-            line++;
-            DrawCancel(line);
+            DrawDistance(line);
             line++;
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
         }
 
-        public void ToggleGUI()
-        {
-            if (GuiEnabledOrXScubaKerbMissions)
-            {
-                DisableGui();
-            }
-            else
-            {
-                EnableGui();
-            }
-        }
 
         public void EnableGui()
         {
@@ -132,59 +115,20 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, 0, WindowWidth, 20),
-                "Scuba Kerb",
+                "Distance to target",
                 titleStyle);
         }
 
 
-        private void DrawText(float line)
+        private void DrawDistance(float line)
         {
             var leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), 
-                "TEXT",
-                leftLabel);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private void DrawStart(float line)
-        {
-            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "Unlock Scuba Kerb", HighLogic.Skin.button))
-            {
-                DisableGui();
-                OrXScubaKerbMissions.instance.EnableGui();
-            }
-        }
-
-        private void DrawCancel(float line)
-        {
-            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "Cancel", HighLogic.Skin.button))
-            {
-                DisableGui();
-                OrXMissions.instance.EnableScubaGui();
-            }
+            //GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), 
+                //OrXMissions.instance._targetDistance,
+                //leftLabel);
         }
 
         #endregion

@@ -12,6 +12,7 @@ namespace OrX
 
         public void Awake()
         {
+            
             if (instance) Destroy(instance);
             instance = this;
 
@@ -22,22 +23,35 @@ namespace OrX
             try
             {
               PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
+                Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
+
             }
             catch
             {
                 Debug.Log("[ORX] === ERROR ADDING OrX MODULE ===");
             }
-
-            EVA = new ConfigNode("MODULE");
-            EVA.AddValue("name", "ModuleOrX");
 
 			try
             {
 				PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
-			}
+                Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVAfemale ===");
+
+            }
             catch
             {
                 Debug.Log("[ORX] === ERROR ADDING OrX MODULE ===");
+            }
+
+            try
+            {
+                if (PartLoader.getPartInfoByName("kerbalEVA").partPrefab.Modules.Contains("ModuleOrX"))
+                {
+                    Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
+                }
+            }
+            catch
+            {
+
             }
         }
     }

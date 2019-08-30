@@ -706,37 +706,28 @@ namespace OrX.spawn
             Debug.Log("[SPAWN OrX] PLACING SPAWNED OrX ...................");
             
             loadingCraft = true;
-            Debug.Log("[SPAWN OrX] loadingCraft = true;");
-
             v.isPersistent = true;
-            Debug.Log("[SPAWN OrX] v.isPersistent = true;");
-
-            v.Landed = false;
-            Debug.Log("[SPAWN OrX] v.Landed = false;");
-
-            v.situation = Vessel.Situations.FLYING;
-            Debug.Log("[SPAWN OrX] v.situation = Vessel.Situations.FLYING;");
-
+            v.Landed = true;
+            v.situation = Vessel.Situations.LANDED;
             while (v.packed)
             {
                 yield return null;
             }
-
-            Debug.Log("[SPAWN OrX] v.IgnoreGForces(60);");
             v.IgnoreGForces(60);
-
-            Debug.Log("[SPAWN OrX] v.SetWorldVelocity(Vector3d.zero);");
             v.SetWorldVelocity(Vector3d.zero);
-
             yield return null;
-            Debug.Log("[SPAWN OrX] GOING OFF RAILS ...................");
 
             if (infectedCount <= 1)
             {
                 ConfigNode temp = new ConfigNode();
                 temp.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/OrX.tmp");
             }
-
+            v.rootPart.AddModule("ModuleOrX");
+            var orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
+            if (orx != null)
+            {
+                orx.orx = true;
+            }
             v.GoOffRails();
             StageManager.BeginFlight();
 

@@ -40,23 +40,14 @@ namespace OrX.wind
         {
             _windowRect = new Rect((Screen.width / 2) - (WindowWidth / 2), 250, WindowWidth, _windowHeight);
             GameEvents.onHideUI.Add(DisableGui);
-            GameEvents.onShowUI.Add(EnableGui);
-
-            if (OrXLog.instance.unlockedWind)
-            {
-                AddToolbarButton();
-            }
-            else
-            {
-                OrXWindGUIEnabled = false;
-            }
+            //AddToolbarButton();
         }
 
         private void OnGUI()
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (OrXWindGUIEnabled && OrXLog.instance.unlockedWind)
+                if (OrXWindGUIEnabled)
                 {
                     _windowRect = GUI.Window(693427236, _windowRect, GuiWindow, "");
                 }
@@ -121,7 +112,7 @@ namespace OrX.wind
             _windowRect.height = _windowHeight;
         }
 
-        public void AddToolbarButton()
+        private void AddToolbarButton()
         {
             string textureDir = "OrX/Plugin/";
 

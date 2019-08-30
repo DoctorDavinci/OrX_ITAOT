@@ -6,7 +6,7 @@ using System;
 
 namespace OrX.wind
 {
-    [KSPAddon(KSPAddon.Startup.AllGameScenes, true)]
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class OrXWeatherSim : MonoBehaviour
     {
         public static OrXWeatherSim instance;
@@ -54,7 +54,11 @@ namespace OrX.wind
 
         private void Awake()
         {
-            DontDestroyOnLoad(this);
+            if (instance)
+            {
+                Destroy(instance);
+            }
+
             instance = this;
         }
 
@@ -145,10 +149,13 @@ namespace OrX.wind
                     if (p.Current == null) continue;
                     if (p.Current.Modules.Contains("ModuleLiftingSurface"))
                     {
-                        p.Current.AddModule("ModuleOrXWind");
-                        var ms = p.Current.FindModuleImplementing<ModuleOrXWind>();
-                        var mls = p.Current.FindModuleImplementing<ModuleLiftingSurface>();
-                        ms.deflectionLiftCoeff = mls.deflectionLiftCoeff;
+                        if (!p.Current.Modules.Contains<ModuleOrXWind>())
+                        {
+                            p.Current.AddModule("ModuleOrXWind");
+                            var ms = p.Current.FindModuleImplementing<ModuleOrXWind>();
+                            var mls = p.Current.FindModuleImplementing<ModuleLiftingSurface>();
+                            ms.deflectionLiftCoeff = mls.deflectionLiftCoeff;
+                        }
                     }
                 }
                 p.Dispose(); // dispose of parts list ... remove list from RAM and KSP without it going to the garbage heap/collector
@@ -158,18 +165,18 @@ namespace OrX.wind
 
             vectorList.Clear();
 
-            if (manual)
-            {
-                setDirection = true;
-            }
+            setDirection = true;
 
-            StartCoroutine(CalcSlope());
+            SetDirection();
+            //StartCoroutine(CalcSlope());
+            //StartCoroutine(Tease());
         }
 
         public void ToggleWind()
         {
             if (enableWind) // if Wind is enabled
             {
+                _blowing = false;
                 blowing = false;
                 enableWind = false;
             }
@@ -179,7 +186,7 @@ namespace OrX.wind
             }
         }
 
-        IEnumerator CalcSlope()
+        private void CalcSlope()
         {
             // create list for height of terrain at each point (8 cardinal directions)
 
@@ -287,7 +294,7 @@ namespace OrX.wind
                     }
 
                     count -= 1;
-                    StartCoroutine(CalcSlope());
+                    CalcSlope();
                 }
             }
             else
@@ -429,36 +436,6 @@ namespace OrX.wind
                 
             }
 
-            if (setDirection)
-            {
-                _degrees = GetHeading();
-                SetDirection();
-            }
-            else
-            {
-                yield return new WaitForSeconds(300);
-
-                if (enableWind)
-                {
-                    vectorList.Clear();
-                    blowing = true;
-
-                    if (setDirection)
-                    {
-                        _degrees = GetHeading();
-                        SetDirection();
-                    }
-                    else
-                    {
-                        StartCoroutine(CalcSlope());
-                    }
-                }
-                else
-                {
-                    _blowing = false;
-                    blowing = false;
-                }
-            }
         }
 
         public string GetHeading()
@@ -479,62 +456,73 @@ namespace OrX.wind
         {
             blowing = true;
 
-            int randomDirection = new System.Random().Next(1, 10); // randomizer for variable wind direction ... for determining if wind direction should change and in which direction
-            int randomYaw = new System.Random().Next(1, 100); // amount of wind direction change, if any
-
-            // the following code determines any wind direction changes over time
-            if (randomDirection <= 6) // if random direction is below 6
+            if (setDirection)
             {
-                if (randomDirection >= 2) // if random direction is above 2
+                _degrees = GetHeading();
+                SetDirection();
+            }
+            else
+            {
+                vectorList.Clear();
+                blowing = true;
+
+                int randomDirection = new System.Random().Next(1, 10); // randomizer for variable wind direction ... for determining if wind direction should change and in which direction
+                int randomYaw = new System.Random().Next(1, 100); // amount of wind direction change, if any
+
+                // the following code determines any wind direction changes over time
+                if (randomDirection <= 6) // if random direction is below 6
                 {
-                    float angle = Vector3.Angle(windDirection, originalWindDirection);
-
-                    if (angle <= windVariability / 100)
+                    if (randomDirection >= 2) // if random direction is above 2
                     {
-                        Debug.Log("[Wind} ... Changing direction");
-                        windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
-                    }
-                    else
-                    {
-                        variationCount += 1;
-                        Debug.Log("[Wind} ... Changing direction");
-                        windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
+                        float angle = Vector3.Angle(windDirection, originalWindDirection);
 
-                        if (variationCount >= 3) // && random360)
+                        if (angle <= windVariability / 100)
                         {
-                            originalWindDirection = windDirection;
-                            variationCount = 0;
+                            Debug.Log("[Wind} ... Changing direction");
+                            windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
+                        }
+                        else
+                        {
+                            variationCount += 1;
+                            Debug.Log("[Wind} ... Changing direction");
+                            windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
+
+                            if (variationCount >= 3) // && random360)
+                            {
+                                originalWindDirection = windDirection;
+                                variationCount = 0;
+                            }
                         }
                     }
                 }
-            }
-            else// if random direction is above 5
-            {
-                if (randomDirection <= 9) // if random direction is below 9
+                else// if random direction is above 5
                 {
-                    float angle = Vector3.Angle(windDirection, originalWindDirection);
-
-                    if (angle <= windVariability / 100)
+                    if (randomDirection <= 9) // if random direction is below 9
                     {
-                        Debug.Log("[Wind} ... Changing direction");
-                        windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
-                    }
-                    else
-                    {
-                        variationCount += 1;
-                        Debug.Log("[Wind} ... Changing direction");
-                        windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
+                        float angle = Vector3.Angle(windDirection, originalWindDirection);
 
-                        if (variationCount >= 3) // && random360)
+                        if (angle <= windVariability / 100)
                         {
-                            originalWindDirection = windDirection;
-                            variationCount = 0;
+                            Debug.Log("[Wind} ... Changing direction");
+                            windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
+                        }
+                        else
+                        {
+                            variationCount += 1;
+                            Debug.Log("[Wind} ... Changing direction");
+                            windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
+
+                            if (variationCount >= 3) // && random360)
+                            {
+                                originalWindDirection = windDirection;
+                                variationCount = 0;
+                            }
                         }
                     }
                 }
-            }
 
-            StartCoroutine(Tease());
+                StartCoroutine(Tease());
+            }
         }
 
         IEnumerator Tease()
@@ -595,8 +583,6 @@ namespace OrX.wind
             {
                 setDirection = false;
                 var _heading = float.Parse(_degrees);
-                windDirection = NorthVect;
-                originalWindDirection = windDirection;
 
                 if (_heading >= 360 || _heading <= 0)
                 {

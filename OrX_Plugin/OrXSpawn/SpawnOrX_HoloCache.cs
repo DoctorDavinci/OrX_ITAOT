@@ -48,6 +48,9 @@ namespace OrX.spawn
         public bool holo = true;
         public bool emptyholo = true;
 
+        public Quaternion rot;
+        float heading = 0;
+
         private void Awake()
         {
             if (instance) Destroy(instance);
@@ -59,6 +62,77 @@ namespace OrX.spawn
             return FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt);
         }
 
+        private int boidCount = 10;
+        private int spawnRadius = 0;
+        public bool boid = false;
+
+        public void SpawnBoids()
+        {
+            boid = true;
+            StartCoroutine(SpawnBoidRoutine());
+        }
+
+        public IEnumerator SpawnBoidRoutine()
+        {
+            spawnRadius = new System.Random().Next(25, 50);
+            boidCount = new System.Random().Next(3, 10);
+            float offsetx = 0;
+            float offsety = 0;
+
+            int random = new System.Random().Next(1, 4);
+            if (random == 1)
+            {
+                offsetx = 0.001f;
+                offsety = -0.001f;
+            }
+            if (random ==21)
+            {
+                offsetx = -0.001f;
+                offsety = -0.001f;
+            }
+            if (random == 3)
+            {
+                offsetx = -0.001f;
+                offsety = 0.001f;
+            }
+            if (random == 4)
+            {
+                offsetx = 0.001f;
+                offsety = 0.001f;
+            }
+
+            _lat = FlightGlobals.ActiveVessel.latitude + offsetx;
+            _lon = FlightGlobals.ActiveVessel.latitude + offsety;
+            if (FlightGlobals.ActiveVessel.Splashed)
+            {
+                _alt = FlightGlobals.ActiveVessel.altitude -= 25;
+
+            }
+            else
+            {
+                _alt = FlightGlobals.ActiveVessel.altitude + 25;
+
+            }
+
+
+            for (int i = 0; i < boidCount; i++)
+            {
+                string craftFileLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/Boids/Boid.craft";
+                emptyholo = false;
+                Debug.Log("[Spawn OrX HoloCache] === Spawning Boids ===");
+                loadingCraft = false;
+                timer = true;
+                holo = false;
+
+                StartCoroutine(SpawnEmptyHoloRoutine(craftFileLoc));
+                yield return new WaitForFixedUpdate();
+                yield return new WaitForFixedUpdate();
+                yield return new WaitForFixedUpdate();
+                yield return new WaitForFixedUpdate();
+
+            }
+        }
+
         public void SpawnEmptyHoloCache()
         {
             string craftFileLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/HoloCache/HoloCache.craft";
@@ -66,8 +140,9 @@ namespace OrX.spawn
             Debug.Log("[Spawn OrX HoloCache] Spawning Empty HoloCache ...... " + craftFile);
             loadingCraft = false;
             timer = true;
-            _lat = FlightGlobals.ActiveVessel.latitude + 0.00001f;
-            _lon = FlightGlobals.ActiveVessel.longitude + 0.00001f;
+            holo = true;
+            _lat = FlightGlobals.ActiveVessel.latitude + 0.0002f;
+            _lon = FlightGlobals.ActiveVessel.longitude + 0.0002f;
             _alt = FlightGlobals.ActiveVessel.altitude + 2;
 
             StartCoroutine(SpawnEmptyHoloRoutine(craftFileLoc));
@@ -94,15 +169,17 @@ namespace OrX.spawn
         }
         public string missionCraftLoc = string.Empty;
 
-        public void SpawnMissionHolo(string hcLoc, Vector3 loc, bool hc)
+        public void SpawnMissionCraft(string hcLoc, Vector3 loc, bool hc, Quaternion r, float h)
         {
+            heading = h;
+            rot = r;
             missionCraftLoc = hcLoc;
             SpawnCoords = loc;
             holo = hc;
             emptyholo = false;
             loadingCraft = true;
             timer = true;
-            Debug.Log("[Spawn OrX HoloCache] Spawning Mission Craft");
+            Debug.Log("[Spawn OrX HoloCache] Spawning HoloCache Craft");
             StartCoroutine(SpawnCraftRoutine(missionCraftLoc));
         }
 
@@ -141,9 +218,9 @@ namespace OrX.spawn
             HoloCacheData newData = new HoloCacheData();
 
             newData.craftURL = craftURL;
-            newData.latitude = gpsCoords.x + 0.0006f;    //+ _lat_;
-            newData.longitude = gpsCoords.y + 0.0006f;
-            newData.altitude = gpsCoords.z + 5;
+            newData.latitude = gpsCoords.x; 
+            newData.longitude = gpsCoords.y;
+            newData.altitude = gpsCoords.z;
 
             Debug.Log("[Spawn OrX HoloCache] SpawnVesselFromCraftFile Altitude: " + newData.altitude);
 
@@ -203,8 +280,8 @@ namespace OrX.spawn
                 }
 
                 craftNode = ConfigNode.Load(HoloCacheData.craftURL);
-                lcHeight = ConfigNode.ParseVector3(craftNode.GetNode("PART").GetValue("pos")).y;
-                craftRotation = ConfigNode.ParseQuaternion(craftNode.GetNode("PART").GetValue("rot"));
+                lcHeight = 0;
+                //craftRotation = rot;
 
                 // Restore ShipConstruction ship
                 ShipConstruction.ShipConfig = currentShip;
@@ -364,6 +441,7 @@ namespace OrX.spawn
                 Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
                 Quaternion rotation = Quaternion.identity;
                 float heading = HoloCacheData.heading;
+
                 if (shipConstruct == null)
                 {
                     //rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
@@ -379,7 +457,7 @@ namespace OrX.spawn
                     rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
                     rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
 
-                    //rotation = craftRotation;
+                    rotation = craftRotation;
 
 
                     HoloCacheData.heading = 0;
@@ -397,7 +475,15 @@ namespace OrX.spawn
                     hgt += HoloCacheData.height;
                     protoVesselNode.SetValue("hgt", hgt.ToString(), true);
                 }
-                protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+
+                if (rot != null)
+                {
+                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(rot), true);
+                }
+                else
+                {
+                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+                }
 
                 // Set the normal vector relative to the surface
                 Vector3 nrm = (rotation * Vector3.forward);
@@ -444,39 +530,43 @@ namespace OrX.spawn
                 yield return null;
             }
             v.SetWorldVelocity(Vector3d.zero);
-
             //      yield return null;
             //      FlightGlobals.ForceSetActiveVessel(v);
             yield return null;
             //v.Landed = true;
             //v.situation = Vessel.Situations.LANDED;
-            v.GoOffRails();
-            v.IgnoreGForces(120);
 
             if (holo)
-            {
-                var hc = v.FindPartModuleImplementing<ModuleOrXHoloCache>();
-                if (hc != null && !emptyholo)
-                {
-                    hc.powerDown = false;
-                    hc.spawned = true;
-
-                    if (hc.sth)
-                    {
-                        hc.spawned = true;
-                        hc.spawn = true;
-                    }
-                }
-            }
-            else
             {
                 var mom = v.FindPartModuleImplementing<ModuleOrXMission>();
                 if (mom == null)
                 {
-                    v.rootPart.AddModule("ModuleOrXMission");
+                    v.rootPart.AddModule("ModuleOrXMission", true);
+                }
+            }
+            else
+            {
+                if (boid)
+                {
+                    var mom = v.FindPartModuleImplementing<ModuleOrXMission>();
+                    if (mom != null)
+                    {
+                        Destroy(mom);
+                    }
+
+                    v.rootPart.AddModule("ModuleOrXBoid", true);
+                }
+                else
+                {
+                    ConfigNode craft = ConfigNode.Load(missionCraftLoc);
+                    craft.ClearData();
+                    craft.Save(missionCraftLoc);
                 }
             }
 
+            v.GoOffRails();
+            v.IgnoreGForces(120);
+            boid = false;
             emptyholo = true;
             StageManager.BeginFlight();
             loadingCraft = false;
@@ -550,38 +640,6 @@ namespace OrX.spawn
                     crew.Add(new CrewData(cd));
                 }
             }
-        }
-
-        public string Crypt(string toCrypt)
-        {
-            char[] chars = toCrypt.ToArray();
-            System.Random r = new System.Random(259);
-            for (int i = 0; i < chars.Length; i++)
-            {
-                int randomIndex = r.Next(0, chars.Length);
-                char temp = chars[randomIndex];
-                chars[randomIndex] = chars[i];
-                chars[i] = temp;
-            }
-            return new string(chars);
-        }
-
-        public string Decrypt(string scrambled)
-        {
-            char[] sc = scrambled.ToArray();
-            System.Random r = new System.Random(259);
-            List<int> swaps = new List<int>();
-            for (int i = 0; i < sc.Length; i++)
-            {
-                swaps.Add(r.Next(0, sc.Length));
-            }
-            for (int i = sc.Length - 1; i >= 0; i--)
-            {
-                char temp = sc[swaps[i]];
-                sc[swaps[i]] = sc[i];
-                sc[i] = temp;
-            }
-            return new string(sc);
         }
     }
 }

@@ -53,18 +53,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Missions\OrXMissions.cs" />
-    <Compile Include="OrXModules\ModuleOrXMission.cs" />
+    <Compile Include="Missions\ModuleOrXMission.cs" />
     <Compile Include="Missions\OrXScubaKerbMissions.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXAppendCfg.cs" />
-    <Compile Include="OrXModules\ModuleOrXDestroyVessel.cs" />
-    <Compile Include="OrXUtils\OrXMrClean.cs" />
-    <Compile Include="OrXUtils\OrXTerrainCheck.cs" />
+    <Compile Include="OrXTech\OrXWind\ModuleOrXWind.cs" />
     <Compile Include="OrXUtils\OrXAddModules.cs" />
     <Compile Include="OrXUtils\OrXLog.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXDC.cs" />
     <Compile Include="OrXSpawn\SpawnOrX_HoloCache.cs" />
-    <Compile Include="OrXModules\ModuleOrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCacheinfo.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXargetInfo.cs" />
@@ -72,11 +68,9 @@
     <Compile Include="OrXSpawn\OrXSpawn.cs" />
     <Compile Include="OrXTech\OrXWind\OrXWeatherSim.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="OrXModules\ModuleOrXWind.cs" />
     <Compile Include="OrXTech\OrXWind\OrXWindDirectionIndicator.cs" />
     <Compile Include="OrXTech\OrXWind\OrXWindGUI.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
