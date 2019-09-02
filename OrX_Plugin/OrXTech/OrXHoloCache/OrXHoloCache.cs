@@ -845,7 +845,7 @@ namespace OrX
             spawnHoloCache = false;
             if (boid && boidCount >= 0)
             {
-                SpawnBoidRoutine();
+                //SpawnBoidRoutine();
             }
             else
             {
@@ -4389,6 +4389,9 @@ namespace OrX
                                                     lat = coordinate.Current.gpsCoordinates.x;
                                                     lon = coordinate.Current.gpsCoordinates.y;
                                                     alt = coordinate.Current.gpsCoordinates.z;
+                                                    _lat = coordinate.Current.gpsCoordinates.x;
+                                                    _lon = coordinate.Current.gpsCoordinates.y;
+                                                    _alt = coordinate.Current.gpsCoordinates.z;
 
                                                     TargetHCGUIIndex = index;
                                                     TargetHCGUI = true;
@@ -4421,6 +4424,10 @@ namespace OrX
                                                         OrXDC.instance.EnableGui();
                                                     }
                                                     HoloCacheName = coordinate.Current.name;
+
+                                                    _lat = coordinate.Current.gpsCoordinates.x;
+                                                    _lon = coordinate.Current.gpsCoordinates.y;
+                                                    _alt = coordinate.Current.gpsCoordinates.z;
 
                                                     lat = coordinate.Current.gpsCoordinates.x;
                                                     lon = coordinate.Current.gpsCoordinates.y;

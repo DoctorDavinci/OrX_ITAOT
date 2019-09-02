@@ -55,6 +55,10 @@
   <ItemGroup>
     <Compile Include="Missions\ModuleOrXMission.cs" />
     <Compile Include="Missions\OrXScubaKerbMissions.cs" />
+    <Compile Include="OrXTech\MoveLaunch\MoveLaunch.cs" />
+    <Compile Include="OrXTech\MoveLaunch\MoveLaunchGPSLogger.cs" />
+    <Compile Include="OrXTech\MoveLaunch\MoveLaunchMassModifier.cs" />
+    <Compile Include="OrXTech\MoveLaunch\MoveLaunchVesselMove.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXAppendCfg.cs" />
     <Compile Include="OrXTech\OrXWind\ModuleCannon.cs" />
     <Compile Include="OrXTech\OrXWind\ModuleCannonBall.cs" />

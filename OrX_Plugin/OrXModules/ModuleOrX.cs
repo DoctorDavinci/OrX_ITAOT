@@ -190,12 +190,6 @@ namespace OrX.parts
 
                     }
 
-                    if (boids)
-                    {
-                        boids = false;
-                        OrXHoloCache.instance.SpawnBoids();
-                    }
-
                     if (this.vessel.Splashed)
                     {
                         if (bends)
