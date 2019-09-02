@@ -1,5 +1,5 @@
 ﻿using OrX.spawn;
-using OrX.wind;
+using Wind;
 using System;
 using System.Collections;
 using System.Collections.Generic;

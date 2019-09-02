@@ -3,16 +3,16 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace OrX.wind
+namespace Wind
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class OrXWindDirectionIndicator : MonoBehaviour
+    public class WindDirectionIndicator : MonoBehaviour
     {
         private const float WindowWidth = 140;
         private const float DraggableHeight = 40;
         private const float LeftIndent = 12;
         private const float ContentTop = 20;
-        public static OrXWindDirectionIndicator instance;
+        public static WindDirectionIndicator instance;
         public bool GuiEnabledWindDI = false;
         public static bool HasAddedButton;
         private readonly float _incrButtonWidth = 26;
@@ -56,19 +56,16 @@ namespace OrX.wind
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                if (GuiEnabledWindDI)
-                {
-                    IndicatorCheck();
-                }
-
-                if (OrXWeatherSim.instance.enableWind)
+                if (WindGUI.instance.enableWind)
                 {
                     if (!GuiEnabledWindDI)
                     {
                         GuiEnabledWindDI = true;
                     }
+
+                    IndicatorCheck();
                 }
                 else
                 {
@@ -82,8 +79,8 @@ namespace OrX.wind
 
         private void IndicatorCheck()
         {
-            degrees = Convert.ToSingle(Math.Round((decimal)OrXWeatherSim.instance.heading, 1));  //OrXWindGUI.instance.heading;
-            speed = Convert.ToSingle(Math.Round((decimal)OrXWeatherSim.instance._wi, 2));
+            degrees = Convert.ToSingle(Math.Round((decimal)WindGUI.instance.heading, 1));  //WindGUI.instance.heading;
+            speed = Convert.ToSingle(Math.Round((decimal)WindGUI.instance._wi, 2));
 
             if (degrees >= 349 && degrees < 11) // 0
             {
@@ -183,13 +180,11 @@ namespace OrX.wind
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
             DrawTitle(line);
-            line++;
             Direction(line);
             line++;
             DirectionDegrees(line);
             line++;
             Speed(line);
-            line++;
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;

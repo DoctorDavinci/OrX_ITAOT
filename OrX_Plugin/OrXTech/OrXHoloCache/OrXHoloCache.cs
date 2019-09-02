@@ -7,7 +7,7 @@ using OrX.spawn;
 using System.IO;
 using System.Text;
 using System.Linq;
-using OrX.wind;
+using Wind;
 
 namespace OrX
 {
@@ -354,6 +354,7 @@ namespace OrX
         float offsetx = 0;
         float offsety = 0;
         bool _timer = false;
+        public string missionCraftLoc = string.Empty;
 
         public void SpawnBoids()
         {
@@ -444,8 +445,6 @@ namespace OrX
             Debug.Log("[Spawn OrX HoloCache] Spawning: " + craftFile);
             StartCoroutine(SpawnCraftRoutine(craftFileLoc));
         }
-        public string missionCraftLoc = string.Empty;
-
         public void SpawnMissionCraft(string hcLoc, Vector3 loc, bool hc, Quaternion r, float h)
         {
             heading = h;
@@ -461,17 +460,18 @@ namespace OrX
         }
         private IEnumerator SpawnCraftRoutine(string craftUrl, List<ProtoCrewMember> crewData = null)
         {
-            Vector3 worldPos = new Vector3();
+            Vector3 pos = new Vector3();
 
             if (holo)
             {
-                worldPos = _SpawnCoords_();
+                pos = _SpawnCoords_();
+                SpawnCoords = pos;
             }
             else
             {
-                worldPos = SpawnCoords;
+                pos = SpawnCoords;
             }
-            Vector3 gpsPos = WorldPositionToGeoCoords(worldPos, FlightGlobals.currentMainBody);
+            Vector3 gpsPos = WorldPositionToGeoCoords(pos, FlightGlobals.currentMainBody);
             yield return new WaitForFixedUpdate();
             SpawnVesselFromCraftFile(craftUrl, gpsPos, 90, 0, crewData);
         }
@@ -784,8 +784,8 @@ namespace OrX
         {
             loadingCraft = true;
             v.isPersistent = true;
-            v.Landed = true;
-            v.situation = Vessel.Situations.LANDED;
+            v.Landed = false;
+            v.situation = Vessel.Situations.FLYING;
             while (v.packed)
             {
                 yield return null;
@@ -799,15 +799,16 @@ namespace OrX
 
             if (holo)
             {
+                /*
                 var mom = v.FindPartModuleImplementing<ModuleOrXMission>();
                 if (mom == null)
                 {
                     v.rootPart.AddModule("ModuleOrXMission", true);
                 }
-
+                */
                 if (!emptyholo)
                 {
-                    mom = v.FindPartModuleImplementing<ModuleOrXMission>();
+                    var mom = v.FindPartModuleImplementing<ModuleOrXMission>();
                     mom.spawned = true;
                     mom.HoloCacheName = HoloCacheName;
                     mom.latitude = _lat;
@@ -842,7 +843,7 @@ namespace OrX
             loadingCraft = false;
             holo = false;
             spawnHoloCache = false;
-            if (boidCount >= 0)
+            if (boid && boidCount >= 0)
             {
                 SpawnBoidRoutine();
             }
@@ -1725,7 +1726,7 @@ namespace OrX
                     {
                         if (v.Current == null) continue;
                         if (!v.Current.loaded || v.Current.packed) continue;
-                        if (!v.Current != holoCube)
+                        if (!v.Current != holoCube && !v.Current.rootPart.Modules.Contains<KerbalEVA>())
                         {
                             try
                             {
@@ -1885,11 +1886,12 @@ namespace OrX
                 }
             }
 
+            GuiEnabledOrXMissions = false;
+            OrXHCGUIEnabled = false;
+            OrXLog.instance.building = false;
             building = false;
             buildingMission = false;
             addCoords = false;
-            GuiEnabledOrXMissions = false;
-            OrXHCGUIEnabled = false;
             PlayOrXMission = false;
             _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
             ResetData();
@@ -3116,10 +3118,6 @@ namespace OrX
 
         #region Target Location Spawning
 
-        private Vector3d _SpawnCoords()
-        {
-            return FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)lat, (double)lon, (double)alt);
-        }
         public static Camera GetMainCamera()
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -3660,13 +3658,169 @@ namespace OrX
                             line++;
                             DrawHangar(line);
                             line++;
-                            GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth, WindowRectHCGUI.height));
-                            CraftWindow();
-                            GUI.EndGroup();
-                            HCGUILines = WindowRectHCGUI.height / entryHeight;
+                            if (HighLogic.LoadedSceneIsEditor)
+                            {
+                                if (sph)
+                                {
+                                    int c = 0;
+                                    List<string>.Enumerator hcFile = sphFiles.GetEnumerator();
+                                    while (hcFile.MoveNext())
+                                    {
+                                        try
+                                        {
+                                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
+                                            string vn = "";
 
-                            HCGUIHeight = Mathf.Lerp(HCGUIHeight, HCGUILines, 0.15f);
-                            line += HCGUIHeight;
+                                            foreach (ConfigNode.Value cv in craft.values)
+                                            {
+                                                if (cv.name == "ship")
+                                                {
+                                                    vn = cv.value;
+                                                }
+                                            }
+
+                                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
+                                            {
+                                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === SPH");
+
+                                                blueprintsFile = hcFile.Current;
+                                                craftToAddMission = vn;
+                                                craftBrowserOpen = false;
+                                                addingBluePrints = false;
+                                                blueprintsAdded = true;
+                                            }
+                                            line++;
+                                            c += 1;
+                                        }
+                                        catch
+                                        {
+
+                                        }
+                                    }
+                                    hcFile.Dispose();
+                                }
+                                else
+                                {
+                                    int c = 0;
+                                    List<string>.Enumerator hcFile = vabFiles.GetEnumerator();
+                                    while (hcFile.MoveNext())
+                                    {
+                                        try
+                                        {
+                                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
+                                            string vn = "";
+
+                                            foreach (ConfigNode.Value cv in craft.values)
+                                            {
+                                                if (cv.name == "ship")
+                                                {
+                                                    vn = cv.value;
+                                                }
+                                            }
+
+                                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
+                                            {
+                                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
+
+                                                blueprintsFile = hcFile.Current;
+                                                craftToAddMission = vn;
+                                                craftBrowserOpen = false;
+                                                addingBluePrints = false;
+                                                blueprintsAdded = true;
+                                            }
+                                            line++;
+                                            c += 1;
+                                        }
+                                        catch
+                                        {
+
+                                        }
+                                    }
+                                    hcFile.Dispose();
+                                }
+                            }
+                            else
+                            {
+                                if (sph)
+                                {
+                                    int c = 0;
+                                    List<string>.Enumerator hcFile = sphFiles.GetEnumerator();
+                                    while (hcFile.MoveNext())
+                                    {
+                                        try
+                                        {
+                                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
+                                            string vn = "";
+
+                                            foreach (ConfigNode.Value cv in craft.values)
+                                            {
+                                                if (cv.name == "ship")
+                                                {
+                                                    vn = cv.value;
+                                                }
+                                            }
+
+                                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
+                                            {
+                                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
+
+                                                blueprintsFile = hcFile.Current;
+                                                craftToAddMission = vn;
+                                                craftBrowserOpen = false;
+                                                addingBluePrints = false;
+                                                blueprintsAdded = true;
+                                            }
+                                            line++;
+                                            c += 1;
+                                        }
+                                        catch
+                                        {
+
+                                        }
+                                    }
+                                    hcFile.Dispose();
+                                }
+                                else
+                                {
+                                    int c = 0;
+                                    List<string>.Enumerator hcFile = vabFiles.GetEnumerator();
+                                    while (hcFile.MoveNext())
+                                    {
+                                        try
+                                        {
+                                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
+                                            string vn = "";
+
+                                            foreach (ConfigNode.Value cv in craft.values)
+                                            {
+                                                if (cv.name == "ship")
+                                                {
+                                                    vn = cv.value;
+                                                }
+                                            }
+
+                                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
+                                            {
+                                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
+
+                                                blueprintsFile = hcFile.Current;
+                                                craftToAddMission = vn;
+                                                craftBrowserOpen = false;
+                                                addingBluePrints = false;
+                                                blueprintsAdded = true;
+                                            }
+                                            line++;
+                                            c += 1;
+                                        }
+                                        catch
+                                        {
+
+                                        }
+                                    }
+                                    hcFile.Dispose();
+                                }
+                            }
+
                             line++;
                             DrawCloseBrowser(line);
                         }
@@ -4404,192 +4558,6 @@ namespace OrX
             GUI.EndGroup();
             WindowRectHCGUI.height = (2 * HCGUIBorder) + (HCGUIEntryCount * HCGUIEntryHeight);
         }
-        private void CraftWindow()
-        {
-            GUI.Box(WindowRectHCGUI, GUIContent.none, OrXGUISkin.box);
-            HCGUIEntryCount = 0;
-            Rect listRect = new Rect(HCGUIBorder, HCGUIBorder, WindowRectHCGUI.width - (2 * HCGUIBorder),
-                WindowRectHCGUI.height - (2 * HCGUIBorder));
-            GUI.BeginGroup(listRect);
-
-            GUI.Label(new Rect(0, 0, listRect.width, HCGUIEntryHeight), "Available Blueprints", kspTitleLabel);
-
-            if (GUI.Button(new Rect(listRect.width - (HCGUIEntryHeight * 2), 0, HCGUIEntryHeight, HCGUIEntryHeight), "+", OrXGUISkin.button))
-                craftBrowserOpen = false;
-
-            HCGUIEntryCount += 1.2f;
-            int index = 0;
-
-            if (HighLogic.LoadedSceneIsEditor)
-            {
-                if (sph)
-                {
-                    int c = 0;
-                    List<string>.Enumerator hcFile = sphFiles.GetEnumerator();
-                    while (hcFile.MoveNext())
-                    {
-                        try
-                        {
-                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
-                            string vn = "";
-
-                            foreach (ConfigNode.Value cv in craft.values)
-                            {
-                                if (cv.name == "ship")
-                                {
-                                    vn = cv.value;
-                                }
-                            }
-
-                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + index * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
-                            {
-                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === SPH");
-
-                                blueprintsFile = hcFile.Current;
-                                craftToAddMission = vn;
-                                craftBrowserOpen = false;
-                                addingBluePrints = false;
-                                blueprintsAdded = true;
-                            }
-                            HCGUIEntryCount++;
-                            index++;
-                            c += 1;
-                        }
-                        catch
-                        {
-
-                        }
-                    }
-                    hcFile.Dispose();
-                }
-                else
-                {
-                    int c = 0;
-                    List<string>.Enumerator hcFile = vabFiles.GetEnumerator();
-                    while (hcFile.MoveNext())
-                    {
-                        try
-                        {
-                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
-                            string vn = "";
-
-                            foreach (ConfigNode.Value cv in craft.values)
-                            {
-                                if (cv.name == "ship")
-                                {
-                                    vn = cv.value;
-                                }
-                            }
-
-                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + index * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
-                            {
-                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
-
-                                blueprintsFile = hcFile.Current;
-                                craftToAddMission = vn;
-                                craftBrowserOpen = false;
-                                addingBluePrints = false;
-                                blueprintsAdded = true;
-                            }
-                            HCGUIEntryCount++;
-                            index++;
-                            c += 1;
-                        }
-                        catch
-                        {
-
-                        }
-                    }
-                    hcFile.Dispose();
-                }
-            }
-            else
-            {
-                if (sph)
-                {
-                    int c = 0;
-                    List<string>.Enumerator hcFile = sphFiles.GetEnumerator();
-                    while (hcFile.MoveNext())
-                    {
-                        try
-                        {
-                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
-                            string vn = "";
-
-                            foreach (ConfigNode.Value cv in craft.values)
-                            {
-                                if (cv.name == "ship")
-                                {
-                                    vn = cv.value;
-                                }
-                            }
-
-                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + index * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
-                            {
-                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
-
-                                blueprintsFile = hcFile.Current;
-                                craftToAddMission = vn;
-                                craftBrowserOpen = false;
-                                addingBluePrints = false;
-                                blueprintsAdded = true;
-                            }
-                            HCGUIEntryCount++;
-                            index++;
-                            c += 1;
-                        }
-                        catch
-                        {
-
-                        }
-                    }
-                    hcFile.Dispose();
-                }
-                else
-                {
-                    int c = 0;
-                    List<string>.Enumerator hcFile = vabFiles.GetEnumerator();
-                    while (hcFile.MoveNext())
-                    {
-                        try
-                        {
-                            ConfigNode craft = ConfigNode.Load(hcFile.Current);
-                            string vn = "";
-
-                            foreach (ConfigNode.Value cv in craft.values)
-                            {
-                                if (cv.name == "ship")
-                                {
-                                    vn = cv.value;
-                                }
-                            }
-
-                            if (GUI.Button(new Rect(LeftIndent * 1.5f, ContentTop + index * entryHeight, contentWidth * 0.9f, entryHeight), vn, HighLogic.Skin.button))
-                            {
-                                Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
-
-                                blueprintsFile = hcFile.Current;
-                                craftToAddMission = vn;
-                                craftBrowserOpen = false;
-                                addingBluePrints = false;
-                                blueprintsAdded = true;
-                            }
-                            HCGUIEntryCount++;
-                            index++;
-                            c += 1;
-                        }
-                        catch
-                        {
-
-                        }
-                    }
-                    hcFile.Dispose();
-                }
-            }
-
-            GUI.EndGroup();
-            WindowRectHCGUI.height = (2 * HCGUIBorder) + (HCGUIEntryCount * HCGUIEntryHeight);
-        }
 
 
         #region Coords and Scorboard GUI
@@ -4663,11 +4631,11 @@ namespace OrX
                         latMission = lastCoord.x;
                         lonMission = lastCoord.y;
                         altMission = lastCoord.z;
-                        windIntensity = OrXWeatherSim.instance.windIntensity;
-                        windVariability = OrXWeatherSim.instance.windVariability;
-                        variationIntensity = OrXWeatherSim.instance.variationIntensity;
-                        heading = OrXWeatherSim.instance.heading;
-                        teaseDelay = OrXWeatherSim.instance.teaseDelay;
+                        windIntensity = WindGUI.instance.windIntensity;
+                        windVariability = WindGUI.instance.windVariability;
+                        variationIntensity = WindGUI.instance.variationIntensity;
+                        heading = WindGUI.instance.heading;
+                        teaseDelay = WindGUI.instance.teaseDelay;
                         // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
                         CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
                             + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
@@ -4688,11 +4656,11 @@ namespace OrX
                             latMission = lastCoord.x;
                             lonMission = lastCoord.y;
                             altMission = lastCoord.z;
-                            windIntensity = OrXWeatherSim.instance.windIntensity;
-                            windVariability = OrXWeatherSim.instance.windVariability;
-                            variationIntensity = OrXWeatherSim.instance.variationIntensity;
-                            heading = OrXWeatherSim.instance.heading;
-                            teaseDelay = OrXWeatherSim.instance.teaseDelay;
+                            windIntensity = WindGUI.instance.windIntensity;
+                            windVariability = WindGUI.instance.windVariability;
+                            variationIntensity = WindGUI.instance.variationIntensity;
+                            heading = WindGUI.instance.heading;
+                            teaseDelay = WindGUI.instance.teaseDelay;
                             // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
                             CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
                                 + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
@@ -4710,11 +4678,11 @@ namespace OrX
                         latMission = lastCoord.x;
                         lonMission = lastCoord.y;
                         altMission = lastCoord.z;
-                        windIntensity = OrXWeatherSim.instance.windIntensity;
-                        windVariability = OrXWeatherSim.instance.windVariability;
-                        variationIntensity = OrXWeatherSim.instance.variationIntensity;
-                        heading = OrXWeatherSim.instance.heading;
-                        teaseDelay = OrXWeatherSim.instance.teaseDelay;
+                        windIntensity = WindGUI.instance.windIntensity;
+                        windVariability = WindGUI.instance.windVariability;
+                        variationIntensity = WindGUI.instance.variationIntensity;
+                        heading = WindGUI.instance.heading;
+                        teaseDelay = WindGUI.instance.teaseDelay;
                         // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
                         CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
                             + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
@@ -6748,6 +6716,7 @@ namespace OrX
                             OrXHCGUIEnabled = false;
                             building = false;
                             buildingMission = false;
+                            OrXLog.instance.building = false;
                             SaveConfig();
                         }
                         else

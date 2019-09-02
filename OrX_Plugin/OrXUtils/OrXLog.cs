@@ -4,7 +4,7 @@ using System.Collections;
 using OrX.parts;
 using System.Collections.Generic;
 using System.Linq;
-using OrX.wind;
+using Wind;
 
 namespace OrX
 {
