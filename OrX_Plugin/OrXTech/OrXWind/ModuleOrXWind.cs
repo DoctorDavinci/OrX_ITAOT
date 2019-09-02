@@ -9,8 +9,8 @@ namespace OrX.wind
     {
         Rigidbody rigidBody;
         public float deflectionLiftCoeff = 0;
-        private float _modifier = 0;
-        private float modifier = 0;
+        private float _modifier = 1;
+        private float modifier = 1;
         private LineRenderer lrWind;
 
         public override void OnStart(StartState state)
@@ -76,10 +76,8 @@ namespace OrX.wind
 
         private void Blow()
         {
-            _modifier = modifier * (Vector3.Angle(this.part.transform.forward, OrXWeatherSim.instance.windDirection) / 100);
-            Vector3 direction = Vector3.Slerp(OrXWeatherSim.instance.windDirection, this.part.transform.forward, 0.5f);
             rigidBody = this.part.GetComponent<Rigidbody>();
-            rigidBody.AddForce(direction * (OrXWeatherSim.instance._wi * _modifier));
+            rigidBody.AddForce(OrXWeatherSim.instance.windDirection * (OrXWeatherSim.instance._wi * modifier));
         }
     }
 }

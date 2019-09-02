@@ -38,9 +38,9 @@ namespace OrX.wind
 
         private void Start()
         {
-            _windowRect = new Rect((Screen.width / 2) - (WindowWidth / 2), 250, WindowWidth, _windowHeight);
+            _windowRect = new Rect(Screen.width - (WindowWidth * 1.5f), 250, WindowWidth, _windowHeight);
             GameEvents.onHideUI.Add(DisableGui);
-            //AddToolbarButton();
+            AddToolbarButton();
         }
 
         private void OnGUI()

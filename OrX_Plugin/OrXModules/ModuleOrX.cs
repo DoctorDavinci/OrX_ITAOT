@@ -16,18 +16,10 @@ namespace OrX.parts
              UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "Off", enabledText = "On")]
         public bool boids = false;
 
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Hover Jet"),
-             UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "Off", enabledText = "On")]
-        public bool hover = false;
-
-        [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "COLLIDER SHUT OFF"),
-             UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "Off", enabledText = "On")]
-        public bool colOff = false;
-
         public bool narcosis = false;
         public bool bends = false;
 
-        public bool unlockedScuba = false;
+        public bool unlockedScuba = true;
         public bool trimUp = false;
         public bool trimDown = false;
         private bool sinking = false;
@@ -109,29 +101,6 @@ namespace OrX.parts
             _swimSpeed = kerbal.swimSpeed;
             unlockedScuba = true;
             trimModifier = _trimModifier;
-            /*
-            file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
-
-            if (file != null && file.HasNode("OrX"))
-            {
-                ConfigNode node = file.GetNode("OrX");
-
-                foreach (ConfigNode.Value value in node.nodes)
-                {
-                    string cvEncryptedName = OrXLog.instance.Decrypt(value.name);
-                    if (cvEncryptedName == "unlockedScuba")
-                    {
-                        string cvEncryptedValue = OrXLog.instance.Decrypt(value.value);
-
-                        if (cvEncryptedValue == "True")
-                        {
-                            unlockedScuba = true;
-                        }
-                    }
-                }
-            }
-            */
-
             _windowRect = new Rect(Screen.width - 320 - WindowWidth, 140, WindowWidth, _windowHeight);
             _gameUiToggle = true;
 
@@ -145,49 +114,47 @@ namespace OrX.parts
         {
             if (HighLogic.LoadedSceneIsFlight && vessel.isEVA)
             {
-                if (narcosis)
-                {
-                    if (!Nchanged)
-                    {
-                        Debug.Log(" ========================== NARCOSIS =======================");
-                        var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-                        Nchanged = true;
-                        kerbal.walkSpeed = _walkSpeed / 1.3f;
-                        kerbal.runSpeed = _runSpeed / 2;
-                        kerbal.swimSpeed = _swimSpeed / 2;
-                        kerbal.maxJumpForce = _maxJumpForce / 2;
-                    }
-                }
-                else
-                {
-                    if (Nchanged)
-                    {
-                        var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-                        Nchanged = false;
-                        kerbal.walkSpeed = _walkSpeed;
-                        kerbal.runSpeed = _runSpeed;
-                        kerbal.swimSpeed = _swimSpeed;
-                        kerbal.maxJumpForce = _maxJumpForce;
-                    }
-                }
+            }
 
-                if (this.vessel.Splashed)
+            base.OnFixedUpdate();
+        }
+
+        public void Update()
+        {
+            if (!FlightGlobals.ready || PauseMenu.isOpen || !vessel.loaded || vessel.HoldPhysics)
+                return;
+
+            if (HighLogic.LoadedSceneIsFlight && vessel.isEVA)
+            {
+                if (!orx)
                 {
-                    if (this.vessel.altitude >= -2)
+                    if (narcosis)
                     {
-                        if (Input.GetKeyDown(KeyCode.T))
+                        if (!Nchanged)
                         {
-                            if (!hover)
-                            {
-                                hover = true;
-                            }
-                            else
-                            {
-                                hover = false;
-                            }
+                            Debug.Log(" ========================== NARCOSIS =======================");
+                            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+                            Nchanged = true;
+                            kerbal.walkSpeed = _walkSpeed / 1.3f;
+                            kerbal.runSpeed = _runSpeed / 2;
+                            kerbal.swimSpeed = _swimSpeed / 2;
+                            kerbal.maxJumpForce = _maxJumpForce / 2;
                         }
                     }
                     else
+                    {
+                        if (Nchanged)
+                        {
+                            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+                            Nchanged = false;
+                            kerbal.walkSpeed = _walkSpeed;
+                            kerbal.runSpeed = _runSpeed;
+                            kerbal.swimSpeed = _swimSpeed;
+                            kerbal.maxJumpForce = _maxJumpForce;
+                        }
+                    }
+
+                    if (this.vessel.Splashed)
                     {
                         if (Input.GetKeyDown(KeyCode.T))
                         {
@@ -208,96 +175,27 @@ namespace OrX.parts
                                 holdingDepth = false;
                             }
                         }
+
+                        if (Input.GetKeyDown(KeyCode.Z))
+                            massModifier = 0;
+
+                        if (Input.GetKeyDown(KeyCode.X))
+                            massModifier = 50;
+
+                        if (Input.GetKeyDown(KeyCode.Q))
+                            trimDown = true;
+
+                        if (Input.GetKeyDown(KeyCode.E))
+                            trimUp = true;
+
                     }
 
-                    if (Input.GetKeyDown(KeyCode.Z))
-                        massModifier = 0;
-
-                    if (Input.GetKeyDown(KeyCode.X))
-                        massModifier = 50;
-
-                    if (Input.GetKeyDown(KeyCode.Q))
-                        trimDown = true;
-
-                    if (Input.GetKeyDown(KeyCode.E))
-                        trimUp = true;
-
-                }
-                else
-                {
-                    if (Input.GetKeyDown(KeyCode.T))
+                    if (boids)
                     {
-                        if (!hover)
-                        {
-                            hover = true;
-                        }
-                        else
-                        {
-                            hover = false;
-                        }
-                    }
-                }
-
-                if (boids)
-                {
-                    boids = false;
-                    SpawnOrX_HoloCache.instance.SpawnBoids();
-                }
-
-                if (hover)
-                {
-                    if (hoverHeight <= 2)
-                    {
-                        hoverHeight = 2;
+                        boids = false;
+                        OrXHoloCache.instance.SpawnBoids();
                     }
 
-                    if (this.vessel.radarAltitude <= hoverHeight)
-                    {
-                        rigidBody = this.part.GetComponent<Rigidbody>();
-                        rigidBody.AddForce((this.vessel.transform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized * 2);
-                    }
-
-                    if (Input.GetKeyDown(KeyCode.W))
-                    {
-                        rigidBody = this.part.GetComponent<Rigidbody>();
-                        rigidBody.AddForce(this.part.transform.forward * 2);
-                    }
-                    if (Input.GetKeyDown(KeyCode.S))
-                    {
-                        rigidBody = this.part.GetComponent<Rigidbody>();
-                        rigidBody.AddForce(-this.part.transform.forward * 2);
-                    }
-                    if (Input.GetKeyDown(KeyCode.A))
-                    {
-                        rigidBody = this.part.GetComponent<Rigidbody>();
-                        rigidBody.AddForce(-this.part.transform.right * 2);
-                    }
-                    if (Input.GetKeyDown(KeyCode.D))
-                    {
-                        rigidBody = this.part.GetComponent<Rigidbody>();
-                        rigidBody.AddForce(this.part.transform.right * 2);
-                    }
-
-                    if (Input.GetKeyDown(KeyCode.Q))
-                        hoverHeight -= 1;
-
-                    if (Input.GetKeyDown(KeyCode.E))
-                        hoverHeight += 1;
-                }
-            }
-
-            base.OnFixedUpdate();
-        }
-
-        public void Update()
-        {
-            if (!FlightGlobals.ready || PauseMenu.isOpen || !vessel.loaded || vessel.HoldPhysics)
-                return;
-
-            if (HighLogic.LoadedSceneIsFlight && vessel.isEVA)
-            {
-                if (!orx)
-                {
                     if (this.vessel.Splashed)
                     {
                         if (bends)
@@ -520,12 +418,12 @@ namespace OrX.parts
             {
                 if (this.vessel.altitude >= depth * 0.99f)
                 {
-                    massModifier += 0.5f;
+                    massModifier += 0.4f;
                 }
 
                 if (this.vessel.altitude <= depth * 0.99f)
                 {
-                    massModifier -= 0.5f;
+                    massModifier -= 0.4f;
                 }
 
                 yield return new WaitForSeconds(2);

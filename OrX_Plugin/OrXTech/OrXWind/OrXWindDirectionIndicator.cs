@@ -58,14 +58,17 @@ namespace OrX.wind
         {
             if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
             {
+                if (GuiEnabledWindDI)
+                {
+                    IndicatorCheck();
+                }
+
                 if (OrXWeatherSim.instance.enableWind)
                 {
                     if (!GuiEnabledWindDI)
                     {
                         GuiEnabledWindDI = true;
                     }
-
-                    IndicatorCheck();
                 }
                 else
                 {

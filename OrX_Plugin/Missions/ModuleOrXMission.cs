@@ -11,8 +11,6 @@ namespace OrX
 {
     public class ModuleOrXMission : PartModule
     {
-
-
         #region Part Fields
 
         [KSPField(isPersistant = true)]
@@ -63,7 +61,6 @@ namespace OrX
 
         #endregion
 
-
         [KSPField(unfocusedRange = 5, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "OPEN HOLOCACHE"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool deploy = false;
@@ -80,10 +77,13 @@ namespace OrX
                 if (!spawned)
                 {
                     spawned = true;
-                    altitude = SpawnOrX_HoloCache.instance._alt;
-                    latitude = SpawnOrX_HoloCache.instance._lat;
-                    longitude = SpawnOrX_HoloCache.instance._lon;
+                    altitude = OrXHoloCache.instance._alt;
+                    latitude = OrXHoloCache.instance._lat;
+                    longitude = OrXHoloCache.instance._lon;
                     OrXHoloCache.instance.SetupHolo(this.vessel);
+                }
+                else
+                {
                 }
             }
             base.OnStart(state);
@@ -96,23 +96,24 @@ namespace OrX
                 if (deploy && !setup)
                 {
                     setup = true;
+                    triggerCraft = FlightGlobals.ActiveVessel;
 
                     if (HoloCacheName != "" && HoloCacheName != string.Empty)
                     {
                         OrXHoloCache.instance.OpenHoloCache(HoloCacheName);
-                        FlightGlobals.ForceSetActiveVessel(this.vessel);
+                        //FlightGlobals.ForceSetActiveVessel(this.vessel);
                     }
                     else
                     {
                         deploy = false;
                         setup = false;
-                        FlightGlobals.ForceSetActiveVessel(this.vessel);
+                        //FlightGlobals.ForceSetActiveVessel(this.vessel);
                     }
                 }
 
                 if (this.vessel.isActiveVessel)
                 {
-                    FlightGlobals.ForceSetActiveVessel(triggerCraft);
+                    //FlightGlobals.ForceSetActiveVessel(triggerCraft);
                 }
                 else
                 {

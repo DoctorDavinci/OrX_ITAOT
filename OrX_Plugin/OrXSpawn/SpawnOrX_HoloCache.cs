@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Linq;
 
-namespace OrX.spawn
+namespace OrX.spawn.temp
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class SpawnOrX_HoloCache : MonoBehaviour
@@ -65,19 +65,14 @@ namespace OrX.spawn
         private int boidCount = 10;
         private int spawnRadius = 0;
         public bool boid = false;
+        float offsetx = 0;
+        float offsety = 0;
 
         public void SpawnBoids()
         {
-            boid = true;
-            StartCoroutine(SpawnBoidRoutine());
-        }
-
-        public IEnumerator SpawnBoidRoutine()
-        {
             spawnRadius = new System.Random().Next(25, 50);
             boidCount = new System.Random().Next(3, 10);
-            float offsetx = 0;
-            float offsety = 0;
+            boid = true;
 
             int random = new System.Random().Next(1, 4);
             if (random == 1)
@@ -85,7 +80,7 @@ namespace OrX.spawn
                 offsetx = 0.001f;
                 offsety = -0.001f;
             }
-            if (random ==21)
+            if (random == 21)
             {
                 offsetx = -0.001f;
                 offsety = -0.001f;
@@ -101,8 +96,14 @@ namespace OrX.spawn
                 offsety = 0.001f;
             }
 
+            SpawnBoidRoutine();
+        }
+
+        public void SpawnBoidRoutine()
+        {
+
             _lat = FlightGlobals.ActiveVessel.latitude + offsetx;
-            _lon = FlightGlobals.ActiveVessel.latitude + offsety;
+            _lon = FlightGlobals.ActiveVessel.longitude + offsety;
             if (FlightGlobals.ActiveVessel.Splashed)
             {
                 _alt = FlightGlobals.ActiveVessel.altitude -= 25;
@@ -111,26 +112,16 @@ namespace OrX.spawn
             else
             {
                 _alt = FlightGlobals.ActiveVessel.altitude + 25;
-
             }
 
-
-            for (int i = 0; i < boidCount; i++)
-            {
-                string craftFileLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/Boids/Boid.craft";
-                emptyholo = false;
-                Debug.Log("[Spawn OrX HoloCache] === Spawning Boids ===");
-                loadingCraft = false;
-                timer = true;
-                holo = false;
-
-                StartCoroutine(SpawnEmptyHoloRoutine(craftFileLoc));
-                yield return new WaitForFixedUpdate();
-                yield return new WaitForFixedUpdate();
-                yield return new WaitForFixedUpdate();
-                yield return new WaitForFixedUpdate();
-
-            }
+            string craftFileLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/Boids/Boid.craft";
+            emptyholo = false;
+            Debug.Log("[Spawn OrX HoloCache] === Spawning Boids ===");
+            loadingCraft = false;
+            timer = true;
+            holo = false;
+            boidCount -= 1;
+            StartCoroutine(SpawnEmptyHoloRoutine(craftFileLoc));
         }
 
         public void SpawnEmptyHoloCache()
@@ -523,8 +514,8 @@ namespace OrX.spawn
         {
             loadingCraft = true;
             v.isPersistent = true;
-            v.Landed = false;
-            v.situation = Vessel.Situations.FLYING;
+            v.Landed = true;
+            v.situation = Vessel.Situations.LANDED;
             while (v.packed)
             {
                 yield return null;
@@ -532,7 +523,7 @@ namespace OrX.spawn
             v.SetWorldVelocity(Vector3d.zero);
             //      yield return null;
             //      FlightGlobals.ForceSetActiveVessel(v);
-            yield return null;
+            //yield return null;
             //v.Landed = true;
             //v.situation = Vessel.Situations.LANDED;
 
@@ -542,6 +533,16 @@ namespace OrX.spawn
                 if (mom == null)
                 {
                     v.rootPart.AddModule("ModuleOrXMission", true);
+                }
+
+                if (!emptyholo)
+                {
+                    mom = v.FindPartModuleImplementing<ModuleOrXMission>();
+                    mom.spawned = true;
+                    mom.HoloCacheName = HoloCacheName;
+                    mom.latitude = _lat;
+                    mom.longitude = _lon;
+                    mom.altitude = _alt;
                 }
             }
             else
@@ -566,12 +567,19 @@ namespace OrX.spawn
 
             v.GoOffRails();
             v.IgnoreGForces(120);
-            boid = false;
             emptyholo = true;
             StageManager.BeginFlight();
             loadingCraft = false;
             holo = false;
             OrXHoloCache.instance.spawnHoloCache = false;
+            if (boidCount >= 0)
+            {
+                SpawnBoidRoutine();
+            }
+            else
+            {
+                boid = false;
+            }
         }
 
         internal class CrewData
