@@ -10,7 +10,7 @@ namespace Wind
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Activate Sails"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "OFF", enabledText = "ON")]
         public bool sailOn = false;
-
+        /*
         [KSPField(isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "Rotate Left"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool rotateLeft = false;
@@ -22,7 +22,7 @@ namespace Wind
         [KSPField(isPersistant = true, guiActive = true, guiActiveEditor = true, guiName = "Deg of Rot"),
          UI_FloatRange(controlEnabled = true, scene = UI_Scene.All, minValue = 0f, maxValue = 90, stepIncrement = 1f)]
         public float angle = 5;
-
+        */
         private bool setup = true;
         public int randomDirection = 0;
         private bool directionRandomized = false;
@@ -41,11 +41,11 @@ namespace Wind
                     sailPosition = this.part.transform.forward;
                 }
                 else
-                {
+                {/*
                     if (rotateLeft || rotateRight)
                     {
                         // RotateSail();
-                    }
+                    }*/
                 }
             }
         }
@@ -77,6 +77,7 @@ namespace Wind
 
         private void RotateSail()
         {
+            /*
             if (rotateLeft)
             {
                 rotateLeft = false;
@@ -91,7 +92,7 @@ namespace Wind
                 rotateLeft = false;
                 this.part.transform.Rotate(this.part.transform.up, angle);
                 sailPosition = this.part.transform.forward;
-            }
+            }*/
         }
 
         private void BlowSails()
@@ -99,7 +100,7 @@ namespace Wind
             var srfArea = this.part.skinExposedArea / 2;
 
             rigidBody = this.part.GetComponent<Rigidbody>();
-            rigidBody.AddForce(WindGUI.instance.windDirection * WindGUI.instance._wi);
+            rigidBody.AddForce((WindGUI.instance.windDirection - this.part.transform.up).normalized * WindGUI.instance._wi);
         }
     }
 }

@@ -60,13 +60,13 @@
     <Compile Include="OrXTech\MoveLaunch\MoveLaunchMassModifier.cs" />
     <Compile Include="OrXTech\MoveLaunch\MoveLaunchVesselMove.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXAppendCfg.cs" />
-    <Compile Include="OrXTech\OrXWind\ModuleCannon.cs" />
-    <Compile Include="OrXTech\OrXWind\ModuleCannonBall.cs" />
-    <Compile Include="OrXTech\OrXWind\ModuleSail.cs" />
-    <Compile Include="OrXTech\OrXWind\ModuleWind.cs" />
-    <Compile Include="OrXTech\OrXWind\SpawnCannonBall.cs" />
-    <Compile Include="OrXTech\OrXWind\WindDirectionIndicator.cs" />
-    <Compile Include="OrXTech\OrXWind\WindGUI.cs" />
+    <Compile Include="OrXTech\Wind\ModuleCannon.cs" />
+    <Compile Include="OrXTech\Wind\ModuleCannonBall.cs" />
+    <Compile Include="OrXTech\Wind\ModuleSail.cs" />
+    <Compile Include="OrXTech\Wind\ModuleWind.cs" />
+    <Compile Include="OrXTech\Wind\SpawnCannonBall.cs" />
+    <Compile Include="OrXTech\Wind\WindDirectionIndicator.cs" />
+    <Compile Include="OrXTech\Wind\WindGUI.cs" />
     <Compile Include="OrXUtils\OrXAddModules.cs" />
     <Compile Include="OrXUtils\OrXLog.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXDC.cs" />
@@ -74,7 +74,7 @@
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCacheinfo.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXargetInfo.cs" />
-    <Compile Include="OrXModules\ModuleOrX.cs" />
+    <Compile Include="OrXTech\ModuleOrX.cs" />
     <Compile Include="OrXSpawn\OrXSpawn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

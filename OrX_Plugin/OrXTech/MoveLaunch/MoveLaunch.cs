@@ -33,6 +33,7 @@ namespace MoveLaunch
         private bool land = false;
         public static bool runway;
         private bool launching = false;
+        private bool sph = true;
 
         private void Awake()
         {
@@ -537,8 +538,9 @@ namespace MoveLaunch
 
         IEnumerator Launch()
         {
+            Quaternion craftRotation = Quaternion.identity;
+            craftRotation = FlightGlobals.ActiveVessel.srfRelRotation;
             FlightGlobals.ActiveVessel.rootPart.AddModule("MoveLaunchMassModifier", true);
-
             FlightGlobals.ActiveVessel.GetComponent<Rigidbody>().isKinematic = true;
 
             latitude = FlightGlobals.ActiveVessel.latitude;
@@ -592,6 +594,26 @@ namespace MoveLaunch
             FlightGlobals.ActiveVessel.geeForce_immediate = 0;
             yield return new WaitForFixedUpdate();
             Debug.Log("[Move Launch Controller]: Launching ................. Stage 4");
+
+            // SET ROTATION
+            Vector3d norm = FlightGlobals.ActiveVessel.mainBody.GetRelSurfaceNVector(latitude, longitude);
+            Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
+            if (sph)
+            {
+                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
+            }
+            else
+            {
+                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
+                craftRotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * craftRotation;
+            }
+
+            craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.back);
+            craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.down);
+            craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.left);
+            FlightGlobals.ActiveVessel.geeForce = 0;
+            FlightGlobals.ActiveVessel.geeForce_immediate = 0;
+            FlightGlobals.ActiveVessel.SetRotation(craftRotation);
 
             latitude = lat;
             longitude = lon;
@@ -673,15 +695,15 @@ namespace MoveLaunch
             _windowRect2.height = _windowHeight2;
 
         }
-
         private void GuiWindowML(int ML)
         {
-
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
             float line = 0;
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
             DrawTitle(line);
+            line++;
+            DrawBeach(line);
             line++;
             DrawIslandRunway(line);
             line++;
@@ -744,7 +766,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         public void EnableGui()
         {
             _gameUiToggle = true;
@@ -753,14 +774,12 @@ namespace MoveLaunch
             guiOpen = true;
             Debug.Log("[Move Launch Controller]: Showing Editor GUI");
         }
-
         public void DisableGui()
         {
             guiOpen = false;
             GuiEnabledML = false;
             Debug.Log("[Move Launch Controller]: Hiding Editor GUI");
         }
-
         public void EnableGuiF()
         {
             _gameUiToggle = true;
@@ -769,32 +788,11 @@ namespace MoveLaunch
             guiOpen = true;
             Debug.Log("[Move Launch Controller]: Showing Flight GUI");
         }
-
         public void DisableGuiF()
         {
             guiOpen = false;
             GuiEnabledMLFlight = false;
             Debug.Log("[Move Launch Controller]: Hiding Flight GUI");
-        }
-
-        private void GameUiEnableML()
-        {
-            _gameUiToggle = true;
-        }
-
-        private void GameUiDisableML()
-        {
-            _gameUiToggle = false;
-        }
-
-        private void GameUiEnableMLFlight()
-        {
-            _gameUiToggle = true;
-        }
-
-        private void GameUiDisableMLFlight()
-        {
-            _gameUiToggle = false;
         }
 
         private void DrawTitle(float line)
@@ -811,7 +809,6 @@ namespace MoveLaunch
             };
             GUI.Label(new Rect(0, 0, WindowWidth, 20), "Move Launch", titleStyle);
         }
-
         private void DrawBeach(float line)
         {
             GUIStyle guardStyle = beach ? HighLogic.Skin.box : HighLogic.Skin.button;
@@ -841,7 +838,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetBeachLaunch()
         {
             islandRunway = false;
@@ -895,7 +891,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetHarborEastLaunch()
         {
             islandRunway = false;
@@ -948,7 +943,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetkscIslandNewHarborLaunch()
         {
             islandRunway = false;
@@ -1001,7 +995,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetkscIsandChannelLaunch()
         {
             islandRunway = false;
@@ -1054,7 +1047,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetMissileRange200IslandLaunch()
         {
             islandRunway = false;
@@ -1107,7 +1099,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetTirpitzBayLaunch()
         {
             islandRunway = false;
@@ -1160,7 +1151,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetKerbiniAtolLaunch()
         {
             islandRunway = false;
@@ -1213,7 +1203,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetIslandBeachLaunch()
         {
             islandRunway = false;
@@ -1266,7 +1255,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetBaikerbanurLaunch()
         {
             islandRunway = false;
@@ -1319,7 +1307,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetPyramidsLaunch()
         {
             islandRunway = false;
@@ -1372,7 +1359,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetKerbiniIslandLaunch()
         {
             islandRunway = false;
@@ -1425,7 +1411,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetTrunkPeninsulaLaunch()
         {
             islandRunway = false;
@@ -1478,7 +1463,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetMidwayIslandLaunch()
         {
             islandRunway = false;
@@ -1531,7 +1515,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetNorthPoleLaunch()
         {
             islandRunway = false;
@@ -1585,7 +1568,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetSouthPoleLaunch()
         {
             islandRunway = false;
@@ -1638,7 +1620,6 @@ namespace MoveLaunch
                 }
             }
         }
-
         private void SetIslandRunwayLaunch()
         {
             TrunkPeninsula = false;
@@ -1662,15 +1643,6 @@ namespace MoveLaunch
             StartCoroutine(SpawnDelayRoutine());
         }
 
-        private void DrawResetLaunchCoords(float line)
-        {
-            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "RESET LAUNCH COORDS"))
-            {
-                //StartCoroutine(ResetToggle());
-            }
-        }
-
         private void DrawAltitudeText(float line)
         {
             var centerLabel = new GUIStyle
@@ -1688,7 +1660,6 @@ namespace MoveLaunch
                 "ATTITUDE ADJUSTMENT",
                 titleStyle);
         }
-
         private void DrawAltitudeSlider(float line)
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
@@ -1707,7 +1678,6 @@ namespace MoveLaunch
                 DisableGuiF();
             }
         }
-
         public void ResetLaunchCoords()
         {
             islandRunway = false;

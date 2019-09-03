@@ -493,7 +493,7 @@ namespace MoveLaunch
 
             _moving = false;
             MoveHeight = 0;
-            _hoverAdjust = 0f;
+            _hoverAdjust = 2f;
         }
 
         private void UpdateDebugLines()
