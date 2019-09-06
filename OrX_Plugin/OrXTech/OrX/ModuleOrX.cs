@@ -18,6 +18,7 @@ namespace OrX.parts
 
         public bool narcosis = false;
         public bool bends = false;
+        string narcosisText = "Nominal";
 
         public bool unlockedScuba = true;
         public bool trimUp = false;
@@ -124,17 +125,6 @@ namespace OrX.parts
 
             base.OnStart(state);
         }
-
-
-        public override void OnFixedUpdate()
-        {
-            if (HighLogic.LoadedSceneIsFlight && vessel.isEVA)
-            {
-            }
-
-            base.OnFixedUpdate();
-        }
-
         public void Update()
         {
             if (!FlightGlobals.ready || PauseMenu.isOpen || !vessel.loaded || vessel.HoldPhysics)
@@ -144,193 +134,87 @@ namespace OrX.parts
             {
                 if (!orx)
                 {
-                    if (narcosis)
-                    {
-                        if (!Nchanged)
-                        {
-                            Debug.Log(" ========================== NARCOSIS =======================");
-                            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-                            Nchanged = true;
-                            kerbal.walkSpeed = _walkSpeed / 1.3f;
-                            kerbal.runSpeed = _runSpeed / 2;
-                            kerbal.swimSpeed = _swimSpeed / 2;
-                            kerbal.maxJumpForce = _maxJumpForce / 2;
-                        }
-                    }
-                    else
-                    {
-                        if (Nchanged)
-                        {
-                            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-                            Nchanged = false;
-                            kerbal.walkSpeed = _walkSpeed;
-                            kerbal.runSpeed = _runSpeed;
-                            kerbal.swimSpeed = _swimSpeed;
-                            kerbal.maxJumpForce = _maxJumpForce;
-                        }
-                    }
-
                     if (this.vessel.Splashed)
                     {
-                        if (Input.GetKeyDown(KeyCode.T))
+                        if (vessel.isActiveVessel)
                         {
-                            if (!holdDepth)
+                            if (!GuiEnabledScuba)
                             {
-                                holdDepth = true;
+                                guiopenScuba = true;
+                                GuiEnabledScuba = true;
+                                controlGUIswitched = true;
+                            }
 
-                                if (!holdingDepth)
+                            if (Input.GetKeyDown(KeyCode.T))
+                            {
+                                if (!holdDepth)
                                 {
-                                    holdingDepth = true;
-                                    depth = this.vessel.altitude;
-                                    StartCoroutine(DepthCheck());
-                                }
-                            }
-                            else
-                            {
-                                holdDepth = false;
-                                holdingDepth = false;
-                            }
-                        }
+                                    holdDepth = true;
+                                    ScreenMsg("Holding depth at " + Convert.ToInt32(this.vessel.altitude) + " meters");
 
-                        if (Input.GetKeyDown(KeyCode.Z))
-                            massModifier = 0;
-
-                        if (Input.GetKeyDown(KeyCode.X))
-                            massModifier = 50;
-
-                        if (Input.GetKeyDown(KeyCode.Q))
-                            trimDown = true;
-
-                        if (Input.GetKeyDown(KeyCode.E))
-                            trimUp = true;
-
-                    }
-
-                    if (this.vessel.Splashed)
-                    {
-                        if (bends)
-                        {
-                            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-
-                            if (GuiEnabledScuba)
-                            {
-                                guiopenScuba = false;
-                                GuiEnabledScuba = false;
-                            }
-
-                            if (!kerbal.isRagdoll)
-                            {
-                                kerbal.isRagdoll = true;
-                            }
-                        }
-                        else
-                        {
-                            if (pauseCheck)
-                            {
-                                if (PauseMenu.isOpen)
-                                {
-                                    pauseCheck = false;
-                                    if (GuiEnabledScuba)
+                                    if (!holdingDepth)
                                     {
-                                        guiPauseTrigger = true;
-                                        DisableGuiOrXScuba();
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (!PauseMenu.isOpen)
-                                {
-                                    if (!pauseCheck)
-                                    {
-                                        pauseCheck = true;
-                                        if (guiPauseTrigger)
-                                        {
-                                            guiPauseTrigger = false;
-                                            EnableGuiOrXScuba();
-                                        }
+                                        holdingDepth = true;
+                                        depth = this.vessel.altitude;
+                                        StartCoroutine(DepthCheck());
                                     }
                                 }
                                 else
                                 {
-                                    if (GuiEnabledScuba)
-                                    {
-                                        DisableGuiOrXScuba();
-                                    }
+                                    holdDepth = false;
+                                    holdingDepth = false;
                                 }
                             }
 
-                            if (vessel.isActiveVessel)
+                            if (Input.GetKeyDown(KeyCode.Z))
+                                massModifier = 0;
+
+                            if (Input.GetKeyDown(KeyCode.X))
+                                massModifier += 10;
+
+                            if (Input.GetKeyDown(KeyCode.Q))
+                                trimDown = true;
+
+                            if (Input.GetKeyDown(KeyCode.E))
+                                trimUp = true;
+                        }
+                        else
+                        {
+                            if (GuiEnabledScuba)
                             {
-                                if (!GuiEnabledScuba)
+                                guiopenScuba = false;
+                                GuiEnabledScuba = false;
+
+                                if (controlGUIswitched)
                                 {
-                                    guiopenScuba = true;
-                                    GuiEnabledScuba = true;
-
-                                    if (!controlGUIswitched)
-                                    {
-                                        controlGUIswitched = true;
-                                    }
-                                }
-
-                                if (part.vessel.altitude <= -1)
-                                {
-                                    if (part.vessel.altitude <= (bendsDepth * _scubaLevel))
-                                    {
-                                        if (!bendsCheck)
-                                        {
-                                            bendsCheck = true;
-                                            StartCoroutine(BendsCheck());
-                                        }
-                                    }
-                                    else
-                                    {
-                                        bendsCheck = true;
-                                    }
-                                }
-
-                                checkTrim();
-                            }
-                            else
-                            {
-                                if (GuiEnabledScuba)
-                                {
-                                    guiopenScuba = false;
-                                    GuiEnabledScuba = false;
-
-                                    if (controlGUIswitched)
-                                    {
-                                        controlGUIswitched = false;
-                                    }
-                                }
-
-                                checkTrim(); 
-
-                                if (part.vessel.altitude <= -1)
-                                {
-                                    if (part.vessel.altitude <= (bendsDepth * _scubaLevel))
-                                    {
-                                        if (!bendsCheck)
-                                        {
-                                            bendsCheck = true;
-                                            StartCoroutine(BendsCheck());
-                                        }
-                                    }
-                                    else
-                                    {
-                                        bendsCheck = true;
-                                    }
+                                    controlGUIswitched = false;
                                 }
                             }
 
-                            if (part.vessel.altitude <= -1)
+                            checkTrim();
+                        }
+
+                        if (part.vessel.altitude <= -1)
+                        {
+                            checkTrim();
+                            oxyCheck();
+
+                            if (!bendsCheck)
                             {
-                                oxyCheck();
+                                bendsCheck = true;
+                                StartCoroutine(BendsCheck());
+                            }
+                            if (!narcosisCheck)
+                            {
+                                narcosisCheck = true;
+                                StartCoroutine(NarcosisCheck());
                             }
                         }
                     }
                     else
                     {
+                        narcosisCheck = false;
+                        bendsCheck = false;
                         massModifier = 0;
                         if (GuiEnabledScuba)
                         {
@@ -343,7 +227,6 @@ namespace OrX.parts
                             controlGUIswitched = false;
                         }
                     }
-
                 }
                 else
                 {
@@ -353,40 +236,39 @@ namespace OrX.parts
                     }
                     else
                     {
-                    }
+                        if (infected)
+                        {
+                            if (!orxSetup)
+                            {
+                                orxSetup = true;
+                                //SetupOrXStats();
+                            }
 
-                    if (infected)
-                    {
-                        if (!orxSetup)
-                        {
-                            orxSetup = true;
-                            //SetupOrXStats();
+                            if (!chasing)
+                            {
+                                chasing = true;
+                                //StartCoroutine(InfectedChase());
+                            }
                         }
-
-                        if (!chasing)
+                        else
                         {
-                            chasing = true;
-                            //StartCoroutine(InfectedChase());
-                        }
-                    }
-                    else
-                    {
-                        // SETUP DIALOGUE MENU ACCESS HERE
-                        if (pilot)
-                        {
-                            // ACCESS PILOT STORY
-                        }
-                        if (engineer)
-                        {
-                            // ACCESS ENGINEER STORY
-                        }
-                        if (scientist)
-                        {
-                            // YADA
-                        }
-                        if (civilian)
-                        {
-                            // YADA
+                            // SETUP DIALOGUE MENU ACCESS HERE
+                            if (pilot)
+                            {
+                                // ACCESS PILOT STORY
+                            }
+                            if (engineer)
+                            {
+                                // ACCESS ENGINEER STORY
+                            }
+                            if (scientist)
+                            {
+                                // YADA
+                            }
+                            if (civilian)
+                            {
+                                // YADA
+                            }
                         }
                     }
                 }
@@ -408,13 +290,18 @@ namespace OrX.parts
 
         #region Scuba
 
+        bool narcosisCheck = false;
+        bool drunk = false;
+        bool stumbling = false;
+        int martiniLevel = 0;
+        double narcosisDepth = -150;
         private bool bendsCheck = false;
         double bendsDepth = -300;
         double bendsTriggerDepth = 0;
         double depthCheck = 0;
         double p1 = 0;
         double p2 = 0;
-        private bool narcosisTimer = false;
+        private bool bendsTimer = false;
         double depth = 0;
 
         IEnumerator DepthCheck()
@@ -431,132 +318,158 @@ namespace OrX.parts
                     massModifier -= 0.4f;
                 }
 
-                yield return new WaitForSeconds(2);
+                yield return new WaitForSeconds(1);
                 StartCoroutine(DepthCheck());
             }
         }
-
         IEnumerator BendsCheck()
         {
-            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-
-            if (!bends)
+            if (this.vessel.Splashed)
             {
-                p1 = this.vessel.altitude;
-                yield return new WaitForSeconds(2);
-                p2 = this.vessel.altitude;
-                depthCheck = this.vessel.altitude;
+                var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
 
-                if (p2 <= p1)
+                if (!bends)
                 {
-                    // Going down
-                }
-                else
-                {
-                    // Going up
+                    p1 = this.vessel.altitude;
+                    yield return new WaitForSeconds(1);
+                    p2 = this.vessel.altitude;
 
-                    if ((-p2 + p1) / 100 >= (1 - (this.vessel.altitude / depthCheck)) 
-                        * ((depthCheck / this.vessel.altitude)))
+                    if (p2 <= p1)
                     {
-                        bendsTriggerDepth = -p2 + p1;
-                        narcosis = true;
+                        // Going down
+                    }
+                    else
+                    {
+                        // Going up
 
-                        if (this.vessel.altitude >= bendsTriggerDepth)
+                        if ((-p2 + p1) / 100 >= (1 - (this.vessel.altitude / p2))
+                            * ((p2 / this.vessel.altitude)))
                         {
-                            if (!narcosisTimer)
+                            bendsTriggerDepth = -p2 + p1;
+                            narcosis = true;
+
+                            if (this.vessel.altitude >= bendsTriggerDepth)
                             {
-                                narcosisTimer = true;
-                                StartCoroutine(NarcosisTimer());
+                                if (!bendsTimer)
+                                {
+                                    bendsTimer = true;
+                                    StartCoroutine(BendsTimer());
+                                }
                             }
                         }
                     }
-                }
 
-                if (!narcosis)
-                {
-                    yield return new WaitForSeconds(5);
-
-                    if (this.vessel.altitude <= (bendsDepth * _scubaLevel))
+                    if (!bendsTimer)
                     {
+                        yield return new WaitForSeconds(5);
                         StartCoroutine(BendsCheck());
+                    }
+                }
+                else
+                {
+                    kerbal.isRagdoll = true;
+                }
+            }
+            else
+            {
+                bendsCheck = false;
+            }
+        }
+        IEnumerator BendsTimer()
+        {
+            if (this.vessel.Splashed)
+            {
+                var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+
+                if (bendsTimer)
+                {
+                    yield return new WaitForSeconds(10);
+                    kerbal.isRagdoll = true;
+                    yield return new WaitForSeconds(0.5f);
+                    kerbal.isRagdoll = false;
+                    if (this.vessel.altitude >= bendsTriggerDepth)
+                    {
+                        yield return new WaitForSeconds(7);
+                        kerbal.isRagdoll = true;
+                        yield return new WaitForSeconds(0.5f);
+                        kerbal.isRagdoll = false;
+
+                        if (this.vessel.altitude >= bendsTriggerDepth)
+                        {
+                            yield return new WaitForSeconds(5);
+                            kerbal.isRagdoll = true;
+                            yield return new WaitForSeconds(0.5f);
+                            kerbal.isRagdoll = false;
+                            yield return new WaitForSeconds(2);
+                            bends = true;
+                            kerbal.isRagdoll = true;
+                        }
+                        else
+                        {
+                            bends = false;
+                            bendsTimer = false;
+                        }
+                    }
+                    else
+                    {
+                        narcosis = false;
+                        bendsTimer = false;
+                    }
+                }
+            }
+        }
+        IEnumerator NarcosisCheck()
+        {
+            if (this.vessel.Splashed)
+            {
+                var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+                martiniLevel = Convert.ToInt32(this.vessel.altitude / (narcosisDepth * _scubaLevel));
+
+                if (!bends)
+                {
+                    if (martiniLevel >= 1)
+                    {
+                        narcosis = true;
+                        kerbal.swimSpeed = _swimSpeed / martiniLevel * 0.85f;
+
+                        if (martiniLevel >= 3)
+                        {
+                            if (martiniLevel >=5)
+                            {
+                                drunk = true;
+                                yield return new WaitForSeconds(10);
+                                kerbal.isRagdoll = true;
+                                yield return new WaitForSeconds(0.5f);
+                                kerbal.isRagdoll = false;
+                                yield return new WaitForSeconds(7);
+                                kerbal.isRagdoll = true;
+                                yield return new WaitForSeconds(0.5f);
+                                kerbal.isRagdoll = false;
+                            }
+                            else
+                            {
+                                drunk = false;
+                                yield return new WaitForSeconds(2);
+                                kerbal.isRagdoll = true;
+                                yield return new WaitForSeconds(0.5f);
+                                kerbal.isRagdoll = false;
+                                StartCoroutine(NarcosisCheck());
+                            }
+                        }
                     }
                     else
                     {
                         kerbal.swimSpeed = _swimSpeed;
-                        bendsCheck = false;
+                        yield return new WaitForSeconds(2);
+                        StartCoroutine(NarcosisCheck());
                     }
                 }
             }
             else
             {
-                kerbal.isRagdoll = true;
+                narcosisCheck = false;
             }
         }
-
-        IEnumerator NarcosisTimer()
-        {
-            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
-
-            if (narcosisTimer)
-            {
-                yield return new WaitForSeconds(10);
-                kerbal.isRagdoll = true;
-                yield return new WaitForSeconds(0.5f);
-                kerbal.isRagdoll = false;
-                if (this.vessel.altitude >= bendsTriggerDepth)
-                {
-                    yield return new WaitForSeconds(7);
-                    kerbal.isRagdoll = true;
-                    yield return new WaitForSeconds(0.5f);
-                    kerbal.isRagdoll = false;
-
-                    if (this.vessel.altitude >= bendsTriggerDepth)
-                    {
-                        yield return new WaitForSeconds(5);
-                        kerbal.isRagdoll = true;
-                        yield return new WaitForSeconds(0.5f);
-                        kerbal.isRagdoll = false;
-                        yield return new WaitForSeconds(2);
-                        bends = true;
-                    }
-                    else
-                    {
-                        narcosis = false;
-                        narcosisTimer = false;
-                    }
-                }
-                else
-                {
-                    narcosis = false;
-                    narcosisTimer = false;
-                }
-            }
-        }
-
-        public void CheckLock()
-        {
-            file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
-
-            if (file != null)
-            {
-                ConfigNode node = file.GetNode("OrX");
-
-                foreach (ConfigNode.Value cv in node.values)
-                {
-                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
-                    if (cvEncryptedName == "unlockedScuba")
-                    {
-                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
-
-                        if (cvEncryptedValue == "True")
-                        {
-                            unlockedScuba = true;
-                        }
-                    }
-                }
-            }
-        }
-
         private void oxyCheck()
         {
             var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
@@ -616,7 +529,6 @@ namespace OrX.parts
                 }
             }
         }
-
         public void checkTrim()
         {
             if (trimUp && !trimming)
@@ -629,7 +541,6 @@ namespace OrX.parts
                 StartCoroutine(TrimDown());
             }
         }
-
         IEnumerator TrimDown()
         {
             trimming = true;
@@ -641,7 +552,6 @@ namespace OrX.parts
             trimDown = false;
             trimming = false;
         }
-
         IEnumerator TrimUp()
         {
             trimming = true;
@@ -842,18 +752,72 @@ namespace OrX.parts
             DrawOxygenText(line);
             line++;
             DrawOxygen(line);
-            line++;
-            DrawScubaText(line);
-            line++;
-            DrawTrimModifier(line);
-            line++;
-            DrawTrimUp(line);
-            line++;
-            DrawTrimDown(line);
+            if (narcosis)
+            {
+                line++;
+                DrawNarcosis(line);
+            }
+            //line++;
+            //DrawScubaText(line);
+            //line++;
+            //DrawTrimModifier(line);
+            //line++;
+            //DrawTrimUp(line);
+            //line++;
+            //DrawTrimDown(line);
 
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
+        }
+
+        private void DrawNarcosis(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperCenter;
+            leftLabel.normal.textColor = Color.white;
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Status: ",
+                leftLabel);
+
+            var rightLabel = new GUIStyle();
+            rightLabel.alignment = TextAnchor.UpperCenter;
+            rightLabel.fontStyle = FontStyle.Bold;
+
+            if (!narcosis)
+            {
+                rightLabel.normal.textColor = Color.white;
+                narcosisText = "Nominal";
+            }
+            else
+            {
+                if (!drunk)
+                {
+                    if (martiniLevel == 1)
+                    {
+                        rightLabel.normal.textColor = Color.green;
+                    }
+                    else
+                    {
+                        if (martiniLevel <= 4)
+                        {
+                            rightLabel.normal.textColor = Color.yellow;
+                        }
+                        else
+                        {
+                            rightLabel.normal.textColor = Color.red;
+                        }
+                    }
+                    narcosisText = martiniLevel + " Martini's";
+                }
+                else
+                {
+                    narcosisText = "You're Drunk";
+                    rightLabel.normal.textColor = Color.magenta;
+                }
+            }
+
+            GUI.Label(new Rect(LeftIndent + (contentWidth / 2), ContentTop + line * entryHeight, 140, entryHeight),
+                narcosisText, rightLabel);
         }
 
         private void DrawScubaText(float line)
@@ -940,18 +904,6 @@ namespace OrX.parts
             guiopenScuba = false;
             GuiEnabledScuba = false;
             Debug.Log("[OrXScuba]: Hiding OrXScuba GUI");
-        }
-
-
-        private void GameUiEnableOrXScuba()
-        {
-            _gameUiToggle = true;
-            GuiEnabledScuba = true;
-        }
-
-        private void GameUiDisableOrXScuba()
-        {
-            _gameUiToggle = false;
         }
 
         private void DrawTitle()

@@ -160,6 +160,7 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public bool blueprintsAdded = false;
         string crafttosave = string.Empty;
+        string blueprintsLabel = "Add Blueprints to Holo";
 
         public bool saveShip = false;
 
@@ -425,7 +426,7 @@ namespace OrX
            
             OrXHCGUIEnabled = false;
             AddToolbarButton();
-            TargetHCGUI = true;
+            TargetHCGUI = false;
             spawnHoloCache = false;
             scanning = false;
 
@@ -1579,10 +1580,6 @@ namespace OrX
                         }
                         else
                         {
-
-                            /*
-
-
                             Debug.Log("[OrX Mission] === GRABBING CRAFT FILE FOR " + spawnCheck.name + " ===");
 
                             ConfigNode location = spawnCheck.GetNode("coords");
@@ -1615,7 +1612,10 @@ namespace OrX
                                 if (locEncryptedName == "rot")
                                 {
                                     string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
-                                    rot = KSPUtil.ParseQuaternion(locEncryptedValue);
+                                    string[] data = locEncryptedValue.Split(new char[] { ',' });
+
+                                    rot = new Quaternion(Convert.ToInt32(data[0]), Convert.ToInt32(data[1]),
+                                        Convert.ToInt32(data[2]), Convert.ToInt32(data[3]));
                                 }
                             }
 
@@ -1680,9 +1680,6 @@ namespace OrX
                             SpawnMissionCraft(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/"
                                 + "spawn.tmp", sl, false, rot, heading);
                             yield return new WaitForSeconds(1.5f);
-
-
-                            */
                         }
                     }
                 }
@@ -4484,7 +4481,7 @@ namespace OrX
                 return Camera.main;
             }
         }
-        public static string FormattedGeoPosShort(Vector3d geoPos, bool altitude)
+        public static string FormattedGeoPosShort(Vector3d geoPos, bool getaltitude)
         {
             string finalString = string.Empty;
             //lat
@@ -4492,7 +4489,7 @@ namespace OrX
             double latSign = Math.Sign(lat);
             double latMajor = latSign * Math.Floor(Math.Abs(lat));
             double latMinor = 100 * (Math.Abs(lat) - Math.Abs(latMajor));
-            string latString = latMajor.ToString("0") + " " + latMinor.ToString("0");
+            string latString = latMajor.ToString("0") + "." + latMinor.ToString("0");
             finalString += "N:" + latString;
 
 
@@ -4501,10 +4498,10 @@ namespace OrX
             double longiSign = Math.Sign(longi);
             double longiMajor = longiSign * Math.Floor(Math.Abs(longi));
             double longiMinor = 100 * (Math.Abs(longi) - Math.Abs(longiMajor));
-            string longiString = longiMajor.ToString("0") + " " + longiMinor.ToString("0");
+            string longiString = longiMajor.ToString("0") + "." + longiMinor.ToString("0");
             finalString += " E:" + longiString;
 
-            if (altitude)
+            if (getaltitude)
             {
                 finalString += " ASL:" + geoPos.z.ToString("0");
             }
@@ -4866,7 +4863,6 @@ namespace OrX
         {
             spawningMissionCraft = true;
             heading = h;
-            rot = r;
             missionCraftLoc = hcLoc;
             SpawnCoords = loc;
             holo = hc;
@@ -5074,6 +5070,14 @@ namespace OrX
                 if (HoloCacheData.body.pqsController != null)
                 {
                     terrainHeight = HoloCacheData.body.pqsController.GetSurfaceHeight(norm) - HoloCacheData.body.pqsController.radius;
+                    if (terrainHeight <= HoloCacheData.body.pqsController.radius)
+                    {
+                        if (!holo && !spawningMissionCraft && !boid)
+                        {
+                            var tHeight = HoloCacheData.body.pqsController.radius - terrainHeight;
+                            terrainHeight += tHeight;
+                        }
+                    }
                 }
                 bool splashed = false;// = landed && terrainHeight < 0.001;
 
@@ -5176,15 +5180,21 @@ namespace OrX
                     }
                     protoVesselNode.SetValue("hgt", hgt.ToString(), true);
                 }
-                protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+
+                if (spawningMissionCraft)
+                {
+                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(rot), true);
+                }
+                else
+                {
+                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+                }
 
                 // Set the normal vector relative to the surface
                 Vector3 nrm = (rotation * Vector3.forward);
                 protoVesselNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
 
                 protoVesselNode.SetValue("prst", false.ToString(), true);
-
-                spawningMissionCraft = false;
             }
 
             // Add vessel to the game
@@ -5281,6 +5291,7 @@ namespace OrX
             }
 
             spawned = true;
+            spawningMissionCraft = false;
             v.GoOffRails();
             v.IgnoreGForces(120);
             emptyholo = true;
@@ -5317,7 +5328,7 @@ namespace OrX
             //TargetHCGUI = false;
             //scanning = false;
             //checking = false;
-            worldPos = Vector3d.zero;
+            //worldPos = Vector3d.zero;
             reload = true;
 
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/"))
@@ -5519,7 +5530,7 @@ namespace OrX
 
             if (!hasAddedButton)
             {
-                Texture buttonTexture = GameDatabase.Instance.GetTexture(OrXDir + "OrX_HoloCache", false); //texture to use for the button
+                Texture buttonTexture = GameDatabase.Instance.GetTexture(OrXDir + "OrX_icon", false); //texture to use for the button
                 ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
                     ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
                 hasAddedButton = true;
@@ -5765,6 +5776,7 @@ namespace OrX
                                             craftBrowserOpen = false;
                                             addingBluePrints = false;
                                             blueprintsAdded = true;
+                                            blueprintsLabel = craftToAddMission + " blueprints added";
                                         }
                                         line++;
                                         c += 1;
@@ -5804,6 +5816,7 @@ namespace OrX
                                             craftBrowserOpen = false;
                                             addingBluePrints = false;
                                             blueprintsAdded = true;
+                                            blueprintsLabel = craftToAddMission + " blueprints added";
                                         }
                                         line++;
                                         c += 1;
@@ -5846,6 +5859,7 @@ namespace OrX
                                             craftBrowserOpen = false;
                                             addingBluePrints = false;
                                             blueprintsAdded = true;
+                                            blueprintsLabel = craftToAddMission + " blueprints added";
                                         }
                                         line++;
                                         c += 1;
@@ -5885,6 +5899,7 @@ namespace OrX
                                             craftBrowserOpen = false;
                                             addingBluePrints = false;
                                             blueprintsAdded = true;
+                                            blueprintsLabel = craftToAddMission + " blueprints added";
                                         }
                                         line++;
                                         c += 1;
@@ -5920,7 +5935,6 @@ namespace OrX
                             line++;
                             DrawSaveLocal(line);
                             line++;
-                            line++;
                             DrawHoloCacheName(line);
                             line++;
                             DrawHoloCacheName2(line);
@@ -5931,47 +5945,47 @@ namespace OrX
                             line++;
                             DrawDescription0(line);
                             line++;
-                            if (missionDescription1 != "" && missionDescription1 != string.Empty)
+                            if (missionDescription0 != "" && missionDescription0 != string.Empty)
                             {
                                 DrawDescription1(line);
                                 line++;
 
-                                if (missionDescription2 != "" && missionDescription2 != string.Empty)
+                                if (missionDescription1 != "" && missionDescription1 != string.Empty)
                                 {
                                     DrawDescription2(line);
                                     line++;
 
-                                    if (missionDescription3 != "" && missionDescription3 != string.Empty)
+                                    if (missionDescription2 != "" && missionDescription2 != string.Empty)
                                     {
                                         DrawDescription3(line);
                                         line++;
 
-                                        if (missionDescription4 != "" && missionDescription4 != string.Empty)
+                                        if (missionDescription3 != "" && missionDescription3 != string.Empty)
                                         {
                                             DrawDescription4(line);
                                             line++;
 
-                                            if (missionDescription5 != "" && missionDescription5 != string.Empty)
+                                            if (missionDescription4 != "" && missionDescription4 != string.Empty)
                                             {
                                                 DrawDescription5(line);
                                                 line++;
 
-                                                if (missionDescription6 != "" && missionDescription6 != string.Empty)
+                                                if (missionDescription5 != "" && missionDescription5 != string.Empty)
                                                 {
                                                     DrawDescription6(line);
                                                     line++;
 
-                                                    if (missionDescription7 != "" && missionDescription7 != string.Empty)
+                                                    if (missionDescription6 != "" && missionDescription6 != string.Empty)
                                                     {
                                                         DrawDescription7(line);
                                                         line++;
 
-                                                        if (missionDescription8 != "" && missionDescription8 != string.Empty)
+                                                        if (missionDescription7 != "" && missionDescription7 != string.Empty)
                                                         {
                                                             DrawDescription8(line);
                                                             line++;
 
-                                                            if (missionDescription9 != "" && missionDescription9 != string.Empty)
+                                                            if (missionDescription8 != "" && missionDescription8 != string.Empty)
                                                             {
                                                                 DrawDescription9(line);
                                                                 line++;
@@ -6160,7 +6174,7 @@ namespace OrX
                     List<OrXHoloCacheinfo>.Enumerator coordinate = HoloCacheTargets[coords].GetEnumerator();
                     while (coordinate.MoveNext())
                     {
-                        string label = FormattedGeoPosShort(coordinate.Current.gpsCoordinates, true);
+                        string label = FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
                         float nameWidth = 120;
                         if (scanning)
                         {
@@ -6176,7 +6190,7 @@ namespace OrX
 
                                     if (!reload && !hide)
                                     {
-                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, nameWidth, HCGUIEntryHeight), coordinate.Current.name, OrXGUISkin.box))
+                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, nameWidth, HCGUIEntryHeight), coordinate.Current.name + " : " + label, OrXGUISkin.box))
                                         {
                                             scanning = false;
                                             checking = false;
@@ -6324,8 +6338,8 @@ namespace OrX
                     {
                         Color origWColor = GUI.color;
 
-                        string label = FormattedGeoPosShort(coordinate.Current.gpsCoordinates, true);
-                        float nameWidth = 120;
+                        string label = FormattedGeoPosShort(coordinate.Current.gpsCoordinates, false);
+
                         if (scanning)
                         {
                             if (TargetHCGUI)
@@ -6340,7 +6354,7 @@ namespace OrX
 
                                     if (!reload && !hide)
                                     {
-                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " - " + label, OrXGUISkin.box))
+                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " " + label, OrXGUISkin.box))
                                         {
                                             if (HighLogic.LoadedSceneIsFlight)
                                             {
@@ -6379,7 +6393,7 @@ namespace OrX
                                     {
                                         if (!reload)
                                         {
-                                            if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " - " + label, OrXGUISkin.box))
+                                            if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " " + label, OrXGUISkin.box))
                                             {
                                                 if (HighLogic.LoadedSceneIsFlight)
                                                 {
@@ -6405,7 +6419,7 @@ namespace OrX
                                 {
                                     if (!hide)
                                     {
-                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " - " + label, OrXGUISkin.box))
+                                        if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " " + label, OrXGUISkin.box))
                                         {
                                             if (HighLogic.LoadedSceneIsFlight)
                                             {
@@ -6455,7 +6469,7 @@ namespace OrX
                             {
                                 if (!hide)
                                 {
-                                    if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " - " + label, OrXGUISkin.box))
+                                    if (GUI.Button(new Rect(0, HCGUIEntryCount * HCGUIEntryHeight, 240, HCGUIEntryHeight), coordinate.Current.name + " " + label, OrXGUISkin.box))
                                     {
                                         if (HighLogic.LoadedSceneIsFlight)
                                         {
@@ -6896,7 +6910,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), HoloCacheName, titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), HoloCacheName, titleStyle);
         }
         private void DrawPlayMissionName(float line)
         {
@@ -6911,7 +6925,7 @@ namespace OrX
                 alignment = TextAnchor.UpperLeft
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionName, titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), missionName, titleStyle);
         }
         private void DrawPlayMissionType(float line)
         {
@@ -6926,7 +6940,7 @@ namespace OrX
                 alignment = TextAnchor.UpperLeft
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), missionType, titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), missionType, titleStyle);
         }
         private void DrawPlayRaceType(float line)
         {
@@ -6941,7 +6955,7 @@ namespace OrX
                 alignment = TextAnchor.UpperLeft
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), challengeType, titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), challengeType, titleStyle);
         }
         private void DrawPlayBlueprintsAdded(float line)
         {
@@ -6956,7 +6970,7 @@ namespace OrX
                 alignment = TextAnchor.UpperLeft
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Bluprints: "+ crafttosave, titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), "Bluprints: "+ crafttosave, titleStyle);
         }
         private void DrawChallengerName(float line)
         {
@@ -7468,8 +7482,9 @@ namespace OrX
         private void DrawCloseBrowser(float line)
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "CLOSE", HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
             {
+                blueprintsLabel = "Add Blueprints to Holo";
                 craftBrowserOpen = false;
             }
         }
@@ -7678,6 +7693,41 @@ namespace OrX
                     blueprintsAdded = false;
                 }
             }
+
+
+
+
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), saveLocalLabel,
+                leftLabel);
+            var bfRect = new Rect(LeftIndent + contentWidth - 30, ContentTop + line * entryHeight, 10, entryHeight);
+
+            if (!blueprintsAdded)
+            {
+                if (GUI.Button(bfRect, "", HighLogic.Skin.button))
+                {
+                    Debug.Log("[OrX Mission] === ADDING BLUEPRINTS ===");
+                    addingBluePrints = true;
+                    blueprintsFile = "";
+                    PlayOrXMission = false;
+
+                    craftBrowserOpen = true;
+                }
+            }
+            else
+            {
+                if (GUI.Button(bfRect, "X", HighLogic.Skin.box))
+                {
+                    Debug.Log("[OrX Mission] === REMOVING BLUEPRINTS ===");
+                    blueprintsLabel = "Add Blueprints to Holo";
+                    blueprintsFile = "";
+                    blueprintsAdded = false;
+                }
+            }
+
         }
 
         private void DrawPassword(float line)
@@ -7720,7 +7770,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "Edit the HoloCache description below", titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), "Edit the HoloCache description below", titleStyle);
         }
         private void DrawEditDescription2(float line)
         {
@@ -7735,7 +7785,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "(Press TAB to jump to next line)", titleStyle);
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), "(Press TAB to jump to next line)", titleStyle);
         }
 
         private void DrawSaveLocal(float line)
