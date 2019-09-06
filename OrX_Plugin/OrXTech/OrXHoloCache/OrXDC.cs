@@ -21,7 +21,7 @@ namespace OrX
         private bool _gameUiToggle;
         private float _windowHeight = 250;
         private Rect _windowRect;
-        public double distance = 0;
+        public string distance = "0";
 
         private void Awake()
         {
@@ -31,11 +31,11 @@ namespace OrX
         
         private void Start()
         {
-            _windowRect = new Rect((Screen.width / 4) * 2 - (WindowWidth * 3) + 10, 50, WindowWidth, _windowHeight);
+            _windowRect = new Rect((Screen.width / 4) - WindowWidth, 50, WindowWidth, _windowHeight);
             GameEvents.onHideUI.Add(GameUiDisableOrXDC);
             GameEvents.onShowUI.Add(GameUiEnableOrXDC);
             _gameUiToggle = true;
-            distance = 0;
+            distance = "0";
         }
 
         private void OnGUI()
@@ -48,14 +48,19 @@ namespace OrX
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && OrXHoloCache.instance.checking)
+            if (HighLogic.LoadedSceneIsFlight && OrXHoloCache.instance.scanning)
             {
-                if (!GuiEnabledOrXDC)
+                if (OrXHoloCache.instance.checkingMission || OrXHoloCache.instance.TargetHCGUI)
                 {
-                    GuiEnabledOrXDC = true;
+                    if (!GuiEnabledOrXDC)
+                    {
+                        GuiEnabledOrXDC = true;
+                    }
                 }
-
-
+                else
+                {
+                    GuiEnabledOrXDC = false;
+                }
             }
             else
             {
@@ -82,8 +87,9 @@ namespace OrX
 
             DrawTitle(line);
             ShowDistance(line);
+            line++;
 
-            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+            _windowHeight = ContentTop + line * entryHeight + (entryHeight / 3);
             _windowRect.height = _windowHeight;
         }
 
@@ -135,7 +141,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20),
-                "" + distance,
+                distance,
                 titleStyle);
         }
 

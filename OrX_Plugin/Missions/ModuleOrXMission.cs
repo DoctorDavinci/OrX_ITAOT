@@ -11,7 +11,7 @@ namespace OrX
 {
     public class ModuleOrXMission : PartModule
     {
-        #region Part Fields
+        #region Fields
 
         [KSPField(isPersistant = true)]
         public bool completed = false;
@@ -59,6 +59,21 @@ namespace OrX
 
         public bool setup = false;
 
+        private float maxfade = 0f;
+        private float surfaceAreaToCloak = 0.0f;
+
+        public bool cloakOn = false;
+
+        private static float UNCLOAKED = 1.0f;
+        private static float RENDER_THRESHOLD = 0.0f;
+        private float fadePerTime = 0.5f;
+        private bool currentShadowState = true;
+        private bool recalcCloak = true;
+        private float visiblilityLevel = UNCLOAKED;
+        private float fadeTime = 3f; // In seconds
+        private float shadowCutoff = 0.0f;
+        private bool selfCloak = true;
+
         #endregion
 
         [KSPField(unfocusedRange = 5, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "OPEN HOLOCACHE"),
@@ -71,22 +86,14 @@ namespace OrX
             {
                 part.force_activate();
                 Debug.Log("[Module OrX Mission] === OnStart(StartState state) ===");
-                GameEvents.onVesselWasModified.Add(ReconfigureEvent);
+                //GameEvents.onVesselWasModified.Add(ReconfigureEvent);
+                recalcCloak = true;
                 recalcSurfaceArea();
 
                 triggerCraft = FlightGlobals.ActiveVessel;
-
-                if (!spawned)
-                {
-                    spawned = true;
-                    altitude = OrXHoloCache.instance._alt;
-                    latitude = OrXHoloCache.instance._lat;
-                    longitude = OrXHoloCache.instance._lon;
-                    OrXHoloCache.instance.SetupHolo(this.vessel);
-                }
-                else
-                {
-                }
+                altitude = OrXHoloCache.instance._alt;
+                latitude = OrXHoloCache.instance._lat;
+                longitude = OrXHoloCache.instance._lon;
             }
             base.OnStart(state);
         }
@@ -99,50 +106,23 @@ namespace OrX
                 {
                     setup = true;
                     triggerCraft = FlightGlobals.ActiveVessel;
+                    deploy = false;
 
                     if (HoloCacheName != "" && HoloCacheName != string.Empty)
                     {
-                        OrXHoloCache.instance.OpenHoloCache(HoloCacheName);
+                        Debug.Log("[MODULE OrX Mission] === OPENING '" + HoloCacheName + "' === "); ;
+
+                        OrXHoloCache.instance.OpenHoloCache(HoloCacheName, this.vessel);
                         //FlightGlobals.ForceSetActiveVessel(this.vessel);
                     }
                     else
                     {
-                        deploy = false;
-                        setup = false;
-                        //FlightGlobals.ForceSetActiveVessel(this.vessel);
-                    }
-                }
-
-                if (this.vessel.isActiveVessel)
-                {
-                    //FlightGlobals.ForceSetActiveVessel(triggerCraft);
-                }
-                else
-                {
-                    if (FlightGlobals.ActiveVessel != triggerCraft && triggerCraft != this.vessel)
-                    {
-                        triggerCraft = FlightGlobals.ActiveVessel;
+                        //OrXHoloCache.instance.SetupHolo(this.vessel);
                     }
                 }
             }
             base.OnFixedUpdate();
         }
-
-        private float maxfade = 0f;
-        private float surfaceAreaToCloak = 0.0f;
-
-        public bool cloakOn = false;
-
-        private static float UNCLOAKED = 1.0f;
-        private static float RENDER_THRESHOLD = 0.0f;
-        private float fadePerTime = 0.5f;
-        private bool currentShadowState = true;
-        private bool recalcCloak = true;
-        private float visiblilityLevel = UNCLOAKED;
-        private float fadeTime = 1.0f; // In seconds
-        private float shadowCutoff = 0.0f;
-        private bool selfCloak = true;
-
 
         public void CloakOn()
         {
@@ -150,7 +130,7 @@ namespace OrX
             UpdateCloakField(null, null);
         }
 
-        public override void OnUpdate()
+        public void Update()
         {
             if (visiblilityLevel == maxfade)
             {
@@ -186,13 +166,11 @@ namespace OrX
             {
                 this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
             }
-
-            base.OnUpdate();
         }
 
         public void OnDestroy()
         {
-            GameEvents.onVesselWasModified.Remove(ReconfigureEvent);
+            //GameEvents.onVesselWasModified.Remove(ReconfigureEvent);
         }
 
         #region Cloak

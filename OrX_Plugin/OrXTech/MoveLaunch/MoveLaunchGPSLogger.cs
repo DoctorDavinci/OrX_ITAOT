@@ -84,10 +84,10 @@ namespace MoveLaunch
 
         private void Start()
         {
-            _windowRect = new Rect(Screen.width - 200 - 140, 100, WindowWidth, _windowHeight);
-            GameEvents.onHideUI.Add(GameUiDisableMLGPS);
-            GameEvents.onShowUI.Add(GameUiEnableMLGPS);
-            AddToolbarButton();
+            //_windowRect = new Rect(Screen.width - 200 - 140, 100, WindowWidth, _windowHeight);
+            //GameEvents.onHideUI.Add(GameUiDisableMLGPS);
+            //GameEvents.onShowUI.Add(GameUiEnableMLGPS);
+            //AddToolbarButton();
             _gameUiToggle = true;
             GPSname = "Enter Name";
         }

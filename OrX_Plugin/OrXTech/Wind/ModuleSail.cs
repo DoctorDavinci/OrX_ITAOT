@@ -25,11 +25,20 @@ namespace Wind
         */
         private bool setup = true;
         public int randomDirection = 0;
-        private bool directionRandomized = false;
         Rigidbody rigidBody;
+        public double surfaceArea = 0;
 
-        public Vector3 windDirection;
-        public Vector3 sailPosition;
+        public Vector3 sailForward;
+
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                part.force_activate();
+            }
+
+            base.OnStart(state);
+        }
 
         public void Update()
         {
@@ -38,14 +47,8 @@ namespace Wind
                 if (setup)
                 {
                     setup = false;
-                    sailPosition = this.part.transform.forward;
-                }
-                else
-                {/*
-                    if (rotateLeft || rotateRight)
-                    {
-                        // RotateSail();
-                    }*/
+                    sailForward = this.part.transform.forward;
+                    surfaceArea = this.part.skinExposedArea / 2;
                 }
             }
         }
@@ -75,32 +78,13 @@ namespace Wind
             }
         }
 
-        private void RotateSail()
-        {
-            /*
-            if (rotateLeft)
-            {
-                rotateLeft = false;
-                rotateRight = false;
-                this.part.transform.Rotate(this.part.transform.up, -angle);
-                sailPosition = this.part.transform.forward;
-            }
-
-            if (rotateRight)
-            {
-                rotateRight = false;
-                rotateLeft = false;
-                this.part.transform.Rotate(this.part.transform.up, angle);
-                sailPosition = this.part.transform.forward;
-            }*/
-        }
-
         private void BlowSails()
         {
-            var srfArea = this.part.skinExposedArea / 2;
-
+            sailForward = this.part.transform.up;
+            float vOffset = 1 / Vector3.Angle(WindGUI.instance.windDirection, sailForward);
+            float speed = WindGUI.instance._wi * ((1 / Vector3.Angle(WindGUI.instance.windDirection, sailForward)) * Convert.ToInt32(surfaceArea));
             rigidBody = this.part.GetComponent<Rigidbody>();
-            rigidBody.AddForce((WindGUI.instance.windDirection - this.part.transform.up).normalized * WindGUI.instance._wi);
+            rigidBody.AddForce((WindGUI.instance.windDirection - sailForward).normalized * speed);
         }
     }
 }

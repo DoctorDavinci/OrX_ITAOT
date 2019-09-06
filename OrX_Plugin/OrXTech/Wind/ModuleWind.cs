@@ -9,6 +9,23 @@ namespace Wind
     {
         public int randomDirection = 0;
         Rigidbody rigidBody;
+        double area = 0;
+
+        public override void OnStart(StartState state)
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                List<Part>.Enumerator p = this.vessel.parts.GetEnumerator();
+                while (p.MoveNext())
+                {
+                    if (p.Current.Modules.Contains<ModuleLiftingSurface>())
+                    {
+                        area += p.Current.skinExposedArea / 2;
+                    }
+                }
+            }
+            base.OnStart(state);
+        }
 
         public void FixedUpdate()
         {
@@ -30,12 +47,12 @@ namespace Wind
                                 if (this.vessel.Splashed)
                                 {
                                     rigidBody = this.vessel.GetComponent<Rigidbody>();
-                                    rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi));
+                                    rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi) * Convert.ToInt32(area));
                                 }
                                 else
                                 {
                                     rigidBody = this.vessel.GetComponent<Rigidbody>();
-                                    rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi / 2));
+                                    rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi / 2) * Convert.ToInt32(area));
                                 }
                             }
                             else
@@ -45,13 +62,13 @@ namespace Wind
                                     if (this.vessel.radarAltitude <= 1000)
                                     {
                                         rigidBody = this.vessel.GetComponent<Rigidbody>();
-                                        rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi));
+                                        rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi) * Convert.ToInt32(area));
                                     }
                                     else
                                     {
                                         var flyingWind = Convert.ToSingle(this.vessel.radarAltitude / 100);
                                         rigidBody = this.vessel.GetComponent<Rigidbody>();
-                                        rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi / flyingWind));
+                                        rigidBody.AddForce(WindGUI.instance.windDirection * (WindGUI.instance._wi / flyingWind) * Convert.ToInt32(area));
                                     }
                                 }
                             }

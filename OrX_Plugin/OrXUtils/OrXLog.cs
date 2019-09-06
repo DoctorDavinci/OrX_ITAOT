@@ -97,7 +97,7 @@ namespace OrX
 
         private void onFlightGlobalsReady(bool data)
         {
-            //AddToVesselList(FlightGlobals.ActiveVessel);
+            ImportVesselList();
         }
 
         #region Checks
@@ -265,8 +265,6 @@ namespace OrX
                     }
                 }
             }
-
-            ImportVesselList();
         }
 
         public void AddToVesselList(Vessel data)
@@ -438,9 +436,12 @@ namespace OrX
             {
                 ConfigNode ul = file.GetNode(HighLogic.CurrentGame.Title);
 
-                foreach (ConfigNode.Value cv in ul.values)
+                if (ul != null)
                 {
-                    owned.Add(cv.value);
+                    foreach (ConfigNode.Value cv in ul.values)
+                    {
+                        owned.Add(cv.value);
+                    }
                 }
             }
         }

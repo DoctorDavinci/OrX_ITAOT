@@ -82,6 +82,23 @@ namespace OrX.parts
         Guid id;
 
         private bool setupOrXModule = true;
+        Transform trans;
+
+        public double hoverAlt = 2;
+
+        private bool pilot = false;
+        private bool engineer = false;
+        private bool scientist = false;
+        private bool civilian = false;
+
+        public void AddTransform()
+        {
+            trans = this.part.gameObject.AddComponent<Transform>();
+            trans.forward = forward;
+            trans.up = this.part.transform.up;
+            trans.right = this.part.transform.right;
+            trans.localPosition = this.part.transform.localPosition + new Vector3(0,0,5);
+        }
 
         public override void OnStart(StartState state)
         {
@@ -103,12 +120,11 @@ namespace OrX.parts
             trimModifier = _trimModifier;
             _windowRect = new Rect(Screen.width - 320 - WindowWidth, 140, WindowWidth, _windowHeight);
             _gameUiToggle = true;
+            forward = this.part.transform.forward;
 
             base.OnStart(state);
         }
 
-
-        public double hoverAlt = 2;
 
         public override void OnFixedUpdate()
         {
@@ -376,11 +392,6 @@ namespace OrX.parts
                 }
             }
         }
-
-        private bool pilot = false;
-        private bool engineer = false;
-        private bool scientist = false;
-        private bool civilian = false;
 
         //////////////////////////////////////////////////////////////////////////////
 
@@ -716,6 +727,20 @@ namespace OrX.parts
             var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
             kerbal.lampOn = false;
             helmetRemoved = false;
+        }
+
+        #endregion
+
+        //////////////////////////////////////////////////////////////////////////////
+
+        #region Snowball
+
+        Vector3 forward;
+
+
+        private void SpawnSnowball()
+        {
+
         }
 
         #endregion

@@ -39,7 +39,7 @@ namespace Wind
         
         private void Start()
         {
-            _windowRect = new Rect(WindowWidth / 2, 80, WindowWidth, _windowHeight);
+            _windowRect = new Rect(WindowWidth / 4, 50, WindowWidth, _windowHeight);
             GameEvents.onHideUI.Add(GameUiDisableWindDI);
             GameEvents.onShowUI.Add(GameUiEnableWindDI);
             _gameUiToggle = true;
@@ -275,7 +275,7 @@ namespace Wind
             };
             var titleStyle = new GUIStyle(centerLabel)
             {
-                fontSize = 12,
+                fontSize = 14,
                 alignment = TextAnchor.MiddleCenter
             };
 

@@ -117,7 +117,7 @@ namespace Wind
                 enableWind = true;
                 Debug.Log("[Wind} ... Setting up weather");
 
-                if (!manual)
+                if (random360)
                 {
                     windDirection = UnityEngine.Random.onUnitSphere; // Generate a random direction for the wind to start blowing in
                     originalWindDirection = windDirection;
@@ -157,12 +157,12 @@ namespace Wind
             if (random >= 50) // if random is above 50
             {
                 //Debug.Log("[Wind} ... Changing wind speed");
-                _wi = windIntensity + (windSpeedMod / 50); // increase wind speed by adding the wind speed modifier divided by 50 to wind speed
+                _wi = (windIntensity + (windSpeedMod / 50)) / 10; // increase wind speed by adding the wind speed modifier divided by 50 to wind speed
             }
             else // if random is below 51
             {
                 //Debug.Log("[Wind} ... Changing wind speed");
-                _wi = windIntensity - (windSpeedMod / 50);// decrese wind speed by subtracting the wind speed modifier divided by 50 to wind speed
+                _wi = (windIntensity - (windSpeedMod / 50)) / 10;// decrese wind speed by subtracting the wind speed modifier divided by 50 to wind speed
             }
         }
 
@@ -282,7 +282,6 @@ namespace Wind
             }
         }
 
-
         // FROM SPANNER
         //
         // already got a list of  wants,  wind direction speed indicator,  selectable wind options,
@@ -290,6 +289,25 @@ namespace Wind
         // selectable initial wind direction  to avoid ending up on the beach before yopu even get going (lee shores are bastards)  ,
         // and  oof course wind strength, because while it takes max force to move that ship  at 12ms   , 
         // the same wind will make an aircraft  a nightmare to fly .   Tested  PAI  ,  it couldnt cope with a prop aircraft may have better luck  with a jet
+
+
+
+        private void StartWeatherSim()
+        {
+            // START WEATHER CALCULATIONS
+            // SET BASE WIND DIRECTION OF TRAVEL TO MATCH PLANETARY ROTATION
+            // IF VESSEL IS SPLASHED OR BELOW 100 METERS IN AN ATMOSPHERE WINS TRAVELS FROM HIGHEST TO LOWEST POINT
+            // IF VESSEL IS AIRBORNE WIND TRAVELS FROM LOWEST TO HIGHEST TO SIMULATE UPDRAFTS (HANG GLIDING AND GLIDERS)
+            // ALL WIND DIRECTIONS WILL BE SUBJECT TO THE BASE WIND DIRECTION (EAST)
+
+            // PLOT GROUND ELEVATION AT 32 POINTS AROUND VESSEL
+            // USE EASTVECT AS BASE WIND DIRECTION AND MODIFY ACCORDING TO MEASURES POINT ELEVATIONS
+            // IF WIND BLOWING EAST ACROSS HILLY TERRAIN CREATE UPDRAFTS
+            
+
+
+
+        }
 
 
         /// /////////////////////////////////////////////////////////////////////////////
@@ -303,29 +321,26 @@ namespace Wind
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
             DrawTitle(line);
-            //line++;
-            //Draw360Random(line);
-            //line++;
-            DrawIntensity(line);
-            line++;
-            DrawWindIntensity(line);
-            line++;
-            DrawVariability(line);
-            line++;
-            DrawWindVariability(line);
-            line++;
-            DrawVariationIntensity(line);
-            line++;
-            DrawVIntensity(line);
-            line++;
-            DrawBlowNTeaseText(line);
-            line++;
-            DrawBlowNTeaseTimer(line);
             line++;
             DrawEnableWind(line);
-
             if (!random360)
             {
+                line++;
+                DrawIntensity(line);
+                line++;
+                DrawWindIntensity(line);
+                line++;
+                DrawVariability(line);
+                line++;
+                DrawWindVariability(line);
+                line++;
+                DrawVariationIntensity(line);
+                line++;
+                DrawVIntensity(line);
+                line++;
+                DrawBlowNTeaseText(line);
+                line++;
+                DrawBlowNTeaseTimer(line);
                 line++;
                 line++;
                 DrawDegrees(line);
@@ -333,6 +348,9 @@ namespace Wind
                 line++;
                 DrawWindSetDirection(line);
             }
+            line++;
+            line++;
+            Draw360Random(line);
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
@@ -340,7 +358,7 @@ namespace Wind
 
         private void AddToolbarButton()
         {
-            string textureDir = "Wind/Plugin/";
+            string textureDir = "OrX/Plugin/";
 
             if (!HasAddedButton)
             {
@@ -491,14 +509,16 @@ namespace Wind
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             if (!random360)
             {
-                if (GUI.Button(saveRect, "Enable 360 Random", style))
+                if (GUI.Button(saveRect, "Enable Weather", style))
                 {
-                    random360 = true;
+                    ScreenMsg("Simulated weather is currently unavailable");
+                    //random360 = true;
+                    //StartWeatherSim();
                 }
             }
             else
             {
-                if (GUI.Button(saveRect, "Disable 360 Random", style))
+                if (GUI.Button(saveRect, "DOESNT WORK YET", style))
                 {
                     random360 = false;
                 }

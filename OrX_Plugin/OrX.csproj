@@ -74,7 +74,7 @@
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCacheinfo.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXargetInfo.cs" />
-    <Compile Include="OrXTech\ModuleOrX.cs" />
+    <Compile Include="OrXTech\OrX\ModuleOrX.cs" />
     <Compile Include="OrXSpawn\OrXSpawn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
