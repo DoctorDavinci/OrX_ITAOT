@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Wind
+namespace OrXWind
 {
     public class ModuleWind : PartModule
     {

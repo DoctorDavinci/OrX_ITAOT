@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Wind
+namespace OrXWind
 {
     public class ModuleCannonBall : PartModule
     {

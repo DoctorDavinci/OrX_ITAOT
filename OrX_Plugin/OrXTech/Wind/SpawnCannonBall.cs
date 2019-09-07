@@ -6,7 +6,7 @@ using KSP.UI.Screens;
 using System.IO;
 using System.Reflection;
 
-namespace Wind
+namespace OrXWind
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class SpawnCannonBall : MonoBehaviour

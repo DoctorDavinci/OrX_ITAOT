@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
 
-namespace Wind
+namespace OrXWind
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class WindDirectionIndicator : MonoBehaviour

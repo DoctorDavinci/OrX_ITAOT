@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-namespace Wind
+namespace OrXWind
 {
     [KSPAddon(KSPAddon.Startup.Flight, true)]
     public class WindGUI : MonoBehaviour

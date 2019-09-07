@@ -6,7 +6,7 @@ using System.Collections;
 using System.Reflection;
 using UnityEngine;
 
-namespace Wind
+namespace OrXWind
 {
     public class ModuleCannon : PartModule
     {
