@@ -1,5 +1,5 @@
 ﻿using OrX.spawn;
-using Wind;
+using OrXWind;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -70,7 +70,7 @@ namespace OrX
         private bool currentShadowState = true;
         private bool recalcCloak = true;
         private float visiblilityLevel = UNCLOAKED;
-        private float fadeTime = 3f; // In seconds
+        private float fadeTime = 5f;
         private float shadowCutoff = 0.0f;
         private bool selfCloak = true;
 

@@ -7,7 +7,7 @@ using OrX.spawn;
 using System.IO;
 using System.Text;
 using System.Linq;
-using Wind;
+using OrXWind;
 using System.Threading;
 
 namespace OrX
@@ -1674,7 +1674,6 @@ namespace OrX
 
                             Debug.Log("[OrX Mission] === VESSEL DECRYPTED - READY FOR SPAWNING ===");
 
-                            craftFile.SetValue("rot", KSPUtil.WriteQuaternion(rot), true);
                             craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
                             spawningMissionCraft = true;
                             SpawnMissionCraft(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/"
@@ -2023,15 +2022,8 @@ namespace OrX
                 }
             }
         }
-        private void SaveConfig()
+        public void SaveConfig()
         {
-            var h = holoCube.rootPart.FindModuleImplementing<ModuleOrXMission>();
-            h.altitude = _alt;
-            h.latitude = _lat;
-            h.longitude = _lon;
-            h.HoloCacheName = HoloCacheName;
-            h.engageCloak();
-
             string hConfigLoc = UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/"
                 + HoloCacheName + "/" + HoloCacheName + ".orx";
 
@@ -2048,6 +2040,7 @@ namespace OrX
                 _file.AddNode("OrX");
                 _file.Save("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
             }
+
             _file = ConfigNode.Load(hConfigLoc);
             ConfigNode node = null;
             if (_file != null && _file.HasNode("OrX"))
@@ -2512,6 +2505,13 @@ namespace OrX
                 v.Dispose();
                 _file.Save(hConfigLoc);
             }
+
+            var h = holoCube.rootPart.FindModuleImplementing<ModuleOrXMission>();
+            h.altitude = _alt;
+            h.latitude = _lat;
+            h.longitude = _lon;
+            h.HoloCacheName = HoloCacheName;
+            h.engageCloak();
 
             if (!addCoords)
             {
@@ -4885,9 +4885,15 @@ namespace OrX
             {
                 pos = SpawnCoords;
             }
+
+            if (!spawningMissionCraft)
+            {
+                heading = 90;
+            }
+
             Vector3 gpsPos = WorldPositionToGeoCoords(pos, FlightGlobals.currentMainBody);
             yield return new WaitForFixedUpdate();
-            SpawnVesselFromCraftFile(craftUrl, gpsPos, 90, 0, crewData);
+            SpawnVesselFromCraftFile(craftUrl, gpsPos, heading, 0, crewData);
         }
 
         private void SpawnVesselFromCraftFile(string craftURL, Vector3d gpsCoords, float heading, float pitch, List<ProtoCrewMember> crewData = null)
@@ -4897,7 +4903,7 @@ namespace OrX
             newData.craftURL = craftURL;
             newData.latitude = gpsCoords.x;
             newData.longitude = gpsCoords.y;
-            newData.altitude = gpsCoords.z;
+            newData.altitude = gpsCoords.z + 1;
 
             Debug.Log("[Spawn OrX HoloCache] SpawnVesselFromCraftFile Altitude: " + newData.altitude);
 
@@ -4939,7 +4945,6 @@ namespace OrX
             ShipConstruct shipConstruct = null;
             bool hasClamp = false;
             float lcHeight = 0;
-            ConfigNode craftNode;
             Quaternion craftRotation = Quaternion.identity;
 
             if (!string.IsNullOrEmpty(HoloCacheData.craftURL))
@@ -4955,7 +4960,6 @@ namespace OrX
                     return;//continue;
                 }
 
-                craftNode = ConfigNode.Load(HoloCacheData.craftURL);
                 lcHeight = 0;
                 //craftRotation = rot;
 
@@ -5082,7 +5086,7 @@ namespace OrX
                 bool splashed = false;// = landed && terrainHeight < 0.001;
 
                 // Create the config node representation of the ProtoVessel
-                // Note - flying is experimental, and so far doesn't wOrX
+                // Note - flying is experimental, and so far doesn't work
                 protoVesselNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
                   Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
                 protoVesselNode.SetValue("landed", (landed && !splashed).ToString());
@@ -5098,22 +5102,33 @@ namespace OrX
                 {
                     foreach (Part p in shipConstruct.parts)
                     {
-                        foreach (Collider collider in p.GetComponentsInChildren<Collider>())
+                        bool robotic = p.isRobotic();
+                        if (!robotic)
                         {
-                            if (collider.gameObject.layer != 21 && collider.enabled)
+                            foreach (Collider collider in p.GetComponentsInChildren<Collider>())
                             {
-                                lowest = Mathf.Min(lowest, collider.bounds.min.y);
+                                if (collider.gameObject.layer != 21 && collider.enabled)
+                                {
+                                    lowest = Mathf.Min(lowest, collider.bounds.min.y);
+                                }
                             }
                         }
                     }
                 }
                 else
                 {
-                    foreach (Collider collider in HoloCacheData.craftPart.partPrefab.GetComponentsInChildren<Collider>())
+                    foreach (Part p in shipConstruct.parts)
                     {
-                        if (collider.gameObject.layer != 21 && collider.enabled)
+                        bool roboticPart = p.isRobotic();
+                        if (!roboticPart)
                         {
-                            lowest = Mathf.Min(lowest, collider.bounds.min.y);
+                            foreach (Collider collider in HoloCacheData.craftPart.partPrefab.GetComponentsInChildren<Collider>())
+                            {
+                                if (collider.gameObject.layer != 21 && collider.enabled)
+                                {
+                                    lowest = Mathf.Min(lowest, collider.bounds.min.y);
+                                }
+                            }
                         }
                     }
                 }
@@ -5126,7 +5141,7 @@ namespace OrX
                 Debug.Log("[Spawn OrX HoloCache] Figure out the surface height and rotation for " + HoloCacheData.name);
 
                 // Figure out the surface height and rotation
-                Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
+                Quaternion normal = Quaternion.LookRotation(norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
                 Quaternion rotation = Quaternion.identity;
                 float heading = HoloCacheData.heading;
                 if (shipConstruct == null)
@@ -5195,6 +5210,10 @@ namespace OrX
                 protoVesselNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
 
                 protoVesselNode.SetValue("prst", false.ToString(), true);
+            }
+            else
+            {
+
             }
 
             // Add vessel to the game
@@ -6879,7 +6898,7 @@ namespace OrX
         private void DrawUpdateScoreboard(float line)
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "UPDATE SCOREBOARD", HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "IMPORT SCORES", HighLogic.Skin.button))
             {
                 ImportScores();
             }
@@ -7821,27 +7840,58 @@ namespace OrX
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
 
-            if (!geoCache)
+            _file = ConfigNode.Load("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            if (_file == null)
             {
-                if (addCoords)
+                if (!geoCache)
                 {
-                    if (GUI.Button(saveRect, "SAVE AND EXIT", HighLogic.Skin.button))
+                    if (addCoords)
                     {
-                        Debug.Log("[OrX Mission] === SAVING .orx ===");
+                        if (GUI.Button(saveRect, "SAVE AND EXIT", HighLogic.Skin.button))
+                        {
+                            Debug.Log("[OrX Mission] === SAVING .orx ===");
 
-                        SaveCoords();
+                            SaveCoords();
+                        }
+                    }
+                    else
+                    {
+                        if (GUI.Button(saveRect, "ADD COORDS", HighLogic.Skin.button))
+                        {
+                            if (HoloCacheName != string.Empty && HoloCacheName != "")
+                            {
+                                if (missionDescription0 != string.Empty && missionDescription0 != "")
+                                {
+                                    CoordDatabase = new List<string>();
+                                    addCoords = true;
+                                    SaveConfig();
+                                }
+                                else
+                                {
+                                    ScreenMsg("Please add a description");
+                                }
+                            }
+                            else
+                            {
+                                ScreenMsg("Please enter a name for your HoloCache");
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    if (GUI.Button(saveRect, "ADD COORDS", HighLogic.Skin.button))
+                    if (GUI.Button(saveRect, "SAVE", HighLogic.Skin.button))
                     {
                         if (HoloCacheName != string.Empty && HoloCacheName != "")
                         {
                             if (missionDescription0 != string.Empty && missionDescription0 != "")
                             {
-                                CoordDatabase = new List<string>();
-                                addCoords = true;
+                                Debug.Log("[OrX Mission] === SAVING .orx ===");
+                                GuiEnabledOrXMissions = false;
+                                OrXHCGUIEnabled = false;
+                                building = false;
+                                buildingMission = false;
+                                OrXLog.instance.building = false;
                                 SaveConfig();
                             }
                             else
@@ -7858,30 +7908,7 @@ namespace OrX
             }
             else
             {
-                if (GUI.Button(saveRect, "SAVE", HighLogic.Skin.button))
-                {
-                    if (HoloCacheName != string.Empty && HoloCacheName != "")
-                    {
-                        if (missionDescription0 != string.Empty && missionDescription0 != "")
-                        {
-                            Debug.Log("[OrX Mission] === SAVING .orx ===");
-                            GuiEnabledOrXMissions = false;
-                            OrXHCGUIEnabled = false;
-                            building = false;
-                            buildingMission = false;
-                            OrXLog.instance.building = false;
-                            SaveConfig();
-                        }
-                        else
-                        {
-                            ScreenMsg("Please add a description");
-                        }
-                    }
-                    else
-                    {
-                        ScreenMsg("Please enter a name for your HoloCache");
-                    }
-                }
+                OrXAppendCfg.instance.EnableGui();
             }
         }
         private void DrawCancel(float line)
@@ -7894,47 +7921,33 @@ namespace OrX
                 if (PlayOrXMission)
                 {
                     Debug.Log("[OrX Mission] === CANCEL CHALLENGE ===");
-
-                    CoordDatabase.Clear();
-                    locCount = 0;
-                    locAdded = false;
-                    ResetData();
-                    building = false;
-                    buildingMission = false;
-                    addCoords = false;
-                    GuiEnabledOrXMissions = false;
-                    OrXHCGUIEnabled = false;
-                    PlayOrXMission = false;
+                    CancelChallenge();
                 }
                 else
                 {
                     Debug.Log("[OrX Mission] === CANCEL HOLOCACHE CREATION ===");
 
-                    List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
-                    while (v.MoveNext())
-                    {
-                        if (v.Current == null) continue;
-                        if (!v.Current.loaded || v.Current.packed) continue;
-                        if (v.Current.id == id)
-                        {
-                            v.Current.DestroyVesselComponents();
-                            v.Current.Die();
-                            break;
-                        }
-                    }
-                    v.Dispose();
-
-                    ResetData();
-                    locCount = 0;
-                    locAdded = false;
-                    building = false;
-                    buildingMission = false;
-                    addCoords = false;
-                    GuiEnabledOrXMissions = false;
-                    OrXHCGUIEnabled = false;
-                    PlayOrXMission = false;
+                    var h = holoCube.rootPart.Modules.GetModule<ModuleOrXMission>();
+                    h.CloakOn();
+                    CancelChallenge();
                 }
             }
+        }
+
+        public void CancelChallenge()
+        {
+            Debug.Log("[OrX Mission] === CANCEL CHALLENGE ===");
+
+            CoordDatabase.Clear();
+            ResetData();
+            locCount = 0;
+            locAdded = false;
+            building = false;
+            buildingMission = false;
+            addCoords = false;
+            GuiEnabledOrXMissions = false;
+            OrXHCGUIEnabled = false;
+            PlayOrXMission = false;
         }
 
         #endregion

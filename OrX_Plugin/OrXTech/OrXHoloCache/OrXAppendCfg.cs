@@ -63,6 +63,7 @@ namespace OrX
 
         public void EnableGui()
         {
+            OrXHoloCache.instance.GuiEnabledOrXMissions = false;
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = true;
@@ -71,6 +72,7 @@ namespace OrX
 
         public void DisableGui()
         {
+            OrXHoloCache.instance.GuiEnabledOrXMissions = true;
             hcName = "";
             cancel = false;
             save = false;
@@ -190,7 +192,8 @@ namespace OrX
                 }
                 else
                 {
-                    save = true;
+                    OrXHoloCache.instance.SaveConfig();
+                    OrXHoloCache.instance.GuiEnabledOrXMissions = true;
                 }
             }
         }
@@ -215,7 +218,8 @@ namespace OrX
 
             if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
             {
-                cancel = true;
+                OrXHoloCache.instance.SaveConfig();
+                OrXHoloCache.instance.GuiEnabledOrXMissions = true;
             }
         }
 

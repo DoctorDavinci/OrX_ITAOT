@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections;
@@ -9,7 +10,7 @@ namespace OrXWind
     public class WeatherFactory : MonoBehaviour
     {
         public static WeatherFactory instance;
-
+        /*
         private bool setup = false;
 
         public List<Vector3d> HurricaneFactories;
@@ -66,7 +67,7 @@ namespace OrXWind
                 }
             }
         }
-
+        
         private void HurricaneFactory()
         {
             List<Vector3d>.Enumerator fact = HurricaneFactories.GetEnumerator();
@@ -235,6 +236,6 @@ namespace OrXWind
             }
 
         }
-
+        */
     }
 }

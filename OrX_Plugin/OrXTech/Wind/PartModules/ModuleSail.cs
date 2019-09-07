@@ -63,8 +63,11 @@ namespace OrXWind
                     {
                         if (!WindGUI.instance.enableWind) // if Wind is not enabled
                         {
-                            //Debug.Log("[Wind} ... Taking the wind from your sails");
-                            //Destroy(this);
+                            if (sailOn)
+                            {
+                                Debug.Log("[OrX Wind] ... Taking the wind from your sails");
+                            }
+                            Destroy(this);
                         }
                         else // if Wind is enabled
                         {

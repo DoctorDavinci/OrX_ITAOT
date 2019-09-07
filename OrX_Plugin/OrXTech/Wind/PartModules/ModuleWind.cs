@@ -35,7 +35,7 @@ namespace OrXWind
                 {
                     if (!WindGUI.instance.enableWind) // if Wind is not enabled
                     {
-                        Debug.Log("[Wind} ... Killing the weather man");
+                        Debug.Log("[OrX Wind] ... Killing the weather man");
                         Destroy(this);
                     }
                     else // if Wind is enabled

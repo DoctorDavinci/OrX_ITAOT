@@ -141,8 +141,18 @@ namespace OrXWind
                     Debug.Log("[OrX Wind] ... Adding Wind Module to " + v.Current.vesselName);
                     v.Current.rootPart.AddModule("ModuleWind", true); // add ModuleWind to the current vessel and activate the code
 
-                    // TO DO: add in additional module for sails ... either add separate module or add the code to ModuleWind
-
+                    List<Part>.Enumerator p = v.Current.parts.GetEnumerator();
+                    while (p.MoveNext())
+                    {
+                        if (p.Current.Modules.Contains<ModuleLiftingSurface>())
+                        {
+                            if (!p.Current.Modules.Contains<ModuleSail>())
+                            {
+                                p.Current.AddModule("ModuleSail");
+                            }
+                        }
+                    }
+                    p.Dispose();
                 }
                 v.Dispose(); // dispose of vessel list ... remove list from RAM and KSP without it going to the garbage heap/collector
             }
