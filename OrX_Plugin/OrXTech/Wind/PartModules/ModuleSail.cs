@@ -67,13 +67,25 @@ namespace OrXWind
                             {
                                 Debug.Log("[OrX Wind] ... Taking the wind from your sails");
                             }
-                            Destroy(this);
+                            sailOn = false;
+
+                            if (this.part.Modules.Contains<ModuleLiftingSurface>())
+                            {
+                                Destroy(this);
+                            }
                         }
                         else // if Wind is enabled
                         {
                             if (sailOn)
                             {
                                 BlowSails();
+                            }
+                            else
+                            {
+                                if (!this.part.Modules.Contains<ModuleLiftingSurface>())
+                                {
+                                    sailOn = true;
+                                }
                             }
                         }
                     }

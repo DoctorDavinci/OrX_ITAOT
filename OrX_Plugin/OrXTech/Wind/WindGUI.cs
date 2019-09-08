@@ -135,6 +135,8 @@ namespace OrXWind
                 List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator(); // creat a list of vessels in game and scrutinize each one
                 while (v.MoveNext()) // while scrutinizing a vessel
                 {
+                    try
+                    {
                     if (v.Current == null) continue; // if vessel is null/non existant then move to the next vessel
                     if (!v.Current.loaded || v.Current.packed) continue; // if current vessel is not loaded or vessel is packed move on to the next vessel
 
@@ -153,6 +155,11 @@ namespace OrXWind
                         }
                     }
                     p.Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        
+                    }
                 }
                 v.Dispose(); // dispose of vessel list ... remove list from RAM and KSP without it going to the garbage heap/collector
             }
