@@ -46,6 +46,7 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
+                part.SetOpacity(0);
                 Debug.Log("[Module OrX HoloCube] === OnStart(StartState state) ===");
                 recalcCloak = true;
                 recalcSurfaceArea();
@@ -90,7 +91,7 @@ namespace OrX
         {
             // SPAWN CRAFT
 
-            yield return new WaitForSeconds(10);
+            yield return new WaitForSeconds(3);
             engageCloak();
         }
 

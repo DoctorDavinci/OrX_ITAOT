@@ -104,7 +104,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20),
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
                 hcName + " already exists .....",
                 titleStyle);
         }
@@ -122,7 +122,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20),
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
                 hcName + "What would you like to do?",
                 titleStyle);
         }
@@ -140,7 +140,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20),
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
                 "Rename your HoloCache below",
                 titleStyle);
         }
@@ -151,7 +151,8 @@ namespace OrX
 
             if (GUI.Button(saveRect, "Add to " + hcName, HighLogic.Skin.button))
             {
-                append = true;
+                OrXHoloCache.instance.SaveConfig();
+                DisableGui();
             }
         }
 
@@ -174,7 +175,6 @@ namespace OrX
             DrawSave(line);
             line++;
             DrawCancel(line);
-            line++;
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
@@ -193,7 +193,7 @@ namespace OrX
                 else
                 {
                     OrXHoloCache.instance.SaveConfig();
-                    OrXHoloCache.instance.GuiEnabledOrXMissions = true;
+                    DisableGui();
                 }
             }
         }
@@ -218,8 +218,7 @@ namespace OrX
 
             if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
             {
-                OrXHoloCache.instance.SaveConfig();
-                OrXHoloCache.instance.GuiEnabledOrXMissions = true;
+                DisableGui();
             }
         }
 

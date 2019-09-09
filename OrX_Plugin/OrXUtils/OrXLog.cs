@@ -34,7 +34,6 @@ namespace OrX
 
         List<string> owned;
 
-
         public bool mission = false;
         public bool story = false;
         public bool building = false;
@@ -56,12 +55,31 @@ namespace OrX
         private int loggedVesselCount = 0;
         private int errorCount = 0;
 
+        // Move Launch 
+        public bool islandRunway = false;
+        public bool TrunkPeninsula = false;
+        public bool KerbiniIsland = false;
+        public bool MidwayIsland = false;
+        public bool NorthPole = false;
+        public bool SouthPole = false;
+        public bool kscIsandChannel = false;
+        public bool kscHarborEast = false;
+        public bool MissileRange200Island = false;
+        public bool kscIslandNewHarbor = false;
+        public bool TirpitzBay = false;
+        public bool KerbiniAtol = false;
+        public bool kscIslandBeach = false;
+        public bool baikerbanur = false;
+        public bool pyramids = false;
+        public bool runway = false;
+        public bool beach = false;
+
+
         private void Awake()
         {
             DontDestroyOnLoad(this);
             instance = this;
         }
-        
         private void Start()
         {
             owned = new List<string>();
@@ -92,7 +110,7 @@ namespace OrX
 
         private void onCrewBoarding(GameEvents.FromToAction<Part, Part> data)
         {
-            AddToVesselList(FlightGlobals.ActiveVessel);
+            AddToVesselList(data.to.vessel);
         }
 
         private void onFlightGlobalsReady(bool data)

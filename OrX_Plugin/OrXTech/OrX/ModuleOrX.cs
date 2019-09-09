@@ -83,8 +83,8 @@ namespace OrX.parts
         Guid id;
 
         private bool setupOrXModule = true;
-        Transform trans;
-
+        public Transform trans;
+        private bool throwBall = false;
         public double hoverAlt = 2;
 
         private bool pilot = false;
@@ -95,10 +95,12 @@ namespace OrX.parts
         public void AddTransform()
         {
             trans = this.part.gameObject.AddComponent<Transform>();
-            trans.forward = forward;
+            trans.parent = this.part.transform;
+            trans.forward = this.part.transform.forward;
             trans.up = this.part.transform.up;
             trans.right = this.part.transform.right;
             trans.localPosition = this.part.transform.localPosition + new Vector3(0,0,5);
+
         }
 
         public override void OnStart(StartState state)
@@ -122,7 +124,7 @@ namespace OrX.parts
             _windowRect = new Rect(Screen.width - 320 - WindowWidth, 140, WindowWidth, _windowHeight);
             _gameUiToggle = true;
             forward = this.part.transform.forward;
-
+            AddTransform();
             base.OnStart(state);
         }
         public void Update()
@@ -134,6 +136,9 @@ namespace OrX.parts
             {
                 if (!orx)
                 {
+                    if (Input.GetKeyDown(KeyCode.F))
+                        throwBall = true;
+
                     if (this.vessel.Splashed)
                     {
                         if (vessel.isActiveVessel)
@@ -273,6 +278,19 @@ namespace OrX.parts
                     }
                 }
             }
+        }
+
+        public override void OnFixedUpdate()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (throwBall)
+                {
+                    throwBall = false;
+                    OrXHoloCache.instance.SpawnEmptyHoloCache();
+                }
+            }
+            base.OnFixedUpdate();
         }
 
         //////////////////////////////////////////////////////////////////////////////

@@ -76,7 +76,7 @@ namespace OrX
 
         #endregion
 
-        [KSPField(unfocusedRange = 5, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "OPEN HOLOCACHE"),
+        [KSPField(unfocusedRange = 5, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOLOCACHE"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool deploy = false;
 
@@ -86,10 +86,10 @@ namespace OrX
             {
                 part.force_activate();
                 Debug.Log("[Module OrX Mission] === OnStart(StartState state) ===");
-                //GameEvents.onVesselWasModified.Add(ReconfigureEvent);
                 recalcCloak = true;
                 recalcSurfaceArea();
-
+                visiblilityLevel = 0;
+                part.SetOpacity(visiblilityLevel);
                 triggerCraft = FlightGlobals.ActiveVessel;
                 altitude = OrXHoloCache.instance._alt;
                 latitude = OrXHoloCache.instance._lat;
@@ -107,52 +107,42 @@ namespace OrX
                     setup = true;
                     triggerCraft = FlightGlobals.ActiveVessel;
                     deploy = false;
+                    part.PartActionWindow.enabled = false;
 
                     if (HoloCacheName != "" && HoloCacheName != string.Empty)
                     {
-                        Debug.Log("[MODULE OrX Mission] === OPENING '" + HoloCacheName + "' === "); ;
+                        Debug.Log("[Module OrX Mission] === OPENING '" + HoloCacheName + "' === "); ;
 
                         OrXHoloCache.instance.OpenHoloCache(HoloCacheName, this.vessel);
-                        //FlightGlobals.ForceSetActiveVessel(this.vessel);
-                    }
-                    else
-                    {
-                        //OrXHoloCache.instance.SetupHolo(this.vessel);
                     }
                 }
             }
             base.OnFixedUpdate();
         }
 
-        public void CloakOn()
-        {
-            cloakOn = true;
-            UpdateCloakField(null, null);
-        }
-
         public void Update()
         {
-            if (visiblilityLevel == maxfade)
-            {
-                this.vessel.DestroyVesselComponents();
-                this.vessel.Die();
-            }
-
-            if (IsTransitioning())
-            {
-                recalcCloak = false;
-                calcNewCloakLevel();
-
-                foreach (Part p in vessel.parts)
-                    if (selfCloak || (p != part))
-                    {
-                        p.SetOpacity(visiblilityLevel);
-                        SetRenderAndShadowStates(p, visiblilityLevel > shadowCutoff, visiblilityLevel > RENDER_THRESHOLD);
-                    }
-            }
-
             if (HighLogic.LoadedSceneIsFlight)
             {
+                if (visiblilityLevel == maxfade && setup)
+                {
+                    this.vessel.DestroyVesselComponents();
+                    this.vessel.Die();
+                }
+
+                if (IsTransitioning())
+                {
+                    recalcCloak = false;
+                    calcNewCloakLevel();
+
+                    foreach (Part p in vessel.parts)
+                        if (selfCloak || (p != part))
+                        {
+                            p.SetOpacity(visiblilityLevel);
+                            SetRenderAndShadowStates(p, visiblilityLevel > shadowCutoff, visiblilityLevel > RENDER_THRESHOLD);
+                        }
+                }
+
                 if (this.vessel.parts.Count == 1)
                 {
                     this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
@@ -168,11 +158,6 @@ namespace OrX
             }
         }
 
-        public void OnDestroy()
-        {
-            //GameEvents.onVesselWasModified.Remove(ReconfigureEvent);
-        }
-
         #region Cloak
 
         public void engageCloak()
@@ -180,15 +165,6 @@ namespace OrX
             cloakOn = true;
             UpdateCloakField(null, null);
         }
-        public void disengageCloak()
-        {
-            if (cloakOn)
-            {
-                cloakOn = false;
-                UpdateCloakField(null, null);
-            }
-        }
-
         public void UpdateCloakField(BaseField field, object oldValueObj)
         {
             // Update in case its been changed
@@ -254,19 +230,6 @@ namespace OrX
                 }
             }
         }
-        private void ReconfigureEvent(Vessel v)
-        {
-            if (v == null) { return; }
-
-            if (v == vessel)
-            {   // This is the cloaking vessel - recalc EC required based on new configuration (unless this is a dock event)
-                recalcCloak = true;
-                recalcSurfaceArea();
-            }
-            else
-            {   
-            }
-        }
         protected void calcNewCloakLevel()
         {
             calcFadeTime();
@@ -274,7 +237,7 @@ namespace OrX
             if (cloakOn && (visiblilityLevel > maxfade))
                 delta = -delta;
 
-            visiblilityLevel = visiblilityLevel + delta;
+            visiblilityLevel += delta;
             visiblilityLevel = Mathf.Clamp(visiblilityLevel, maxfade, UNCLOAKED);
         }
         protected bool IsTransitioning()

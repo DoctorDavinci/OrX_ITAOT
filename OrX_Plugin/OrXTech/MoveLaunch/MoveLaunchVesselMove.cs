@@ -309,7 +309,7 @@ namespace MoveLaunch
 
             PQS bodyPQS = MovingVessel.mainBody.pqsController;
 
-            Vector3d geoCoords = WorldPositionToGeoCoords(MovingVessel.GetWorldPos3D() + (_currMoveVelocity * Time.fixedDeltaTime), MovingVessel.mainBody);
+            Vector3d geoCoords = WorldPositionToGeoCoords(new Vector3d(MovingVessel.latitude, MovingVessel.longitude, MovingVessel.altitude) + (_currMoveVelocity * Time.fixedDeltaTime), MovingVessel.mainBody);
             double lat = geoCoords.x;
             double lng = geoCoords.y;
 
@@ -616,7 +616,8 @@ namespace MoveLaunch
 
         private Vector3 North()
         {
-            Vector3 n = MovingVessel.mainBody.GetWorldSurfacePosition(MovingVessel.latitude + 1, MovingVessel.longitude, MovingVessel.altitude) - MovingVessel.GetWorldPos3D();
+            Vector3 n = MovingVessel.mainBody.GetWorldSurfacePosition(MovingVessel.latitude + 1, MovingVessel.longitude, MovingVessel.altitude) 
+                - new Vector3d(MovingVessel.latitude, MovingVessel.longitude, MovingVessel.altitude);
             n = Vector3.ProjectOnPlane(n, _up);
             return n.normalized;
         }

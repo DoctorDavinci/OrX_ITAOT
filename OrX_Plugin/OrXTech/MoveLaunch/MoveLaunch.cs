@@ -3,12 +3,15 @@ using KSP.UI.Screens;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using OrX;
 
 namespace MoveLaunch
 {
-    [KSPAddon(KSPAddon.Startup.FlightAndEditor, true)]
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class MoveLaunch : MonoBehaviour
     {
+        //ApplicationLauncherButton mlButton = new ApplicationLauncherButton();
+
         private const float WindowWidth = 220;
         private const float DraggableHeight = 40;
         private const float LeftIndent = 12;
@@ -37,18 +40,38 @@ namespace MoveLaunch
 
         private void Awake()
         {
-            DontDestroyOnLoad(this);
+            if (instance)
+                Destroy(instance);
             instance = this;
         }
 
         private void Start()
         {
-            _windowRect = new Rect(Screen.width - 200 -140, 200, WindowWidth, _windowHeight);
-            _windowRect2 = new Rect(Screen.width - 200 - 140, 200, WindowWidth, _windowHeight);
-
-            GameEvents.onHideUI.Add(DisableGui);
-            GameEvents.onShowUI.Add(EnableGui);
-            AddToolbarButton();
+            _windowRect = new Rect(Screen.width - 200 -140, 50, WindowWidth, _windowHeight);
+            _windowRect2 = new Rect(Screen.width - 200 - 140, 50, WindowWidth, _windowHeight);
+            islandRunway = OrXLog.instance.islandRunway;
+            TrunkPeninsula = OrXLog.instance.TrunkPeninsula;
+            KerbiniIsland = OrXLog.instance.KerbiniIsland;
+            MidwayIsland = OrXLog.instance.MidwayIsland;
+            NorthPole = OrXLog.instance.NorthPole;
+            SouthPole = OrXLog.instance.SouthPole;
+            kscIsandChannel = OrXLog.instance.kscIsandChannel;
+            kscHarborEast = OrXLog.instance.kscHarborEast;
+            MissileRange200Island = OrXLog.instance.MissileRange200Island;
+            kscIslandNewHarbor = OrXLog.instance.kscIslandNewHarbor;
+            TirpitzBay = OrXLog.instance.TirpitzBay;
+            KerbiniAtol = OrXLog.instance.KerbiniAtol;
+            kscIslandBeach = OrXLog.instance.kscIslandBeach;
+            baikerbanur = OrXLog.instance.baikerbanur;
+            pyramids = OrXLog.instance.pyramids;
+            runway = OrXLog.instance.runway;
+            beach = OrXLog.instance.beach;
+            //GameEvents.onHideUI.Add(DisableGui);
+            //GameEvents.onShowUI.Add(EnableGui);
+            //Texture buttonTexture = GameDatabase.Instance.GetTexture("OrX/Plugin/ML_icon", false); //texture to use for the button
+            //ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
+            //            ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
+            //HasAddedButton = true;
             _gameUiToggle = true;
             altAdjust = 5;
         }
@@ -162,110 +185,6 @@ namespace MoveLaunch
             }
         }
 
-        IEnumerator SpawnDelayRoutine()
-        {
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
-            {
-                if (!FlightGlobals.ActiveVessel.HoldPhysics && FlightGlobals.ActiveVessel.loaded)
-                {
-                    if (launchSiteChanged)
-                    {
-                        launchSiteChanged = false;
-
-                        if (beach)
-                        {
-                            LaunchToBeach();
-                        }
-
-                        if (kscIslandBeach)
-                        {
-                            LaunchToIslandBeach();
-                        }
-
-                        if (baikerbanur)
-                        {
-                            LaunchToBaikerbanur();
-                        }
-
-                        if (pyramids)
-                        {
-                            LaunchToPyramids();
-                        }
-
-                        if (kscHarborEast)
-                        {
-                            LaunchTokscHarborEast();
-                        }
-
-                        if (kscIsandChannel)
-                        {
-                            LaunchTokscIsandChannel();
-                        }
-
-                        if (kscIslandNewHarbor)
-                        {
-                            LaunchTokscIslandNewHarbor();
-                        }
-
-                        if (MissileRange200Island)
-                        {
-                            LaunchToMissileRange200Island();
-                        }
-
-                        if (TirpitzBay)
-                        {
-                            LaunchToTirpitzBay();
-                        }
-
-                        if (KerbiniAtol)
-                        {
-                            LaunchToKerbiniAtol();
-                        }
-
-                        if (islandRunway)
-                        {
-                            LaunchToIslandRunway();
-                        }
-
-                        if (MidwayIsland)
-                        {
-                            LaunchToMidwayIsland();
-                        }
-
-                        if (TrunkPeninsula)
-                        {
-                            LaunchToTrunkPeninsula();
-                        }
-
-                        if (NorthPole)
-                        {
-                            LaunchToNorthPole();
-                        }
-
-                        if (SouthPole)
-                        {
-                            LaunchToSouthPole();
-                        }
-
-                        if (KerbiniIsland)
-                        {
-                            LaunchToKerbiniIsland();
-                        }
-                    }
-                }
-                else
-                {
-                    yield return new WaitForEndOfFrame();
-                    StartCoroutine(SpawnDelayRoutine());
-                }
-            }
-            else
-            {
-                yield return new WaitForEndOfFrame();
-                StartCoroutine(SpawnDelayRoutine());
-            }
-        }
-
         public void ResetLaunch()
         {
             StartCoroutine(ResetToggle());
@@ -275,19 +194,6 @@ namespace MoveLaunch
         {
             yield return new WaitForSeconds(1);
             ResetLaunchCoords();
-        }
-
-        private void AddToolbarButton()
-        {
-            string textureDir = "VesselMover/Textures/";
-
-            if (!HasAddedButton)
-            {
-                Texture buttonTexture = GameDatabase.Instance.GetTexture(textureDir + "ML_icon", false); //texture to use for the button
-                ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
-                    ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB, buttonTexture);
-                HasAddedButton = true;
-            }
         }
 
         private void ScreenMsg(string msg)
@@ -391,7 +297,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToIslandRunway()
         {
             Debug.Log("[Move Launch] LaunchToIslandRunway");
@@ -400,7 +305,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToTrunkPeninsula()
         {
             Debug.Log("[Move Launch] LaunchToTrunkPeninsula");
@@ -409,7 +313,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToMidwayIsland()
         {
             Debug.Log("[Move Launch] LaunchToRunway");
@@ -418,7 +321,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToSouthPole()
         {
             Debug.Log("[Move Launch] LaunchToSouthPole");
@@ -427,7 +329,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToNorthPole()
         {
             Debug.Log("[Move Launch] LaunchToNorthPole");
@@ -436,7 +337,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToKerbiniIsland()
         {
             Debug.Log("[Move Launch] LaunchToKerbiniIsland");
@@ -445,7 +345,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToBeach()
         {
             Debug.Log("[Move Launch] LaunchToBeach");
@@ -454,7 +353,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchToIslandBeach()
         {
             Debug.Log("[Move Launch] LaunchToIslandBeach");
@@ -463,7 +361,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchToBaikerbanur()
         {
             Debug.Log("[Move Launch] LaunchToBaikerbanur");
@@ -472,7 +369,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchToPyramids()
         {
             Debug.Log("[Move Launch] LaunchToPyramids");
@@ -481,7 +377,6 @@ namespace MoveLaunch
             land = true;
             StartCoroutine(Launch());
         }
-
         public void LaunchTokscHarborEast()
         {
             Debug.Log("[Move Launch] LaunchTokscHarborEast");
@@ -490,7 +385,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchTokscIslandNewHarbor()
         {
             Debug.Log("[Move Launch] LaunchTokscIslandNewHarbor");
@@ -499,7 +393,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchTokscIsandChannel()
         {
             Debug.Log("[Move Launch] LaunchTokscIsandChannel");
@@ -508,7 +401,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchToMissileRange200Island()
         {
             Debug.Log("[Move Launch] LaunchToMissileRange200Island");
@@ -517,7 +409,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchToTirpitzBay()
         {
             Debug.Log("[Move Launch] LaunchToTirpitzBay");
@@ -526,7 +417,6 @@ namespace MoveLaunch
             land = false;
             StartCoroutine(Launch());
         }
-
         public void LaunchToKerbiniAtol()
         {
             Debug.Log("[Move Launch] LaunchToKerbiniAtol");
@@ -538,8 +428,7 @@ namespace MoveLaunch
 
         IEnumerator Launch()
         {
-            Quaternion craftRotation = Quaternion.identity;
-            craftRotation = FlightGlobals.ActiveVessel.srfRelRotation;
+            Quaternion craftRotation = FlightGlobals.ActiveVessel.srfRelRotation;
             FlightGlobals.ActiveVessel.rootPart.AddModule("MoveLaunchMassModifier", true);
             FlightGlobals.ActiveVessel.GetComponent<Rigidbody>().isKinematic = true;
 
@@ -600,17 +489,18 @@ namespace MoveLaunch
             Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
             if (sph)
             {
-                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
+                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.forward, norm);
             }
             else
             {
-                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
+                craftRotation = craftRotation * Quaternion.FromToRotation(Vector3.up, norm);
                 craftRotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * craftRotation;
             }
 
             craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.back);
             craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.down);
             craftRotation = craftRotation * Quaternion.AngleAxis(0, Vector3.left);
+
             FlightGlobals.ActiveVessel.geeForce = 0;
             FlightGlobals.ActiveVessel.geeForce_immediate = 0;
             FlightGlobals.ActiveVessel.SetRotation(craftRotation);
@@ -858,9 +748,30 @@ namespace MoveLaunch
             runway = false;
             beach = true;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
+
+        private void SaveAndLaunch()
+        {
+            OrXLog.instance.TrunkPeninsula = TrunkPeninsula;
+            OrXLog.instance.KerbiniIsland = KerbiniIsland;
+            OrXLog.instance.MidwayIsland = MidwayIsland;
+            OrXLog.instance.NorthPole = NorthPole;
+            OrXLog.instance.SouthPole = SouthPole;
+            OrXLog.instance.kscIsandChannel = kscIsandChannel;
+            OrXLog.instance.kscHarborEast = kscHarborEast;
+            OrXLog.instance.MissileRange200Island = MissileRange200Island;
+            OrXLog.instance.kscIslandNewHarbor = kscIslandNewHarbor;
+            OrXLog.instance.TirpitzBay = TirpitzBay;
+            OrXLog.instance.KerbiniAtol = KerbiniAtol;
+            OrXLog.instance.kscIslandBeach = kscIslandBeach;
+            OrXLog.instance.baikerbanur = baikerbanur;
+            OrXLog.instance.pyramids = pyramids;
+            OrXLog.instance.runway = runway;
+            OrXLog.instance.beach = beach;
+            EditorLogic.fetch.launchVessel();
+        }
+
 
         private void DrawkscHarborEast(float line)
         {
@@ -910,8 +821,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawkscIslandNewHarbor(float line)
@@ -962,8 +872,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawkscIsandChannel(float line)
@@ -1014,8 +923,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawMissileRange200Island(float line)
@@ -1066,8 +974,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawTirpitzBay(float line)
@@ -1118,8 +1025,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawKerbiniAtol(float line)
@@ -1170,8 +1076,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawIslandBeach(float line)
@@ -1222,8 +1127,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawBaikerbanur(float line)
@@ -1274,8 +1178,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawPyramids(float line)
@@ -1326,8 +1229,7 @@ namespace MoveLaunch
             baikerbanur = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawKerbiniIsland(float line)
@@ -1378,8 +1280,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawTrunkPeninsula(float line)
@@ -1430,8 +1331,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawMidwayIsland(float line)
@@ -1482,8 +1382,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawNorthPole(float line)
@@ -1534,8 +1433,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawSouthPole(float line)
@@ -1587,8 +1485,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawIslandRunway(float line)
@@ -1639,8 +1536,7 @@ namespace MoveLaunch
             pyramids = false;
             runway = false;
 
-            EditorLogic.fetch.launchVessel();
-            StartCoroutine(SpawnDelayRoutine());
+            SaveAndLaunch();
         }
 
         private void DrawAltitudeText(float line)
@@ -1700,8 +1596,23 @@ namespace MoveLaunch
             runway = false;
             lat = 0;
             lon = 0;
+            OrXLog.instance.TrunkPeninsula = TrunkPeninsula;
+            OrXLog.instance.KerbiniIsland = KerbiniIsland;
+            OrXLog.instance.MidwayIsland = MidwayIsland;
+            OrXLog.instance.NorthPole = NorthPole;
+            OrXLog.instance.SouthPole = SouthPole;
+            OrXLog.instance.kscIsandChannel = kscIsandChannel;
+            OrXLog.instance.kscHarborEast = kscHarborEast;
+            OrXLog.instance.MissileRange200Island = MissileRange200Island;
+            OrXLog.instance.kscIslandNewHarbor = kscIslandNewHarbor;
+            OrXLog.instance.TirpitzBay = TirpitzBay;
+            OrXLog.instance.KerbiniAtol = KerbiniAtol;
+            OrXLog.instance.kscIslandBeach = kscIslandBeach;
+            OrXLog.instance.baikerbanur = baikerbanur;
+            OrXLog.instance.pyramids = pyramids;
+            OrXLog.instance.runway = runway;
+            OrXLog.instance.beach = beach;
         }
-
 
         #endregion
 

@@ -722,12 +722,14 @@ namespace OrX.spawn
                 ConfigNode temp = new ConfigNode();
                 temp.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/OrX.tmp");
             }
-            v.rootPart.AddModule("ModuleOrX");
             var orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
-            if (orx != null)
+            if (orx == null)
             {
-                orx.orx = true;
+                v.rootPart.AddModule("ModuleOrX", true);
             }
+            orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
+            orx.orx = true;
+
             v.GoOffRails();
             StageManager.BeginFlight();
 

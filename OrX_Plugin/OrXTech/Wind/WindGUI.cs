@@ -6,7 +6,7 @@ using System;
 
 namespace OrXWind
 {
-    [KSPAddon(KSPAddon.Startup.Flight, true)]
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class WindGUI : MonoBehaviour
     {
         private const float WindowWidth = 220;
@@ -58,7 +58,7 @@ namespace OrXWind
 
         private void Awake()
         {
-            DontDestroyOnLoad(this);
+            if (instance) Destroy(instance);
             instance = this;
         }
         private void Start()
@@ -150,7 +150,7 @@ namespace OrXWind
                         {
                             if (!p.Current.Modules.Contains<ModuleSail>())
                             {
-                                p.Current.AddModule("ModuleSail");
+                                p.Current.AddModule("ModuleSail", true);
                             }
                         }
                     }
