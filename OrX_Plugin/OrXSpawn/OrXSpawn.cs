@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using OrX.parts;
 using UnityEngine;
 using KSP.UI.Screens;
 using System.IO;
 using System.Reflection;
 
-namespace OrX.spawn
+namespace OrX
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class OrXSpawn : MonoBehaviour

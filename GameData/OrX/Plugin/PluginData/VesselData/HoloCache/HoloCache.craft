@@ -43,18 +43,4 @@ PART
 	{
 	}
 
-	MODULE
-	{
-		name = ModulrOrXMission
-
-		EVENTS
-		{
-		}
-		ACTIONS
-		{
-		}
-		UPGRADESAPPLIED
-		{
-		}
-	}
 }

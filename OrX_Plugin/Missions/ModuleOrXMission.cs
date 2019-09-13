@@ -57,22 +57,21 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public double longitude = 0;
 
+        public bool hideBoid = false;
         public bool setup = false;
-
-        private float maxfade = 0f;
-        private float surfaceAreaToCloak = 0.0f;
-
-        public bool cloakOn = false;
-
-        private static float UNCLOAKED = 1.0f;
-        private static float RENDER_THRESHOLD = 0.0f;
-        private float fadePerTime = 0.5f;
+        private static float maxfade = 0f;
+        private static float maxVis = 1f;
+        private static float rLevel = 0.0f;
         private bool currentShadowState = true;
-        private bool recalcCloak = true;
-        private float visiblilityLevel = UNCLOAKED;
-        private float fadeTime = 5f;
+        private float tLevel = 0;
+        private float rateOfFade = 5f;
         private float shadowCutoff = 0.0f;
-        private bool selfCloak = true;
+        private bool triggerHide = false;
+        Vector3d pos;
+        public bool boid = false;
+        public int triggerRange = 10;
+        private bool checking = false;
+        public bool isLoaded = false;
 
         #endregion
 
@@ -80,76 +79,113 @@ namespace OrX
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool deploy = false;
 
+        void OnGUI()
+        {
+            if (HighLogic.LoadedSceneIsFlight && isLoaded)
+            {
+                if (boid && !hideBoid)
+                {
+                    DrawTextureOnWorldPos(pos, HoloTargetTexture, new Vector2(8, 8));
+                }
+            }
+        }
+
         public override void OnStart(StartState state)
         {
+            base.OnStart(state);
+
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
-                Debug.Log("[Module OrX Mission] === OnStart(StartState state) ===");
-                recalcCloak = true;
-                recalcSurfaceArea();
-                visiblilityLevel = 0;
-                part.SetOpacity(visiblilityLevel);
+                pos = OrXHoloCache.instance.tpoint;
+                tLevel = 0;
+                part.SetOpacity(tLevel);
                 triggerCraft = FlightGlobals.ActiveVessel;
-                altitude = OrXHoloCache.instance._alt;
-                latitude = OrXHoloCache.instance._lat;
-                longitude = OrXHoloCache.instance._lon;
             }
-            base.OnStart(state);
         }
 
         public override void OnFixedUpdate()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            base.OnFixedUpdate();
+
+            if (!this.vessel.isActiveVessel)
             {
                 if (deploy && !setup)
                 {
                     setup = true;
-                    triggerCraft = FlightGlobals.ActiveVessel;
                     deploy = false;
-                    part.PartActionWindow.enabled = false;
-
                     if (HoloCacheName != "" && HoloCacheName != string.Empty)
                     {
                         Debug.Log("[Module OrX Mission] === OPENING '" + HoloCacheName + "' === "); ;
-
                         OrXHoloCache.instance.OpenHoloCache(HoloCacheName, this.vessel);
                     }
                 }
             }
-            base.OnFixedUpdate();
         }
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (!FlightGlobals.ready || PauseMenu.isOpen || !vessel.loaded || vessel.HoldPhysics)
+                return;
+
+            if (HighLogic.LoadedSceneIsFlight && isLoaded)
             {
-                if (visiblilityLevel == maxfade && setup)
-                {
-                    this.vessel.DestroyVesselComponents();
-                    this.vessel.Die();
-                }
-
-                if (IsTransitioning())
-                {
-                    recalcCloak = false;
-                    calcNewCloakLevel();
-
-                    foreach (Part p in vessel.parts)
-                        if (selfCloak || (p != part))
-                        {
-                            p.SetOpacity(visiblilityLevel);
-                            SetRenderAndShadowStates(p, visiblilityLevel > shadowCutoff, visiblilityLevel > RENDER_THRESHOLD);
-                        }
-                }
-
                 if (this.vessel.parts.Count == 1)
                 {
                     this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-                    this.vessel.IgnoreGForces(240);
-                    this.vessel.geeForce = 0;
-                    this.vessel.geeForce_immediate = 0;
-                    this.vessel.SetPosition(this.vessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude), true);
+                    this.vessel.SetPosition(pos, true);
+                }
+
+                if (tLevel == maxfade && hideBoid)
+                {
+                    if (boid)
+                    {
+                        part.explosionPotential *= 0.2f;
+                        this.part.explode();
+                    }
+                    else
+                    {
+                        this.vessel.Die();
+                    }
+                }
+
+                if (hideBoid && (tLevel > maxfade) || !hideBoid && (tLevel < maxVis) || triggerHide)
+                {
+                    float delta = Time.deltaTime * rateOfFade;
+                    if (hideBoid && (tLevel > maxfade))
+                        delta = -delta;
+
+                    tLevel += delta;
+                    tLevel = Mathf.Clamp(tLevel, maxfade, maxVis);
+                    this.part.SetOpacity(tLevel);
+                    int i;
+
+                    MeshRenderer[] MRs = this.part.GetComponentsInChildren<MeshRenderer>();
+                    for (i = 0; i < MRs.GetLength(0); i++)
+                        MRs[i].enabled = tLevel > rLevel;
+
+                    SkinnedMeshRenderer[] SMRs = this.part.GetComponentsInChildren<SkinnedMeshRenderer>();
+                    for (i = 0; i < SMRs.GetLength(0); i++)
+                        SMRs[i].enabled = tLevel > rLevel;
+
+                    if (tLevel > shadowCutoff != currentShadowState)
+                    {
+                        for (i = 0; i < MRs.GetLength(0); i++)
+                        {
+                            if (tLevel > shadowCutoff)
+                                MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                            else
+                                MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        }
+                        for (i = 0; i < SMRs.GetLength(0); i++)
+                        {
+                            if (tLevel > shadowCutoff)
+                                SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                            else
+                                SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        }
+                        currentShadowState = tLevel > shadowCutoff;
+                    }
                 }
             }
             else
@@ -158,93 +194,48 @@ namespace OrX
             }
         }
 
-        #region Cloak
-
-        public void engageCloak()
+        public void HideHolo()
         {
-            cloakOn = true;
-            UpdateCloakField(null, null);
-        }
-        public void UpdateCloakField(BaseField field, object oldValueObj)
-        {
-            // Update in case its been changed
-            calcFadeTime();
-            recalcSurfaceArea();
-            recalcCloak = true;
-        }
-        private void calcFadeTime()
-        {
-            // In case fadeTime == 0
-            try
-            { fadePerTime = (1 - maxfade) / fadeTime; }
-            catch (Exception)
-            { fadePerTime = 10.0f; }
-        }
-        private void recalcSurfaceArea()
-        {
-            Part p;
-
-            if (vessel != null)
+            if (boid)
             {
-                surfaceAreaToCloak = 0.0f;
-                for (int i = 0; i < vessel.parts.Count; i++)
-                {
-                    p = vessel.parts[i];
-                    if (p != null)
-                        if (selfCloak || (p != part))
-                            surfaceAreaToCloak = (float)(surfaceAreaToCloak + p.skinExposedArea);
-                }
+                part.explosionPotential *= 0.2f;
+                this.part.explode();
+            }
+            else
+            {
+                hideBoid = true;
+                triggerHide = true;
             }
         }
-        private void SetRenderAndShadowStates(Part p, bool shadowsState, bool renderState)
+
+        #region GUI
+
+        private Texture2D redDot;
+        public Texture2D HoloTargetTexture
         {
-            if (p.gameObject != null)
+            get { return redDot ? redDot : redDot = GameDatabase.Instance.GetTexture("OrX/Plugin/HoloTarget", false); }
+        }
+        public static Camera GetMainCamera()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                int i;
-
-                MeshRenderer[] MRs = p.GetComponentsInChildren<MeshRenderer>();
-                for (i = 0; i < MRs.GetLength(0); i++)
-                    MRs[i].enabled = renderState;// || !fullRenderHide;
-
-                SkinnedMeshRenderer[] SMRs = p.GetComponentsInChildren<SkinnedMeshRenderer>();
-                for (i = 0; i < SMRs.GetLength(0); i++)
-                    SMRs[i].enabled = renderState;// || !fullRenderHide;
-
-                if (shadowsState != currentShadowState)
-                {
-                    for (i = 0; i < MRs.GetLength(0); i++)
-                    {
-                        if (shadowsState)
-                            MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                        else
-                            MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    }
-                    for (i = 0; i < SMRs.GetLength(0); i++)
-                    {
-                        if (shadowsState)
-                            SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                        else
-                            SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    }
-                    currentShadowState = shadowsState;
-                }
+                return FlightCamera.fetch.mainCamera;
+            }
+            else
+            {
+                return Camera.main;
             }
         }
-        protected void calcNewCloakLevel()
+        public static void DrawTextureOnWorldPos(Vector3 loc, Texture texture, Vector2 size)
         {
-            calcFadeTime();
-            float delta = Time.deltaTime * fadePerTime;
-            if (cloakOn && (visiblilityLevel > maxfade))
-                delta = -delta;
-
-            visiblilityLevel += delta;
-            visiblilityLevel = Mathf.Clamp(visiblilityLevel, maxfade, UNCLOAKED);
-        }
-        protected bool IsTransitioning()
-        {
-            return (cloakOn && (visiblilityLevel > maxfade)) ||     // Cloaking in progress
-                   (!cloakOn && (visiblilityLevel < UNCLOAKED)) ||  // Uncloaking in progress
-                   recalcCloak;                                     // A forced refresh 
+            Vector3 screenPos = GetMainCamera().WorldToViewportPoint(loc);
+            if (screenPos.z < 0) return; //dont draw if point is behind camera
+            if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
+            if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
+            float xPos = screenPos.x * Screen.width - (0.5f * size.x);
+            float yPos = (1 - screenPos.y) * Screen.height - (0.5f * size.y);
+            Rect iconRect = new Rect(xPos, yPos, size.x, size.y);
+            GUI.DrawTexture(iconRect, texture);
         }
 
         #endregion

@@ -67,12 +67,11 @@
     <Compile Include="OrXTech\Wind\PartModules\ModuleSail.cs" />
     <Compile Include="OrXTech\Wind\PartModules\ModuleWind.cs" />
     <Compile Include="OrXTech\Wind\SpawnCannonBall.cs" />
-    <Compile Include="OrXTech\Wind\WindDirectionIndicator - Copy.cs" />
+    <Compile Include="OrXTech\Wind\WindDirectionIndicator.cs" />
     <Compile Include="OrXTech\Wind\WeatherFactory.cs" />
     <Compile Include="OrXTech\Wind\WindGUI.cs" />
     <Compile Include="OrXUtils\OrXAddModules.cs" />
     <Compile Include="OrXUtils\OrXLog.cs" />
-    <Compile Include="OrXTech\OrXHoloCache\OrXDC.cs" />
     <Compile Include="OrXSpawn\SpawnOrX_HoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCacheinfo.cs" />

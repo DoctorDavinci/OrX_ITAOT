@@ -10,7 +10,7 @@ missionFlag = OrX/Agencies/OrX
 vesselType = Debris
 PART
 {
-	part = DHC.HoloCacheV_4294594558
+	part = HoloCube_4294594558
 	partName = Part
 	persistentId = 416549213
 	pos = 0,10,0
@@ -42,5 +42,4 @@ PART
 	PARTDATA
 	{
 	}
-
 }

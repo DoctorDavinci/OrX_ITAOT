@@ -22,16 +22,16 @@ namespace OrX
 
             try
             {
-              PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
+                PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
                 Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
 
             }
             catch
             {
-                Debug.Log("[ORX] === ERROR ADDING OrX MODULE ===");
+                //Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
             }
 
-			try
+            try
             {
 				PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
                 Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVAfemale ===");
@@ -39,19 +39,7 @@ namespace OrX
             }
             catch
             {
-                Debug.Log("[ORX] === ERROR ADDING OrX MODULE ===");
-            }
-
-            try
-            {
-                if (PartLoader.getPartInfoByName("kerbalEVA").partPrefab.Modules.Contains("ModuleOrX"))
-                {
-                    Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
-                }
-            }
-            catch
-            {
-
+               // Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVAfemale ===");
             }
         }
     }

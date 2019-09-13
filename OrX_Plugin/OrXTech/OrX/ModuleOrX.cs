@@ -4,9 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using OrX.spawn;
 
-namespace OrX.parts
+namespace OrX
 {
     public class ModuleOrX : PartModule, IPartMassModifier
     {
@@ -124,7 +123,7 @@ namespace OrX.parts
             _windowRect = new Rect(Screen.width - 320 - WindowWidth, 140, WindowWidth, _windowHeight);
             _gameUiToggle = true;
             forward = this.part.transform.forward;
-            AddTransform();
+            //AddTransform();
             base.OnStart(state);
         }
         public void Update()
@@ -136,8 +135,10 @@ namespace OrX.parts
             {
                 if (!orx)
                 {
-                    if (Input.GetKeyDown(KeyCode.F))
+                    if (Input.GetKeyDown(KeyCode.H))
+                    {
                         throwBall = true;
+                    }
 
                     if (this.vessel.Splashed)
                     {
@@ -287,7 +288,8 @@ namespace OrX.parts
                 if (throwBall)
                 {
                     throwBall = false;
-                    OrXHoloCache.instance.SpawnEmptyHoloCache();
+                    Debug.Log("======================= OrX - THROWING BALL =======================");
+                    //OrXHoloCache.instance.SpawnHoloCache(new Vector3d(this.vessel.latitude, this.vessel.longitude, this.vessel.altitude), false, true);
                 }
             }
             base.OnFixedUpdate();
