@@ -7,18 +7,19 @@ using OrX.spawn;
 using System.IO;
 using System.Text;
 using System.Linq;
-using OrXWind;
+using FinePrint;
+using FinePrint.Utilities;
 
 
 namespace OrX
 {
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class OrXHoloCache : MonoBehaviour
     {
         #region Fields
 
-        public static Dictionary<OrXHoloCache.OrXCoords, List<OrXTargetInfo>> TargetDatabase;
-        public static Dictionary<OrXHoloCache.OrXCoords, List<OrXHoloCacheinfo>> HoloCacheTargets;
+        public static Dictionary<OrXCoords, List<OrXTargetInfo>> TargetDatabase;
+        public static Dictionary<OrXCoords, List<OrXHoloCacheinfo>> HoloCacheTargets;
         OrXCoords coords;
         public enum OrXCoords
         {
@@ -113,8 +114,6 @@ namespace OrX
 
         //private static Vector2 _displayViewerPosition = Vector2.zero;
         public Vector3d designatedHCGUICoords => designatedHCGUIInfo.gpsCoordinates;
-
-        Vector3d SpawnCoords;
         public Vector3d tpoint;
 
         private Texture2D redDot;
@@ -123,7 +122,7 @@ namespace OrX
             get { return redDot ? redDot : redDot = GameDatabase.Instance.GetTexture("OrX/Plugin/HoloTarget", false); }
         }
 
-        public Vessel holoCube;
+        public Vessel _HoloKron;
 
         public bool addCoords = false;
         Rigidbody rigidBody;
@@ -201,7 +200,7 @@ namespace OrX
 
         public string textBox = string.Empty;
 
-        public bool outlawRacing = false;
+        public bool DAKARRacing = false;
         public bool Scuba = false;
         public bool windRacing = false;
         public bool snowballFight = false;
@@ -229,7 +228,7 @@ namespace OrX
         double _latMission = 0;
         double _lonMission = 0;
         double _altMission = 0;
-        Vessel missionCraft;
+        Vessel challengeHolo;
         bool missionHoloSpawned = false;
 
         public string Password = "OrX";
@@ -302,10 +301,10 @@ namespace OrX
 
         bool updatingScores = false;
 
-        Vector3 nextLocation;
+        Vector3d nextLocation;
         private double targetDistanceMission = 0;
         public string _targetDistance = string.Empty;
-        Vessel targetCoord;
+        Vessel targetCube;
 
         Quaternion rot;
         double la = 0;
@@ -343,7 +342,6 @@ namespace OrX
         public string craftFile = string.Empty;
         private string flagURL = string.Empty;
         private float spawnTimer = 0.0f;
-        private bool loadingCraft = false;
 
         private double _lat_ = 0.0f;
         private double _lon_ = 0.0f;
@@ -355,14 +353,14 @@ namespace OrX
         private int boidCount = 10;
         private int spawnRadius = 0;
         public bool boid = false;
-        float offsetx = 0;
-        float offsety = 0;
-        bool _timer = false;
         public string missionCraftLoc = string.Empty;
         bool spawningMissionCraft = false;
-        bool savingToHoloCube = false;
-        string holoCubeBlueprints = string.Empty;
-        private bool coordSpawn = false;
+        bool savingToHoloKron = false;
+
+
+        double mPerDegree = 0;
+        double degPerMeter = 0;
+        double altOffset = 0;
 
         #endregion
 
@@ -370,8 +368,7 @@ namespace OrX
 
         public void Awake()
         {
-            if (instance)
-                Destroy(instance);
+            DontDestroyOnLoad(this);
             instance = this;
             holoCache = null;
             resetHoloCache = false;
@@ -379,55 +376,58 @@ namespace OrX
         void Start()
         {
             //legacy targetDatabase
-            TargetDatabase = new Dictionary<OrXHoloCache.OrXCoords, List<OrXTargetInfo>>();
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Bop, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Dres, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Duna, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Eeloo, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Eve, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Gilly, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Ike, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Jool, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Kerbin, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Kerbol, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Laythe, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Minmus, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Moho, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Mun, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Pol, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Tylo, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.Vall, new List<OrXTargetInfo>());
-            TargetDatabase.Add(OrXHoloCache.OrXCoords.All, new List<OrXTargetInfo>());
+            TargetDatabase = new Dictionary<OrXCoords, List<OrXTargetInfo>>();
+            TargetDatabase.Add(OrXCoords.Bop, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Dres, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Duna, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Eeloo, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Eve, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Gilly, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Ike, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Jool, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Kerbin, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Kerbol, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Laythe, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Minmus, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Moho, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Mun, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Pol, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Tylo, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.Vall, new List<OrXTargetInfo>());
+            TargetDatabase.Add(OrXCoords.All, new List<OrXTargetInfo>());
 
             if (HoloCacheTargets == null)
             {
-                HoloCacheTargets = new Dictionary<OrXHoloCache.OrXCoords, List<OrXHoloCacheinfo>>();
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Bop, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Dres, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Duna, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Eeloo, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Eve, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Gilly, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Ike, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Jool, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Kerbin, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Kerbol, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Laythe, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Minmus, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Moho, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Mun, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Pol, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Tylo, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Vall, new List<OrXHoloCacheinfo>());
-                HoloCacheTargets.Add(OrXHoloCache.OrXCoords.All, new List<OrXHoloCacheinfo>());
-
+                HoloCacheTargets = new Dictionary<OrXCoords, List<OrXHoloCacheinfo>>();
+                HoloCacheTargets.Add(OrXCoords.Bop, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Dres, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Duna, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Eeloo, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Eve, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Gilly, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Ike, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Jool, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Kerbin, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Kerbol, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Laythe, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Minmus, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Moho, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Mun, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Pol, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Tylo, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.Vall, new List<OrXHoloCacheinfo>());
+                HoloCacheTargets.Add(OrXCoords.All, new List<OrXHoloCacheinfo>());
             }
 
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/"))
                 Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/");
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/Import/"))
                 Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/Import/");
-           
+            if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/Export/"))
+                Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/Export/");
+            if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/"))
+                Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/");
+
             OrXHCGUIEnabled = false;
             AddToolbarButton();
             TargetHCGUI = false;
@@ -511,63 +511,77 @@ namespace OrX
             redErrorShadowStyle = new GUIStyle(redErrorStyle);
             redErrorShadowStyle.normal.textColor = new Color(0, 0, 0, 0.75f);
             GameEvents.onVesselSOIChanged.Add(checkSOI);
-            //GameEvents.onShowUI.Add(ShowGameUI);
+            //GameEvents.OnFlightGlobalsReady.Add(checkHoloTargets);
+            //LoadHoloCacheTargets();
         }
 
-        public void FixedUpdate()
+        /*public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedScene == GameScenes.LOADING) return;
+
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
             {
-                if (!passive && !scanning)
+                if (triggerKerbSetup && triggerVessel.isActiveVessel)
                 {
-                    passive = true;
-                    delay = 300;
-                    StartCoroutine(PassiveCheck());
+                    var kerb = triggerVessel.rootPart.FindModuleImplementing<ModuleOrX>();
+                    if (kerb != null)
+                    {
+                        kerb.holoSave = true;
+                    }
                 }
             }
         }
+        */
+        private void checkHoloTargets(bool data)
+        {
+            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
+            {
+                CheckSOI();
+            }
+        }
+
         void OnDestroy()
         {
             //GameEvents.onHideUI.Remove(HideGameUI);
             //ameEvents.onShowUI.Remove(ShowGameUI);
 
-            HoloCacheTargets = new Dictionary<OrXHoloCache.OrXCoords, List<OrXHoloCacheinfo>>();
-            TargetDatabase[OrXHoloCache.OrXCoords.Bop].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Bop].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Bop);
-            TargetDatabase[OrXHoloCache.OrXCoords.Dres].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Dres].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Dres);
-            TargetDatabase[OrXHoloCache.OrXCoords.Duna].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Duna].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Duna);
-            TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Eeloo);
-            TargetDatabase[OrXHoloCache.OrXCoords.Eve].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Eve].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Eve);
-            TargetDatabase[OrXHoloCache.OrXCoords.Gilly].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Gilly].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Gilly);
-            TargetDatabase[OrXHoloCache.OrXCoords.Ike].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Ike].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Ike);
-            TargetDatabase[OrXHoloCache.OrXCoords.Jool].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Jool].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Jool);
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Kerbin);
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Kerbol);
-            TargetDatabase[OrXHoloCache.OrXCoords.Laythe].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Laythe].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Laythe);
-            TargetDatabase[OrXHoloCache.OrXCoords.Minmus].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Minmus].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Minmus);
-            TargetDatabase[OrXHoloCache.OrXCoords.Moho].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Moho].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Moho);
-            TargetDatabase[OrXHoloCache.OrXCoords.Mun].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Mun].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Mun);
-            TargetDatabase[OrXHoloCache.OrXCoords.Pol].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Pol].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Pol);
-            TargetDatabase[OrXHoloCache.OrXCoords.Tylo].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Tylo].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Tylo);
-            TargetDatabase[OrXHoloCache.OrXCoords.Vall].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.Vall].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Vall);
-            TargetDatabase[OrXHoloCache.OrXCoords.All].RemoveAll(target => target == null);
-            TargetDatabase[OrXHoloCache.OrXCoords.All].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.All);
+            HoloCacheTargets = new Dictionary<OrXCoords, List<OrXHoloCacheinfo>>();
+            TargetDatabase[OrXCoords.Bop].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Bop].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Bop);
+            TargetDatabase[OrXCoords.Dres].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Dres].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Dres);
+            TargetDatabase[OrXCoords.Duna].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Duna].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Duna);
+            TargetDatabase[OrXCoords.Eeloo].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Eeloo].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Eeloo);
+            TargetDatabase[OrXCoords.Eve].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Eve].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Eve);
+            TargetDatabase[OrXCoords.Gilly].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Gilly].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Gilly);
+            TargetDatabase[OrXCoords.Ike].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Ike].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Ike);
+            TargetDatabase[OrXCoords.Jool].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Jool].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Jool);
+            TargetDatabase[OrXCoords.Kerbin].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Kerbin].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Kerbin);
+            TargetDatabase[OrXCoords.Kerbol].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Kerbol].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Kerbol);
+            TargetDatabase[OrXCoords.Laythe].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Laythe].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Laythe);
+            TargetDatabase[OrXCoords.Minmus].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Minmus].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Minmus);
+            TargetDatabase[OrXCoords.Moho].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Moho].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Moho);
+            TargetDatabase[OrXCoords.Mun].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Mun].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Mun);
+            TargetDatabase[OrXCoords.Pol].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Pol].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Pol);
+            TargetDatabase[OrXCoords.Tylo].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Tylo].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Tylo);
+            TargetDatabase[OrXCoords.Vall].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.Vall].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Vall);
+            TargetDatabase[OrXCoords.All].RemoveAll(target => target == null);
+            TargetDatabase[OrXCoords.All].RemoveAll(target => target.OrbitalBodyName == OrXCoords.All);
 
         }
 
@@ -589,7 +603,7 @@ namespace OrX
             aString += ",";
             aString += HoloCacheName;
             aString += ",";
-            aString += Password;
+            aString += ""; // Password;
             aString += ",";
             aString += _lat;
             aString += ",";
@@ -612,7 +626,7 @@ namespace OrX
             bString += ",";
             bString += HoloCacheName;
             bString += ",";
-            bString += Password;
+            bString += "";// Password;
             bString += ",";
             bString += _lat;
             bString += ",";
@@ -633,105 +647,105 @@ namespace OrX
         }
         private void StringToHoloCacheList(string listString)
         {
-            if (FlightGlobals.ActiveVessel.mainBody.name == "Bop")
+            if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbin")
             {
-                coords = OrXHoloCache.OrXCoords.Bop;
+                coords = OrXCoords.Kerbin;
             }
             else
             {
-                if (FlightGlobals.ActiveVessel.mainBody.name == "Dres")
+                if (FlightGlobals.ActiveVessel.mainBody.name == "Mun")
                 {
-                    coords = OrXHoloCache.OrXCoords.Dres;
+                    coords = OrXCoords.Mun;
                 }
                 else
                 {
-                    if (FlightGlobals.ActiveVessel.mainBody.name == "Duna")
+                    if (FlightGlobals.ActiveVessel.mainBody.name == "Minmus")
                     {
-                        coords = OrXHoloCache.OrXCoords.Duna;
+                        coords = OrXCoords.Minmus;
                     }
                     else
                     {
-                        if (FlightGlobals.ActiveVessel.mainBody.name == "Eeloo")
+                        if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbol")
                         {
-                            coords = OrXHoloCache.OrXCoords.Eeloo;
+                            coords = OrXCoords.Kerbol;
                         }
                         else
                         {
-                            if (FlightGlobals.ActiveVessel.mainBody.name == "Eve")
+                            if (FlightGlobals.ActiveVessel.mainBody.name == "Duna")
                             {
-                                coords = OrXHoloCache.OrXCoords.Eve;
+                                coords = OrXCoords.Duna;
                             }
                             else
                             {
                                 if (FlightGlobals.ActiveVessel.mainBody.name == "Gilly")
                                 {
-                                    coords = OrXHoloCache.OrXCoords.Gilly;
+                                    coords = OrXCoords.Gilly;
                                 }
                                 else
                                 {
                                     if (FlightGlobals.ActiveVessel.mainBody.name == "Ike")
                                     {
-                                        coords = OrXHoloCache.OrXCoords.Ike;
+                                        coords = OrXCoords.Ike;
                                     }
                                     else
                                     {
                                         if (FlightGlobals.ActiveVessel.mainBody.name == "Jool")
                                         {
-                                            coords = OrXHoloCache.OrXCoords.Jool;
+                                            coords = OrXCoords.Jool;
                                         }
                                         else
                                         {
-                                            if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbin")
+                                            if (FlightGlobals.ActiveVessel.mainBody.name == "Bop")
                                             {
-                                                coords = OrXHoloCache.OrXCoords.Kerbin;
+                                                coords = OrXCoords.Bop;
                                             }
                                             else
                                             {
-                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbol")
+                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Dres")
                                                 {
-                                                    coords = OrXHoloCache.OrXCoords.Kerbol;
+                                                    coords = OrXCoords.Dres;
                                                 }
                                                 else
                                                 {
                                                     if (FlightGlobals.ActiveVessel.mainBody.name == "Laythe")
                                                     {
-                                                        coords = OrXHoloCache.OrXCoords.Laythe;
+                                                        coords = OrXCoords.Laythe;
                                                     }
                                                     else
                                                     {
-                                                        if (FlightGlobals.ActiveVessel.mainBody.name == "Minmus")
+                                                        if (FlightGlobals.ActiveVessel.mainBody.name == "Eeloo")
                                                         {
-                                                            coords = OrXHoloCache.OrXCoords.Minmus;
+                                                            coords = OrXCoords.Eeloo;
                                                         }
                                                         else
                                                         {
                                                             if (FlightGlobals.ActiveVessel.mainBody.name == "Moho")
                                                             {
-                                                                coords = OrXHoloCache.OrXCoords.Moho;
+                                                                coords = OrXCoords.Moho;
                                                             }
                                                             else
                                                             {
-                                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Mun")
+                                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Eve")
                                                                 {
-                                                                    coords = OrXHoloCache.OrXCoords.Mun;
+                                                                    coords = OrXCoords.Eve;
                                                                 }
                                                                 else
                                                                 {
                                                                     if (FlightGlobals.ActiveVessel.mainBody.name == "Pol")
                                                                     {
-                                                                        coords = OrXHoloCache.OrXCoords.Pol;
+                                                                        coords = OrXCoords.Pol;
                                                                     }
                                                                     else
                                                                     {
                                                                         if (FlightGlobals.ActiveVessel.mainBody.name == "Tylo")
                                                                         {
-                                                                            coords = OrXHoloCache.OrXCoords.Tylo;
+                                                                            coords = OrXCoords.Tylo;
                                                                         }
                                                                         else
                                                                         {
                                                                             if (FlightGlobals.ActiveVessel.mainBody.name == "Vall")
                                                                             {
-                                                                                coords = OrXHoloCache.OrXCoords.Vall;
+                                                                                coords = OrXCoords.Vall;
                                                                             }
                                                                         }
                                                                     }
@@ -778,7 +792,23 @@ namespace OrX
                             double alt = double.Parse(data[5]);
                             OrXHoloCacheinfo newInfo = new OrXHoloCacheinfo(new Vector3d(lat, longi, alt), craftToSpawn);
                             HoloCacheTargets[coords].Add(newInfo);
-                            HoloCacheTargets[OrXHoloCache.OrXCoords.All].Add(newInfo);
+                            HoloCacheTargets[OrXCoords.All].Add(newInfo);
+                            Vector3d surfacePoint = new Vector3d(lat, longi, alt);
+                            Waypoint waypoint = new Waypoint();
+                            System.Random r = new System.Random();
+                            waypointColor = (int)(r.NextDouble() * seeds.Count());
+                            waypoint.id = "marker";
+                            waypoint.seed = seeds[waypointColor];
+                            waypoint.name = craftToSpawn;
+                            waypoint.celestialName = name;
+                            waypoint.longitude = longi;
+                            waypoint.latitude = lat;
+                            waypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
+                            waypoint.altitude = alt - waypoint.height;
+
+                            Debug.Log("[OrX Target Manager] ====================================== ADDING WAYPOINT FOR " + craftToSpawn + " ===");
+                            ScenarioCustomWaypoints.RemoveWaypoint(waypoint);
+                            ScenarioCustomWaypoints.AddWaypoint(waypoint);
                         }
                     }
                 }
@@ -788,34 +818,19 @@ namespace OrX
                 Debug.Log("[OrX Target Manager] HoloCache config file processed ...... ");
             }
         }
-        public static void UseMouseEventInRect(Rect rect)
-        {
-            if (MouseIsInRect(rect) && Event.current.isMouse && (Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseUp))
-            {
-                Event.current.Use();
-            }
-        }
-        public static bool MouseIsInRect(Rect rect)
-        {
-            Vector3 inverseMousePos = new Vector3(Input.mousePosition.x, Screen.height - Input.mousePosition.y, 0);
-            return rect.Contains(inverseMousePos);
-        }
 
-        public string GetHeading(Vessel v)
-        {
-            Vector3 UpVect = (v.transform.position - v.mainBody.position).normalized;
-            Vector3 EastVect = v.mainBody.getRFrmVel(v.CoM).normalized;
-            Vector3 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
-            heading = Vector3.Angle(v.transform.forward, NorthVect);
-            if (Math.Sign(Vector3.Dot(v.transform.forward, EastVect)) < 0)
-            {
-                heading = 360 - heading; // westward headings become angles greater than 180
-            }
-
-            return heading.ToString();
-        }
         private void ResetData()
         {
+            if (OrXLog.instance.keysSet)
+            {
+                OrXLog.instance.ResetFocusKeys();
+            }
+            addCoords = false;
+            addCoordSetup = false;
+            holo = false;
+            spawnByOrx = false;
+            challengeRunning = false;
+
             nameSB0 = string.Empty;
             timeSB0 = string.Empty;
             nameSB1 = string.Empty;
@@ -889,46 +904,46 @@ namespace OrX
             {
                 yield return new WaitForSeconds(5);
 
-                TargetDatabase[OrXHoloCache.OrXCoords.Bop].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Bop].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Bop);
-                TargetDatabase[OrXHoloCache.OrXCoords.Dres].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Dres].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Dres);
-                TargetDatabase[OrXHoloCache.OrXCoords.Duna].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Duna].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Duna);
-                TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Eeloo);
-                TargetDatabase[OrXHoloCache.OrXCoords.Eve].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Eve].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Eve);
-                TargetDatabase[OrXHoloCache.OrXCoords.Gilly].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Gilly].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Gilly);
-                TargetDatabase[OrXHoloCache.OrXCoords.Ike].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Ike].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Ike);
-                TargetDatabase[OrXHoloCache.OrXCoords.Jool].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Jool].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Jool);
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Kerbin);
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Kerbol);
-                TargetDatabase[OrXHoloCache.OrXCoords.Laythe].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Laythe].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Laythe);
-                TargetDatabase[OrXHoloCache.OrXCoords.Minmus].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Minmus].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Minmus);
-                TargetDatabase[OrXHoloCache.OrXCoords.Moho].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Moho].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Moho);
-                TargetDatabase[OrXHoloCache.OrXCoords.Mun].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Mun].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Mun);
-                TargetDatabase[OrXHoloCache.OrXCoords.Pol].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Pol].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Pol);
-                TargetDatabase[OrXHoloCache.OrXCoords.Tylo].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Tylo].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Tylo);
-                TargetDatabase[OrXHoloCache.OrXCoords.Vall].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.Vall].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.Vall);
-                TargetDatabase[OrXHoloCache.OrXCoords.All].RemoveAll(target => target == null);
-                TargetDatabase[OrXHoloCache.OrXCoords.All].RemoveAll(target => target.OrbitalBodyName == OrXHoloCache.OrXCoords.All);
+                TargetDatabase[OrXCoords.Bop].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Bop].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Bop);
+                TargetDatabase[OrXCoords.Dres].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Dres].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Dres);
+                TargetDatabase[OrXCoords.Duna].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Duna].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Duna);
+                TargetDatabase[OrXCoords.Eeloo].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Eeloo].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Eeloo);
+                TargetDatabase[OrXCoords.Eve].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Eve].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Eve);
+                TargetDatabase[OrXCoords.Gilly].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Gilly].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Gilly);
+                TargetDatabase[OrXCoords.Ike].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Ike].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Ike);
+                TargetDatabase[OrXCoords.Jool].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Jool].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Jool);
+                TargetDatabase[OrXCoords.Kerbin].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Kerbin].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Kerbin);
+                TargetDatabase[OrXCoords.Kerbol].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Kerbol].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Kerbol);
+                TargetDatabase[OrXCoords.Laythe].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Laythe].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Laythe);
+                TargetDatabase[OrXCoords.Minmus].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Minmus].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Minmus);
+                TargetDatabase[OrXCoords.Moho].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Moho].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Moho);
+                TargetDatabase[OrXCoords.Mun].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Mun].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Mun);
+                TargetDatabase[OrXCoords.Pol].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Pol].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Pol);
+                TargetDatabase[OrXCoords.Tylo].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Tylo].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Tylo);
+                TargetDatabase[OrXCoords.Vall].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.Vall].RemoveAll(target => target.OrbitalBodyName == OrXCoords.Vall);
+                TargetDatabase[OrXCoords.All].RemoveAll(target => target == null);
+                TargetDatabase[OrXCoords.All].RemoveAll(target => target.OrbitalBodyName == OrXCoords.All);
 
             }
         }
-        public void RemoveTarget(OrXTargetInfo target, OrXHoloCache.OrXCoords OrbitalBodyName)
+        public void RemoveTarget(OrXTargetInfo target, OrXCoords OrbitalBodyName)
         {
             TargetDatabase[OrbitalBodyName].Remove(target);
 
@@ -937,79 +952,79 @@ namespace OrX
         {
             if (FlightGlobals.currentMainBody.name == "Bop")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Bop].Add(target);
+                TargetDatabase[OrXCoords.Bop].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Dres")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Dres].Add(target);
+                TargetDatabase[OrXCoords.Dres].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Duna")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Duna].Add(target);
+                TargetDatabase[OrXCoords.Duna].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Eeloo")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].Add(target);
+                TargetDatabase[OrXCoords.Eeloo].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Eve")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Eve].Add(target);
+                TargetDatabase[OrXCoords.Eve].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Gilly")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Gilly].Add(target);
+                TargetDatabase[OrXCoords.Gilly].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Ike")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Ike].Add(target);
+                TargetDatabase[OrXCoords.Ike].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Jool")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Jool].Add(target);
+                TargetDatabase[OrXCoords.Jool].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Kerbin")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].Add(target);
+                TargetDatabase[OrXCoords.Kerbin].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Kerbol")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].Add(target);
+                TargetDatabase[OrXCoords.Kerbol].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Laythe")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Laythe].Add(target);
+                TargetDatabase[OrXCoords.Laythe].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Minmus")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Minmus].Add(target);
+                TargetDatabase[OrXCoords.Minmus].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Moho")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Moho].Add(target);
+                TargetDatabase[OrXCoords.Moho].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Mun")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Mun].Add(target);
+                TargetDatabase[OrXCoords.Mun].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Pol")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Pol].Add(target);
+                TargetDatabase[OrXCoords.Pol].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Tylo")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Tylo].Add(target);
+                TargetDatabase[OrXCoords.Tylo].Add(target);
             }
             if (FlightGlobals.currentMainBody.name == "Vall")
             {
-                TargetDatabase[OrXHoloCache.OrXCoords.Vall].Add(target);
+                TargetDatabase[OrXCoords.Vall].Add(target);
             }
 
-            TargetDatabase[OrXHoloCache.OrXCoords.All].Add(target);
+            TargetDatabase[OrXCoords.All].Add(target);
 
         }
         public void ClearDatabase()
         {
-            foreach (OrXHoloCache.OrXCoords t in TargetDatabase.Keys)
+            foreach (OrXCoords t in TargetDatabase.Keys)
             {
                 foreach (OrXTargetInfo target in TargetDatabase[t])
                 {
@@ -1017,32 +1032,32 @@ namespace OrX
                 }
             }
 
-            TargetDatabase[OrXHoloCache.OrXCoords.Bop].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Dres].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Duna].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Eeloo].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Eve].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Gilly].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Ike].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Jool].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbin].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Kerbol].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Laythe].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Minmus].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Moho].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Moho].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Mun].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Pol].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Tylo].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.Vall].Clear();
-            TargetDatabase[OrXHoloCache.OrXCoords.All].Clear();
-
+            TargetDatabase[OrXCoords.Bop].Clear();
+            TargetDatabase[OrXCoords.Dres].Clear();
+            TargetDatabase[OrXCoords.Duna].Clear();
+            TargetDatabase[OrXCoords.Eeloo].Clear();
+            TargetDatabase[OrXCoords.Eve].Clear();
+            TargetDatabase[OrXCoords.Gilly].Clear();
+            TargetDatabase[OrXCoords.Ike].Clear();
+            TargetDatabase[OrXCoords.Jool].Clear();
+            TargetDatabase[OrXCoords.Kerbin].Clear();
+            TargetDatabase[OrXCoords.Kerbol].Clear();
+            TargetDatabase[OrXCoords.Laythe].Clear();
+            TargetDatabase[OrXCoords.Minmus].Clear();
+            TargetDatabase[OrXCoords.Moho].Clear();
+            TargetDatabase[OrXCoords.Moho].Clear();
+            TargetDatabase[OrXCoords.Mun].Clear();
+            TargetDatabase[OrXCoords.Pol].Clear();
+            TargetDatabase[OrXCoords.Tylo].Clear();
+            TargetDatabase[OrXCoords.Vall].Clear();
+            TargetDatabase[OrXCoords.All].Clear();
+            CheckSOI();
         }
 
         public void LoadHoloCacheTargets()
         {
             HoloCacheName = "";
-
+            //CheckSOI();
             TargetHCGUI = false;
             scanning = false;
             checking = false;
@@ -1053,42 +1068,44 @@ namespace OrX
 
             if (HoloCacheTargets == null)
             {
-                HoloCacheTargets = new Dictionary<OrXHoloCache.OrXCoords, List<OrXHoloCacheinfo>>();
+                HoloCacheTargets = new Dictionary<OrXCoords, List<OrXHoloCacheinfo>>();
             }
             HoloCacheTargets.Clear();
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Bop, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Dres, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Duna, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Eeloo, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Eve, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Gilly, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Ike, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Jool, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Kerbin, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Kerbol, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Laythe, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Minmus, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Moho, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Mun, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Pol, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Tylo, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.Vall, new List<OrXHoloCacheinfo>());
-            HoloCacheTargets.Add(OrXHoloCache.OrXCoords.All, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Bop, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Dres, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Duna, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Eeloo, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Eve, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Gilly, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Ike, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Jool, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Kerbin, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Kerbol, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Laythe, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Minmus, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Moho, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Mun, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Pol, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Tylo, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.Vall, new List<OrXHoloCacheinfo>());
+            HoloCacheTargets.Add(OrXCoords.All, new List<OrXHoloCacheinfo>());
 
-            string soi = FlightGlobals.currentMainBody.name;
             string holoCacheLoc = UrlDir.ApplicationRootPath + "GameData/";
             var files = new List<string>(Directory.GetFiles(holoCacheLoc, "*.orx", SearchOption.AllDirectories));
             bool _spawned = true;
-            hcCount = 0;
+            List<string> holoList = new List<string>();
 
             if (files != null)
             {
                 List<string>.Enumerator cfgsToAdd = files.GetEnumerator();
                 while (cfgsToAdd.MoveNext())
                 {
+                    bool loadWaypoint = false;
+
                     try
                     {
                         ConfigNode fileNode = ConfigNode.Load(cfgsToAdd.Current);
+                        hcCount = 0;
 
                         if (fileNode != null && fileNode.HasNode("OrX"))
                         {
@@ -1100,15 +1117,15 @@ namespace OrX
                                 {
                                     if (spawnCheck.name.Contains("OrXHoloCacheCoords"))
                                     {
-                                        Debug.Log("[OrX Target Manager] === FOUND HOLOCACHE === " + hcCount); ;
+                                        Debug.Log("[OrX Holo Loader] === FOUND HOLOCACHE === " + hcCount);
                                         foreach (ConfigNode.Value cv in spawnCheck.values)
                                         {
                                             if (cv.name == "spawned")
                                             {
                                                 if (cv.value == "False")
                                                 {
-                                                    Debug.Log("[OrX Target Manager] === HOLOCACHE " + hcCount + " has not spawned ... ");
-
+                                                    Debug.Log("[OrX Holo Loader] === HOLOCACHE " + hcCount + " has not spawned ... ");
+                                                    loadWaypoint = true;
                                                     _spawned = false;
                                                     break;
                                                 }
@@ -1117,25 +1134,27 @@ namespace OrX
                                                     var complete = spawnCheck.GetValue("completed");
                                                     if (complete == "False")
                                                     {
-                                                        Debug.Log("[OrX Target Manager] === HOLOCACHE " + hcCount + " has not been completed ... END TRANSMISSION"); ;
+                                                        Debug.Log("[OrX Holo Loader] === HOLOCACHE " + hcCount + " has spawned but has not been completed ... END TRANSMISSION");
                                                         _spawned = false;
+                                                        hcCount = int.MaxValue;
                                                         break;
                                                     }
                                                     else
                                                     {
-                                                        Debug.Log("[OrX Target Manager] === HOLOCACHE " + hcCount + " has been completed ... CHECKING FOR EXTRAS"); ;
+                                                        Debug.Log("[OrX Holo Loader] === HOLOCACHE " + hcCount + " has been completed ... CHECKING FOR EXTRAS");
                                                         if (spawnCheck.HasValue("extras"))
                                                         {
                                                             var t = spawnCheck.GetValue("extras");
                                                             if (t == "False")
                                                             {
-                                                                Debug.Log("[OrX Target Manager] === HOLOCACHE " + hcCount + " has no extras ... END TRANSMISSION");
+                                                                Debug.Log("[OrX Holo Loader] === HOLOCACHE " + hcCount + " has no extras ... END TRANSMISSION");
                                                                 _spawned = false;
+                                                                hcCount = int.MaxValue;
                                                                 break;
                                                             }
                                                             else
                                                             {
-                                                                Debug.Log("[OrX Target Manager] === HOLOCACHE " + hcCount + " has extras ... CONTINUING");
+                                                                Debug.Log("[OrX Holo Loader] === HOLOCACHE " + hcCount + " has extras ... CONTINUING");
                                                                 _spawned = true;
                                                                 hcCount += 1;
                                                             }
@@ -1148,35 +1167,68 @@ namespace OrX
                                 }
                             }
 
-                            foreach (ConfigNode HoloCacheNode in node.GetNodes("OrXHoloCacheCoords" + hcCount))
+                            if (node.HasNode("OrXHoloCacheCoords" + hcCount))
                             {
-                                if (HoloCacheNode.HasValue("SOI"))
+                                foreach (ConfigNode HoloCacheNode in node.GetNodes("OrXHoloCacheCoords" + hcCount))
                                 {
-                                    if (HoloCacheNode.HasValue("Targets"))
+                                    if (HoloCacheNode.HasValue("SOI"))
                                     {
-                                        string targetString = HoloCacheNode.GetValue("Targets");
-                                        if (targetString == string.Empty)
+                                        string _soi = HoloCacheNode.GetValue("SOI");
+
+                                        if (_soi == FlightGlobals.currentMainBody.name)
                                         {
-                                            Debug.Log("[OrX HoloCache] OrX HoloCache Target string was empty!");
-                                            return;
+                                            if (HoloCacheNode.HasValue("Targets"))
+                                            {
+                                                string targetString = HoloCacheNode.GetValue("Targets");
+                                                if (targetString == string.Empty)
+                                                {
+                                                    Debug.Log("[OrX Holo Loader] OrX HoloCache Target string was empty!");
+                                                    break;
+                                                }
+
+                                                if (loadWaypoint)
+                                                {
+                                                    Debug.Log("[OrX Holo Loader] Loaded OrX HoloCache Targets");
+
+                                                    StringToHoloCacheList(targetString);
+                                                }
+                                                else
+                                                {
+                                                    Debug.Log("[OrX Holo Loader] HoloCache has already been spawned .... SKIPPING");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Debug.Log("[OrX Holo Loader] No OrX HoloCache Targets value found!");
+                                            }
                                         }
-                                        StringToHoloCacheList(targetString);
-                                        Debug.Log("[OrX HoloCache] Loaded OrX HoloCache Targets");
-                                    }
-                                    else
-                                    {
-                                        Debug.Log("[OrX HoloCache] No OrX HoloCache Targets value found!");
+                                        else
+                                        {
+                                            Debug.Log("[OrX Holo Loader] HoloCache Target Outside Of Current SOI ...... SKIPPING");
+                                        }
                                     }
                                 }
+                            }
+                            else
+                            {
+                                Debug.Log("[OrX Holo Loader] HoloCache " + hcCount + " doesn't exist ...... Continuing");
                             }
                         }
                     }
                     catch (Exception e)
                     {
-                        Debug.Log("[OrX Target Manager] HoloCache Targets Out Of Range ...... Continuing");
+                        Debug.Log("[OrX Holo Loader] HoloCache Targets Out Of Range ...... Continuing");
                     }
                 }
                 cfgsToAdd.Dispose();
+
+                if (HighLogic.LoadedSceneIsFlight)
+                {
+                    if (!challengeRunning && !buildingMission)
+                    {
+                        TargetDistance();
+                    }
+                }
             }
             else
             {
@@ -1184,140 +1236,114 @@ namespace OrX
             }
             reload = false;
         }
-        IEnumerator PassiveCheck()
-        {
-            CheckSOI();
-            yield return new WaitForSeconds(delay);
-            passive = false;
-        }
+
         private void checkSOI(GameEvents.HostedFromToAction<Vessel, CelestialBody> data)
         {
             CheckSOI();
         }
         public void CheckSOI()
         {
-            var SOIcheck = FlightGlobals.ActiveVessel.orbitDriver.orbit.referenceBody;
-            if (SOIcheck != SOIcurrent)
-            {
-                SOIcurrent = FlightGlobals.ActiveVessel.orbitDriver.orbit.referenceBody;
+            soi = FlightGlobals.ActiveVessel.mainBody.name;
 
-                if (FlightGlobals.ActiveVessel.mainBody.name == "Bop")
+            if (soi == "Bop")
+            {
+                coords = OrXCoords.Bop;
+            }
+            else
+            {
+                if (soi == "Dres")
                 {
-                    coords = OrXCoords.Bop;
-                    soi = "Bop";
+                    coords = OrXCoords.Dres;
                 }
                 else
                 {
-                    if (FlightGlobals.ActiveVessel.mainBody.name == "Dres")
+                    if (soi == "Duna")
                     {
-                        coords = OrXCoords.Dres;
-                        soi = "Dres";
+                        coords = OrXCoords.Duna;
                     }
                     else
                     {
-                        if (FlightGlobals.ActiveVessel.mainBody.name == "Duna")
+                        if (soi == "Eeloo")
                         {
-                            soi = "Duna";
-                            coords = OrXCoords.Duna;
+                            coords = OrXCoords.Eeloo;
                         }
                         else
                         {
-                            if (FlightGlobals.ActiveVessel.mainBody.name == "Eeloo")
+                            if (soi == "Eve")
                             {
-                                soi = "Eeloo";
-                                coords = OrXCoords.Eeloo;
+                                coords = OrXCoords.Eve;
                             }
                             else
                             {
-                                if (FlightGlobals.ActiveVessel.mainBody.name == "Eve")
+                                if (soi == "Gilly")
                                 {
-                                    soi = "Eve";
-                                    coords = OrXCoords.Eve;
+                                    coords = OrXCoords.Gilly;
                                 }
                                 else
                                 {
-                                    if (FlightGlobals.ActiveVessel.mainBody.name == "Gilly")
+                                    if (soi == "Ike")
                                     {
-                                        soi = "Gilly";
-                                        coords = OrXCoords.Gilly;
+                                        coords = OrXCoords.Ike;
                                     }
                                     else
                                     {
-                                        if (FlightGlobals.ActiveVessel.mainBody.name == "Ike")
+                                        if (soi == "Jool")
                                         {
-                                            soi = "Ike";
-                                            coords = OrXCoords.Ike;
+                                            coords = OrXCoords.Jool;
                                         }
                                         else
                                         {
-                                            if (FlightGlobals.ActiveVessel.mainBody.name == "Jool")
+                                            if (soi == "Kerbin")
                                             {
-                                                soi = "Jool";
-                                                coords = OrXCoords.Jool;
+                                                coords = OrXCoords.Kerbin;
                                             }
                                             else
                                             {
-                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbin")
+                                                if (soi == "Kerbol")
                                                 {
-                                                    soi = "Kerbin";
-                                                    coords = OrXCoords.Kerbin;
+                                                    coords = OrXCoords.Kerbol;
                                                 }
                                                 else
                                                 {
-                                                    if (FlightGlobals.ActiveVessel.mainBody.name == "Kerbol")
+                                                    if (soi == "Laythe")
                                                     {
-                                                        soi = "Kerbol";
-                                                        coords = OrXCoords.Kerbol;
+                                                        coords = OrXCoords.Laythe;
                                                     }
                                                     else
                                                     {
-                                                        if (FlightGlobals.ActiveVessel.mainBody.name == "Laythe")
+                                                        if (soi == "Minmus")
                                                         {
-                                                            soi = "Laythe";
-                                                            coords = OrXCoords.Laythe;
+                                                            coords = OrXCoords.Minmus;
                                                         }
                                                         else
                                                         {
-                                                            if (FlightGlobals.ActiveVessel.mainBody.name == "Minmus")
+                                                            if (soi == "Moho")
                                                             {
-                                                                soi = "Minmus";
-                                                                coords = OrXCoords.Minmus;
+                                                                coords = OrXCoords.Moho;
                                                             }
                                                             else
                                                             {
-                                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Moho")
+                                                                if (soi == "Mun")
                                                                 {
-                                                                    soi = "Moho";
-                                                                    coords = OrXCoords.Moho;
+                                                                    coords = OrXCoords.Mun;
                                                                 }
                                                                 else
                                                                 {
-                                                                    if (FlightGlobals.ActiveVessel.mainBody.name == "Mun")
+                                                                    if (soi == "Pol")
                                                                     {
-                                                                        soi = "Mun";
-                                                                        coords = OrXCoords.Mun;
+                                                                        coords = OrXCoords.Pol;
                                                                     }
                                                                     else
                                                                     {
-                                                                        if (FlightGlobals.ActiveVessel.mainBody.name == "Pol")
+                                                                        if (soi == "Tylo")
                                                                         {
-                                                                            soi = "Pol";
-                                                                            coords = OrXCoords.Pol;
+                                                                            coords = OrXCoords.Tylo;
                                                                         }
                                                                         else
                                                                         {
-                                                                            if (FlightGlobals.ActiveVessel.mainBody.name == "Tylo")
+                                                                            if (soi == "Vall")
                                                                             {
-                                                                                soi = "Tylo";
-                                                                                coords = OrXCoords.Tylo;
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                if (FlightGlobals.ActiveVessel.mainBody.name == "Vall")
-                                                                                {
-                                                                                    soi = "Vall";
-                                                                                    coords = OrXCoords.Vall;
-                                                                                }
+                                                                                coords = OrXCoords.Vall;
                                                                             }
                                                                         }
                                                                     }
@@ -1335,6 +1361,30 @@ namespace OrX
                     }
                 }
             }
+
+            if (!challengeRunning)
+            {
+                LoadHoloCacheTargets();
+            }
+        }
+
+        private static int[] seeds = new int[] {
+            269, 316, 876, 9, 569, 159, 262, 822, 412, 972, 105, 665, 255, 358, 1375, 51,
+            98, 1115, 248, 808, 398, 501, 91, 651, 241, 344, 904, 37, 597, 187, 747, 337,
+            384, 487, 77, 180, 1197, 330, 890, 23, 583, 173, 276, 1293, 426, 16, 119, 679,
+        };
+
+        public static double TerrainHeight(double latitude, double longitude, CelestialBody body)
+        {
+            if (body.pqsController == null)
+            {
+                return 0;
+            }
+
+            double latRads = Math.PI / 180.0 * latitude;
+            double lonRads = Math.PI / 180.0 * longitude;
+            Vector3d radialVector = new Vector3d(Math.Cos(latRads) * Math.Cos(lonRads), Math.Sin(latRads), Math.Cos(latRads) * Math.Sin(lonRads));
+            return Math.Max(body.pqsController.GetSurfaceHeight(radialVector) - body.pqsController.radius, 0.0);
         }
 
         internal class CrewData
@@ -1410,10 +1460,21 @@ namespace OrX
 
         #region Missions
 
+        List<Waypoint> waypoints = new List<Waypoint>();
+
         public void SaveConfig()
         {
+            triggerKerbSetup = false;
+            _triggered = false;
+            addCoordSetup = false;
+
             string hConfigLoc = UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/"
                 + HoloCacheName + "/" + HoloCacheName + ".orx";
+
+            if (OrXLog.instance.keysSet)
+            {
+                OrXLog.instance.ResetFocusKeys();
+            }
 
             mCount = 0;
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName))
@@ -1426,10 +1487,13 @@ namespace OrX
                 _file = new ConfigNode();
                 _file.AddValue("name", HoloCacheName);
                 _file.AddNode("OrX");
-                _file.Save("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                _file.Save("GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
             }
 
             _file = ConfigNode.Load(hConfigLoc);
+
+            ConfigNode _missionMain = new ConfigNode();
+
             ConfigNode node = null;
             if (_file != null && _file.HasNode("OrX"))
             {
@@ -1667,6 +1731,26 @@ namespace OrX
                 Debug.Log("[OrX Mission] " + HoloCacheName + " Saved");
                 _file = ConfigNode.Load(hConfigLoc);
                 node = _file.GetNode("OrX");
+                ConfigNode craftData = node.AddNode("HC" + hcCount + "OrXv0");
+                ConfigNode location = craftData.AddNode("coords");
+                craftData.AddValue("vesselName", craftToAddMission);
+                location.AddValue("holo", hcCount);
+                location.AddValue("pas", Password);
+                location.AddValue("lat", FlightGlobals.ActiveVessel.latitude);
+                location.AddValue("lon", FlightGlobals.ActiveVessel.longitude);
+                location.AddValue("alt", FlightGlobals.ActiveVessel.altitude);
+                location.AddValue("heading", 0);
+                location.AddValue("pitch", 0);
+                location.AddValue("rot", "null");
+                location.AddValue("pos", "null");
+
+                foreach (ConfigNode.Value cv in location.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
 
                 if (blueprintsAdded)
                 {
@@ -1674,27 +1758,6 @@ namespace OrX
 
                     if (addedCraft != null)
                     {
-                        ConfigNode craftData = node.AddNode("HC" + hcCount + "OrXv0");
-                        craftData.AddValue("vesselName", craftToAddMission);
-                        ConfigNode location = craftData.AddNode("coords");
-                        location.AddValue("holo", hcCount);
-                        location.AddValue("pas", Password);
-                        location.AddValue("lat", FlightGlobals.ActiveVessel.latitude);
-                        location.AddValue("lon", FlightGlobals.ActiveVessel.longitude);
-                        location.AddValue("alt", FlightGlobals.ActiveVessel.altitude);
-                        location.AddValue("heading", 0);
-                        location.AddValue("pitch", 0);
-                        location.AddValue("rot", "null");
-                        location.AddValue("pos", "null");
-
-                        foreach (ConfigNode.Value cv in location.values)
-                        {
-                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
-                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
-                            cv.name = cvEncryptedName;
-                            cv.value = cvEncryptedValue;
-                        }
-
                         ConfigNode craftFile = craftData.AddNode("craft");
                         ScreenMsg("<color=#cfc100ff><b>Saving to " + HoloCacheName + "</b></color>");
                         Debug.Log("[OrX Mission] Saving: " + craftToAddMission);
@@ -1750,8 +1813,6 @@ namespace OrX
             }
             coordCount = 0;
 
-            //saveLocalVessels = false;
-
             if (saveLocalVessels)
             {
                 Debug.Log("[OrX Mission] === SAVING LOCAL VESELS ===");
@@ -1761,6 +1822,10 @@ namespace OrX
                 node = _file.GetNode("OrX");
                 Debug.Log("[OrX Mission] === '" + HoloCacheName + "' found ===");
 
+                double _latDiff = 0;
+                double _lonDiff = 0;
+                double _altDiff = 0;
+
                 List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
                 while (v.MoveNext())
                 {
@@ -1768,35 +1833,107 @@ namespace OrX
                     {
                         if (v.Current == null) continue;
                         if (!v.Current.loaded || v.Current.packed) continue;
-                        if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>()
-                            && !v.Current.rootPart.Modules.Contains<KerbalEVA>())
+                        if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && !v.Current.rootPart.Modules.Contains<KerbalEVA>())
                         {
                             try
                             {
-                                bool kerbalInSeat = false;
-
-                                List<Part>.Enumerator parts = v.Current.parts.GetEnumerator();
-                                while (parts.MoveNext())
+                                if (v.Current.altitude <= _altMission)
                                 {
-                                    if (parts.Current.Modules.Contains<KerbalEVA>())
-                                    {
-                                        //kerbalInSeat = true;
-                                        break;
-                                    }
-                                }
-                                parts.Dispose();
-
-                                if (kerbalInSeat)
-                                {
-                                    Debug.Log("[Module OrX HoloCache] FOUND KERBAL IN COMMAND CHAIR ... SKIPPING '" + v.Current.vesselName + "'");
+                                    _altDiff = _altMission - v.Current.altitude;
                                 }
                                 else
                                 {
-                                    Vector3d vLoc = new Vector3d(v.Current.latitude, v.Current.longitude, v.Current.altitude);
-                                    double targetDistance = Vector3d.Distance(new Vector3d(FlightGlobals.ActiveVessel.latitude,
-                                        FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude), vLoc);
+                                    _altDiff = v.Current.altitude - _altMission;
+                                }
 
-                                    if (targetDistance <= localSaveRange) // && v.Current.parts.Count != 1)
+                                if (_latMission >= 0)
+                                {
+                                    if (v.Current.latitude >= _latMission)
+                                    {
+                                        _latDiff = v.Current.latitude - _latMission;
+                                    }
+                                    else
+                                    {
+                                        _latDiff = _latMission - v.Current.latitude;
+                                    }
+                                }
+                                else
+                                {
+                                    if (v.Current.latitude >= 0)
+                                    {
+                                        _latDiff = v.Current.latitude - _latMission;
+                                    }
+                                    else
+                                    {
+                                        if (v.Current.latitude <= _latMission)
+                                        {
+                                            _latDiff = v.Current.latitude - _latMission;
+                                        }
+                                        else
+                                        {
+
+                                            _latDiff = _latMission - v.Current.latitude;
+                                        }
+                                    }
+                                }
+
+                                if (_lonMission >= 0)
+                                {
+                                    if (v.Current.longitude >= _lonMission)
+                                    {
+                                        _lonDiff = v.Current.longitude - _lonMission;
+                                    }
+                                    else
+                                    {
+                                        _lonDiff = _lonMission - v.Current.latitude;
+                                    }
+                                }
+                                else
+                                {
+                                    if (v.Current.longitude >= 0)
+                                    {
+                                        _lonDiff = v.Current.longitude - _lonMission;
+                                    }
+                                    else
+                                    {
+                                        if (v.Current.longitude <= _lonMission)
+                                        {
+                                            _lonDiff = v.Current.longitude - _lonMission;
+                                        }
+                                        else
+                                        {
+
+                                            _lonDiff = _lonMission - v.Current.longitude;
+                                        }
+                                    }
+                                }
+
+                                double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                                double _altDiffDeg = _altDiff * degPerMeter;
+                                double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                                double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+
+                                //double _targetDistance = Vector3d.Distance(HoloKron.GetWorldPos3D(), v.Current.GetWorldPos3D()); ;
+
+                                if (_targetDistance <= localSaveRange) // && v.Current.parts.Count != 1)
+                                {
+                                    bool kerbalAttached = false;
+
+                                    List<Part>.Enumerator p = v.Current.parts.GetEnumerator();
+                                    while (p.MoveNext())
+                                    {
+                                        if (p.Current.Modules.Contains<KerbalEVA>())
+                                        {
+                                            kerbalAttached = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (kerbalAttached)
+                                    {
+                                        Debug.Log("[OrX Mission] " + v.Current.vesselName + " has kerbal attached ... skipping");
+                                    }
+                                    else
                                     {
                                         count += 1;
 
@@ -1804,23 +1941,38 @@ namespace OrX
                                         Debug.Log("[OrX Mission] Vessel " + v.Current.vesselName + " Identified .......................");
                                         string shipDescription = v.Current.vesselName + " blueprints from " + HoloCacheName;
 
+                                        Vector3 UpVect = (toSave.transform.position - toSave.mainBody.position).normalized;
+                                        Vector3 EastVect = toSave.mainBody.getRFrmVel(toSave.CoM).normalized;
+                                        Vector3 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+
+                                        float _pitch = Vector3.Angle(toSave.ReferenceTransform.forward, UpVect);
+                                        float _left = Vector3.Angle(-toSave.ReferenceTransform.right, NorthVect); // left is 90 degrees behind vessel heading
+
+                                        if (Math.Sign(Vector3.Dot(-toSave.ReferenceTransform.right, EastVect)) < 0)
+                                        {
+                                            _left = 360 - _left; // westward headings become angles greater than 180
+                                        }
+
+                                        // Be sure to subtract 90 degrees from pitch and left as the vessel reference transform is offset 90 degrees
+                                        // from the respective vectors due to reasons
+
                                         ShipConstruct ConstructToSave = new ShipConstruct(HoloCacheName, shipDescription, v.Current.parts[0]);
                                         ConfigNode craftConstruct = new ConfigNode("Craft");
                                         craftConstruct = ConstructToSave.SaveShip();
                                         craftConstruct.RemoveValue("persistentId");
-                                        //craftConstruct.RemoveValue("steamPublishedFileId");
-                                        //craftConstruct.RemoveValue("rot");
-                                        //craftConstruct.RemoveValue("missionFlag");
-                                        //craftConstruct.RemoveValue("vesselType");
-                                        //craftConstruct.RemoveValue("OverrideDefault");
-                                        //craftConstruct.RemoveValue("OverrideActionControl");
-                                        //craftConstruct.RemoveValue("OverrideAxisControl");
-                                        //craftConstruct.RemoveValue("OverrideGroupNames");
+                                        craftConstruct.RemoveValue("steamPublishedFileId");
+                                        craftConstruct.RemoveValue("rot");
+                                        craftConstruct.RemoveValue("missionFlag");
+                                        craftConstruct.RemoveValue("vesselType");
+                                        craftConstruct.RemoveValue("OverrideDefault");
+                                        craftConstruct.RemoveValue("OverrideActionControl");
+                                        craftConstruct.RemoveValue("OverrideAxisControl");
+                                        craftConstruct.RemoveValue("OverrideGroupNames");
 
 
                                         foreach (ConfigNode cn in craftConstruct.nodes)
                                         {
-                                            if (cn.name == "Part")
+                                            if (cn.name == "PART")
                                             {
                                                 cn.RemoveValue("persistentId");
                                                 cn.RemoveValue("sameVesselCollision");
@@ -1838,18 +1990,11 @@ namespace OrX
                                         location.AddValue("lat", v.Current.latitude);
                                         location.AddValue("lon", v.Current.longitude);
                                         location.AddValue("alt", v.Current.altitude + 1);
-                                        location.AddValue("heading", GetHeading(toSave));
+                                        location.AddValue("left", _left);
+                                        location.AddValue("pitch", _pitch);
 
                                         Quaternion or = toSave.rootPart.transform.rotation;
                                         location.AddValue("rot", or.x + "," + or.y + "," + or.z + "," + or.w);
-
-                                        foreach (ConfigNode.Value cv in location.values)
-                                        {
-                                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
-                                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
-                                            cv.name = cvEncryptedName;
-                                            cv.value = cvEncryptedValue;
-                                        }
 
                                         Debug.Log("[OrX Mission] Adding coords ............................. " + HoloCacheName);
                                         ConfigNode craftFile = craftData.AddNode("craft");
@@ -1860,11 +2005,18 @@ namespace OrX
                                             if (cv.name == "ship")
                                             {
                                                 cv.value = v.Current.vesselName;
-                                                break;
                                             }
                                         }
 
                                         // ADD ENCRYPTION
+
+                                        foreach (ConfigNode.Value cv in location.values)
+                                        {
+                                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                            cv.name = cvEncryptedName;
+                                            cv.value = cvEncryptedValue;
+                                        }
 
                                         foreach (ConfigNode.Value cv in craftFile.values)
                                         {
@@ -1888,10 +2040,13 @@ namespace OrX
                                             {
                                                 foreach (ConfigNode.Value cv2 in cn2.values)
                                                 {
-                                                    string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
-                                                    string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
-                                                    cv2.name = cvEncryptedName;
-                                                    cv2.value = cvEncryptedValue;
+                                                    if (cv2.name != "currentRotation")
+                                                    {
+                                                        string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                                        string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                                        cv2.name = cvEncryptedName;
+                                                        cv2.value = cvEncryptedValue;
+                                                    }
                                                 }
                                             }
                                         }
@@ -1915,33 +2070,49 @@ namespace OrX
                 }
                 v.Dispose();
                 _file.Save(hConfigLoc);
+
+
+                if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloCacheName))
+                {
+                    Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloCacheName);
+                }
+
+                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloCacheName + "/" + HoloCacheName + ".orx");
             }
 
-            var h = holoCube.rootPart.FindModuleImplementing<ModuleOrXMission>();
-            h.altitude = _alt;
-            h.latitude = _lat;
-            h.longitude = _lon;
+            var h = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
             h.HoloCacheName = HoloCacheName;
-            h.setup = true;
-            h.HideHolo();
 
-            GuiEnabledOrXMissions = false;
-            OrXHCGUIEnabled = false;
-            OrXLog.instance.building = false;
-            building = false;
-            buildingMission = false;
-            addCoords = false;
-            PlayOrXMission = false;
-            ResetData();
+            //var dh = challengeHolo.rootPart.FindModuleImplementing<ModuleOrXMission>();
+            //dh.KillHolo();
+
+            if (dakarSetup)
+            {
+                challengeHolo = _HoloKron;
+                h._holoSetup = true;
+                h.StartBuild();
+            }
+            else
+            {
+                h._holoSetup = false;
+                dakarSetup = false;
+                GuiEnabledOrXMissions = false;
+                OrXHCGUIEnabled = false;
+                OrXLog.instance.building = false;
+                building = false;
+                buildingMission = false;
+                addCoords = false;
+                PlayOrXMission = false;
+                ResetData();
+            }
         }
 
-        public void SetupHolo(Vessel v)
+        public void SetupHolo()
         {
             ResetData();
-            holoCube = v;
             holoToAdd = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/HoloCache/HoloCache.craft";
             missionType = "GEO-CACHE";
-            challengeType = "OUTLAW RACING";
+            challengeType = "GEO-CACHE";
             geoCache = true;
             locAdded = false;
 
@@ -1953,29 +2124,27 @@ namespace OrX
 
             vabLoc = UrlDir.ApplicationRootPath + "saves/" + HighLogic.SaveFolder + "/Ships/VAB/";
             vabFiles = new List<string>(Directory.GetFiles(vabLoc, "*.craft", SearchOption.AllDirectories));
+            showTargetOnScreen = false;
             OrXLog.instance.building = true;
             building = true;
             buildingMission = true;
-            id = holoCube.id;
-            startLocation = new Vector3d(_lat, _lon, _alt);
-            lastCoord = startLocation;
-            lat = _lat;
-            lon = _lon;
-            alt = _alt;
             showScores = false;
             GuiEnabledOrXMissions = true;
             PlayOrXMission = false;
             craftBrowserOpen = false;
             spawned = true;
             OrXHCGUIEnabled = true;
+            _latMission = tpoint.x;
+            _lonMission = tpoint.y;
+            _altMission = tpoint.z;
         }
         public void OpenHoloCache(string holoName, Vessel v)
         {
-            holoCube = v;
+            _HoloKron = v;
             HoloCacheName = holoName;
-            StartCoroutine(StartMission());
+            StartCoroutine(StartMission(holoName));
         }
-        public IEnumerator StartMission()
+        public IEnumerator StartMission(string holoName)
         {
             Debug.Log("[OrX Mission] === STARTING MISSION === "); ;
 
@@ -2007,7 +2176,7 @@ namespace OrX
             if (HoloCacheName != "")
             {
                 ec = 0;
-                _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + holoName + "/" + holoName + ".orx");
                 ConfigNode node = _file.GetNode("OrX");
 
                 foreach (ConfigNode spawnCheck in node.nodes)
@@ -2025,6 +2194,7 @@ namespace OrX
                                 if (data.value == "False")
                                 {
                                     Debug.Log("[OrX Mission] === HOLOCACHE " + hcCount + " has not spawned ... "); ;
+                                    break;
                                 }
                                 else
                                 {
@@ -2036,6 +2206,7 @@ namespace OrX
                                         if (t == "False")
                                         {
                                             Debug.Log("[OrX Mission] === HOLOCACHE " + hcCount + " has no extras ... END TRANSMISSION"); ;
+                                            hcCount = int.MaxValue;
                                             break;
                                         }
                                         else
@@ -2129,51 +2300,76 @@ namespace OrX
                         Debug.Log("[OrX Mission] === DATA PROCESSED ===");
                     }
 
-                    if (spawnCheck.name.Contains("HC" + hcCount + "OrXv"))
+                    if (spawnCheck.name.Contains("HC" + hcCount + "OrXv0"))
                     {
-                        Debug.Log("[OrX Mission] === SEEKING CRAFT FILE FOR " + spawnCheck.name + " ===");
+                        Debug.Log("[OrX Mission] === GRABBING CRAFT FILE FOR " + spawnCheck.name + " ===");
 
-                        if (spawnCheck.name.Contains("HC" + hcCount + "OrXv0"))
+                        foreach (ConfigNode.Value cv in spawnCheck.values)
                         {
-                            Debug.Log("[OrX Mission] === GRABBING CRAFT FILE FOR " + spawnCheck.name + " ===");
-
-                            foreach (ConfigNode.Value cv in spawnCheck.values)
+                            if (cv.name == "vesselName")
                             {
-                                if (cv.name == "vesselName")
-                                {
-                                    Debug.Log("[OrX Mission] === Blueprints found for '" + cv.value + "' ===");
-                                    blueprintsAdded = true;
-                                    crafttosave = cv.value;
-                                }
+                                Debug.Log("[OrX Mission] === Blueprints found for '" + cv.value + "' ===");
+                                blueprintsAdded = true;
+                                crafttosave = cv.value;
                             }
+                        }
 
-                            Debug.Log("[OrX Mission] === GRABBING COORDS ===");
+                        Debug.Log("[OrX Mission] === GRABBING COORDS ===");
 
-                            ConfigNode location = spawnCheck.GetNode("coords");
-                            foreach (ConfigNode.Value loc in location.values)
+                        ConfigNode location = spawnCheck.GetNode("coords");
+                        foreach (ConfigNode.Value loc in location.values)
+                        {
+                            string locEncryptedName = OrXLog.instance.Decrypt(loc.name);
+                            if (locEncryptedName == "holo")
                             {
-                                string locEncryptedName = OrXLog.instance.Decrypt(loc.name);
-                                if (locEncryptedName == "holo")
-                                {
-                                    string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
+                                string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
 
-                                    if (locEncryptedValue == hcCount.ToString())
+                                if (locEncryptedValue == hcCount.ToString())
+                                {
+                                    foreach (ConfigNode.Value _loc in location.values)
                                     {
-                                        foreach (ConfigNode.Value _loc in location.values)
+                                        if (locEncryptedName == "pas")
                                         {
-                                            if (locEncryptedName == "pas")
-                                            {
-                                                pas = OrXLog.instance.Decrypt(_loc.value);
-                                            }
+                                            pas = OrXLog.instance.Decrypt(_loc.value);
                                         }
                                     }
                                 }
                             }
+                        }
 
-                            Debug.Log("[OrX Mission] === GRABBING CRAFT FILE DATA ===");
+                        Debug.Log("[OrX Mission] === GRABBING CRAFT FILE DATA ===");
 
-                            ConfigNode craftFile = spawnCheck.GetNode("craft");
-                            foreach (ConfigNode.Value cv in craftFile.values)
+                        ConfigNode craftFile = spawnCheck.GetNode("craft");
+                        foreach (ConfigNode.Value cv in craftFile.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                            cv.name = cvEncryptedName;
+                            cv.value = cvEncryptedValue;
+                        }
+
+                        string _type = "";
+
+                        foreach (ConfigNode.Value value in craftFile.values)
+                        {
+                            if (value.name == "type")
+                            {
+                                if (value.value == "SPH")
+                                {
+                                    _type = "SPH/";
+                                }
+                                if (value.value == "VAB")
+                                {
+                                    _type = "VAB/";
+                                }
+                            }
+                        }
+
+                        Debug.Log("[OrX Mission] === DECRYPTING CRAFT FILE DATA ===");
+
+                        foreach (ConfigNode cn in craftFile.nodes)
+                        {
+                            foreach (ConfigNode.Value cv in cn.values)
                             {
                                 string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
                                 string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
@@ -2181,94 +2377,64 @@ namespace OrX
                                 cv.value = cvEncryptedValue;
                             }
 
-                            string _type = "";
-
-                            foreach (ConfigNode.Value value in craftFile.values)
+                            foreach (ConfigNode cn2 in cn.nodes)
                             {
-                                if (value.name == "type")
+                                foreach (ConfigNode.Value cv2 in cn2.values)
                                 {
-                                    if (value.value == "SPH")
-                                    {
-                                        _type = "SPH/";
-                                    }
-                                    if (value.value == "VAB")
-                                    {
-                                        _type = "VAB/";
-                                    }
+                                    string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                                    cv2.name = cvEncryptedName;
+                                    cv2.value = cvEncryptedValue;
                                 }
                             }
-
-                            Debug.Log("[OrX Mission] === DECRYPTING CRAFT FILE DATA ===");
-
-                            foreach (ConfigNode cn in craftFile.nodes)
-                            {
-                                foreach (ConfigNode.Value cv in cn.values)
-                                {
-                                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
-                                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
-                                    cv.name = cvEncryptedName;
-                                    cv.value = cvEncryptedValue;
-                                }
-
-                                foreach (ConfigNode cn2 in cn.nodes)
-                                {
-                                    foreach (ConfigNode.Value cv2 in cn2.values)
-                                    {
-                                        string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
-                                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
-                                        cv2.name = cvEncryptedName;
-                                        cv2.value = cvEncryptedValue;
-                                    }
-                                }
-                            }
-
-                            _blueprints_ = craftFile;
-                            blueprintsFile = UrlDir.ApplicationRootPath + "saves/" + HighLogic.SaveFolder
-                                + "/Ships/" + _type + crafttosave + ".craft";
-
-                            Debug.Log("[OrX Mission] === BLUEPRINTS READY ===");
-
-                            ConfigNode HoloCacheNode = node.GetNode("OrXHoloCacheCoords" + hcCount);
-                            foreach (ConfigNode.Value cv in HoloCacheNode.values)
-                            {
-                                string a = OrXLog.instance.Decrypt(cv.name);
-
-                                if (a == "tech")
-                                {
-                                    string b = OrXLog.instance.Decrypt(cv.value);
-                                    if (b != "")
-                                    {
-                                        techToAdd = b;
-
-                                        if (OrXLog.instance.CheckTechList(techToAdd))
-                                        {
-                                            Debug.Log("[OrX Mission] " + HoloCacheName + " is adding " + techToAdd + " to the tech list ...");
-                                            OrXLog.instance.AddTech(techToAdd);
-                                        }
-                                        else
-                                        {
-                                            Debug.Log("[OrX Mission] " + techToAdd + " is already in the tech list ...");
-                                        }
-                                    }
-                                }
-                                if (a == "spawned")
-                                {
-                                    cv.value = OrXLog.instance.Crypt("True");
-                                }
-                            }
-
-                            _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
-                            Debug.Log("[OrX Mission] " + HoloCacheName + " Saved Status - SPAWNED");
                         }
+
+                        _blueprints_ = craftFile;
+                        blueprintsFile = UrlDir.ApplicationRootPath + "saves/" + HighLogic.SaveFolder
+                            + "/Ships/" + _type + crafttosave + ".craft";
+
+                        Debug.Log("[OrX Mission] === BLUEPRINTS READY ===");
+
+                        ConfigNode HoloCacheNode = node.GetNode("OrXHoloCacheCoords" + hcCount);
+                        foreach (ConfigNode.Value cv in HoloCacheNode.values)
+                        {
+                            string a = OrXLog.instance.Decrypt(cv.name);
+
+                            if (a == "tech")
+                            {
+                                string b = OrXLog.instance.Decrypt(cv.value);
+                                if (b != "")
+                                {
+                                    techToAdd = b;
+
+                                    if (OrXLog.instance.CheckTechList(techToAdd))
+                                    {
+                                        Debug.Log("[OrX Mission] " + HoloCacheName + " is adding " + techToAdd + " to the tech list ...");
+                                        OrXLog.instance.AddTech(techToAdd);
+                                    }
+                                    else
+                                    {
+                                        Debug.Log("[OrX Mission] " + techToAdd + " is already in the tech list ...");
+                                    }
+                                }
+                            }
+                            if (a == "spawned")
+                            {
+                                cv.value = OrXLog.instance.Crypt("True");
+                            }
+                        }
+
+                        _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
+                        Debug.Log("[OrX Mission] " + HoloCacheName + " Saved Status - SPAWNED");
                     }
                 }
 
                 Debug.Log("[OrX Mission] === BLUEPRINTS PROCESSED ===");
 
-                _mission = _file.GetNode("mission" + mCount);
+                _mission = _file.GetNode("mission" + hcCount);
                 if (_mission != null)
                 {
-                    Debug.Log("[OrX Mission] === MISSION " + mCount + " FOUND ===");
+                    Debug.Log("[OrX Mission] === MISSION " + hcCount + " FOUND ===");
                     CoordDatabase = new List<string>();
 
                     foreach (ConfigNode.Value cv in _mission.values)
@@ -2280,34 +2446,39 @@ namespace OrX
                         }
                     }
 
-                    Debug.Log("[OrX Mission] === FOUND " + coordCount + " COORDS IN MISSION " + mCount + " ===");
+                    Debug.Log("[OrX Mission] === FOUND " + coordCount + " COORDS IN MISSION " + hcCount + " ===");
+                    List<Waypoint> waypoints = new List<Waypoint>();
 
                     if (CoordDatabase.Count >= 0)
                     {
-                        /*
-                        List<string>.Enumerator firstCoords = CoordDatabase.GetEnumerator();
-                        while (firstCoords.MoveNext())
+                        System.Random r = new System.Random();
+                        waypointColor = (int)(r.NextDouble() * seeds.Count());
+
+                        List<string>.Enumerator coords = CoordDatabase.GetEnumerator();
+                        while (coords.MoveNext())
                         {
                             try
                             {
-                                string[] data = firstCoords.Current.Split(new char[] { ',' });
-                                if (data[0] == "1")
-                                {
-                                    gpsCount = 0;
-                                    NextCoord = firstCoords.Current;
-                                    latMission = double.Parse(data[1]);
-                                    latMission = double.Parse(data[2]);
-                                    altMission = double.Parse(data[3]);
-                                    nextLocation = new Vector3d(latMission, latMission, altMission);
-                                }
+                                string[] data = coords.Current.Split(new char[] { ',' });
+                                Vector3d surfacePoint = new Vector3d(double.Parse(data[1]), double.Parse(data[2]), double.Parse(data[3]));
+                                Waypoint waypoint = new Waypoint();
+                                waypoint.id = "marker";
+                                waypoint.seed = seeds[waypointColor];
+                                waypoint.name = craftToSpawn;
+                                waypoint.celestialName = name;
+                                waypoint.longitude = FlightGlobals.ActiveVessel.mainBody.GetLongitude(surfacePoint);
+                                waypoint.latitude = FlightGlobals.ActiveVessel.mainBody.GetLatitude(surfacePoint);
+                                waypoint.height = TerrainHeight(latMission, lonMission, FlightGlobals.ActiveVessel.mainBody);
+                                waypoint.altitude = FlightGlobals.ActiveVessel.mainBody.GetAltitude(surfacePoint) - waypoint.height;
+                                waypoints.Add(waypoint);
+                                Debug.Log("[OrX HoloCache] ====================================== ADDING WAYPOINT FOR " + craftToSpawn + gpsCount + " ===");
                             }
-                            catch (IndexOutOfRangeException e)
+                            catch
                             {
-                                Debug.Log("[OrX Mission] HoloCache config file processed ...... ");
                             }
                         }
-                        firstCoords.Dispose();
-                        */
+                        coords.Dispose();
+
                         Debug.Log("[OrX Mission] === GETTING SCOREBOARD ===");
                         _scoreboard_ = _mission.GetNode("scoreboard");
 
@@ -2463,7 +2634,7 @@ namespace OrX
 
             Debug.Log("[OrX Mission] === SETTING UP HOLOCACHE FOR MISSION ===");
 
-            var mom = holoCube.rootPart.FindModuleImplementing<ModuleOrXMission>();
+            var mom = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
             mom.completed = false;
             mom.missionName = missionName;
             mom.missionType = missionType;
@@ -2484,7 +2655,7 @@ namespace OrX
             craftBrowserOpen = false;
         }
 
-        private void StartChallenge()
+        IEnumerator StartChallenge()
         {
             if (challengeRunning)
             {
@@ -2498,7 +2669,7 @@ namespace OrX
                     Debug.Log("[OrX Holocache] === '" + craftToAddMission + "' Blueprints Available ===");
                     OrXLog.instance.mission = false;
 
-                    _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                    _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
                     ConfigNode node = _file.GetNode("OrX");
 
                     foreach (ConfigNode spawnCheck in node.nodes)
@@ -2533,16 +2704,29 @@ namespace OrX
                         }
                     }
 
-                    _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                    _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
                 }
                 else
                 {
+                    List<Waypoint>.Enumerator _waypoint = waypoints.GetEnumerator();
+                    while (_waypoint.MoveNext())
+                    {
+                        if (_waypoint.Current != null)
+                        {
+                            ScenarioCustomWaypoints.RemoveWaypoint(_waypoint.Current);
+                            yield return new WaitForFixedUpdate();
+                            ScenarioCustomWaypoints.AddWaypoint(_waypoint.Current);
+                            yield return new WaitForFixedUpdate();
+                        }
+                    }
+                    _waypoint.Dispose();
+
                     gpsCount = 0;
                     missionTime = HighLogic.CurrentGame.UniversalTime;
                     if (challengeType == "WIND RACING")
                     {
                         // SETUP WIND CONTROLLER
-                        GetNextCoord();
+                        //GetNextCoord();
 
                     }
                     else
@@ -2555,13 +2739,13 @@ namespace OrX
                             // TO UNLOCK SCUBA KERB GO TO DIVE INTO MY HOLE LOCATION - ADD REASEARCH OUTPOST AND SPAWNED KERBAL FOR DIALOGUE
                             // BUCKEY BALLS AND LOTION - TAKE A SHOWER, PUT ON LOTION AND JUMP INTO THE HOLE OF MUD THEN START TUTORIAL
 
-                            GetNextCoord();
+                            //GetNextCoord();
                         }
                         else
                         {
-                            if (challengeType == "OUTLAW RACING")
+                            if (challengeType == "DAKAR RACING")
                             {
-                                // START OUTLAW RACING GUI
+                                // START DAKAR RACING GUI
                                 // ADD DAKAR, DRAG, SHORT AND LONG TRACK TYPES ???????
                                 // INCORPORATE PULL N DRAG ????????
                                 // REARVIEW MIRRORS FOR FIRST PERSON VIEW ??????
@@ -2576,7 +2760,8 @@ namespace OrX
         }
         private void SaveScore()
         {
-            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            challengeRunning = false;
+            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
             _mission = _file.GetNode("mission" + mCount);
             _scoreboard_ = _mission.GetNode("scoreboard");
             Debug.Log("[OrX Mission Scoreboard] === GET CHALLENGER TOTAL TIME AND CREATE STAGE TIME LIST ===");
@@ -3498,7 +3683,7 @@ namespace OrX
                 }
             }
 
-            _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
             Debug.Log("[OrX Mission Scoreboard] === SCOREBOARD SAVED ===");
         }
         private void ImportScores()
@@ -4346,7 +4531,7 @@ namespace OrX
         }
         private void GetScoreboardData()
         {
-            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
             _mission = _file.GetNode("mission" + mCount);
             _scoreboard_ = _mission.GetNode("scoreboard");
             int sbCount = 0;
@@ -4400,7 +4585,7 @@ namespace OrX
                 scoreboard9.AddValue("name", "<empty>");
                 scoreboard9.AddValue("time", "");
 
-                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
             }
 
             // CHECK PODIUM LIST
@@ -4549,9 +4734,20 @@ namespace OrX
             showScores = true;
         }
 
+        public void CancelHoloCreation()
+        {
+            var h = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
+            h.boid = true;
+            h.HideHolo();
+            FlightGlobals.ForceSetActiveVessel(triggerVessel);
+            ResetData();
+        }
+
         #endregion
 
         #region Location Targeting
+
+        bool scanningForHolo = false;
 
         public static Camera GetMainCamera()
         {
@@ -4603,82 +4799,443 @@ namespace OrX
             GUI.DrawTexture(iconRect, texture);
         }
 
+        bool showTargetOnScreen = false;
+
         private void TargetDistance()
         {
             checking = true;
+            scanning = true;
+            reloadWorldPos = true;
+            showTargetOnScreen = true;
+            building = false;
+            buildingMission = false;
+            addCoords = false;
+            GuiEnabledOrXMissions = false;
+            OrXHCGUIEnabled = false;
+            PlayOrXMission = false;
             StartCoroutine(CheckTargetDistance(false));
         }
         IEnumerator CheckTargetDistance(bool b)
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
+                yield return new WaitForFixedUpdate();
                 if (checking)
                 {
-                    reloadWorldPos = true;
-                    TargetHCGUI = false;
-                    building = false;
-                    buildingMission = false;
-                    addCoords = false;
-                    GuiEnabledOrXMissions = false;
-                    OrXHCGUIEnabled = false;
-                    PlayOrXMission = false;
+                    mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+                    degPerMeter = 1 / mPerDegree;
+                    scanDelay = Convert.ToSingle(targetDistance / FlightGlobals.ActiveVessel.srfSpeed) / 10;
+                    targetDistance = double.MaxValue;
+                    double _latDiff = 0;
+                    double _lonDiff = 0;
+                    double _altDiff = 0;
 
-                    targetDistance = Vector3d.Distance(new Vector3d(FlightGlobals.ActiveVessel.latitude, 
-                        FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude), SpawnCoords);
-
-                    if (targetDistance <= 2000)
+                    if (!b)
                     {
-                        if (!b)
+                        showTargetOnScreen = false;
+                        Vector3 UpVect = (FlightGlobals.ActiveVessel.transform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized;
+                        Vector3 EastVect = FlightGlobals.ActiveVessel.mainBody.getRFrmVel(FlightGlobals.ActiveVessel.CoM).normalized;
+                        Vector3 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+
+                        List<OrXHoloCacheinfo>.Enumerator coordinate = HoloCacheTargets[coords].GetEnumerator();
+                        while (coordinate.MoveNext())
                         {
-                            scanning = false;
-                            checking = false;
-                            missionHoloSpawned = true;
-                            StartCoroutine(SpawnHoloCache(SpawnCoords, false, false));
+
+                            if (FlightGlobals.ActiveVessel.altitude <= coordinate.Current.gpsCoordinates.z)
+                            {
+                                _altDiff = coordinate.Current.gpsCoordinates.z - FlightGlobals.ActiveVessel.altitude;
+                            }
+                            else
+                            {
+                                _altDiff = FlightGlobals.ActiveVessel.altitude - coordinate.Current.gpsCoordinates.z;
+                            }
+
+                            if (coordinate.Current.gpsCoordinates.x >= 0)
+                            {
+                                if (FlightGlobals.ActiveVessel.latitude >= coordinate.Current.gpsCoordinates.x)
+                                {
+                                    _latDiff = FlightGlobals.ActiveVessel.latitude - coordinate.Current.gpsCoordinates.x;
+                                }
+                                else
+                                {
+                                    _latDiff = coordinate.Current.gpsCoordinates.x - FlightGlobals.ActiveVessel.latitude;
+                                }
+                            }
+                            else
+                            {
+                                if (FlightGlobals.ActiveVessel.latitude >= 0)
+                                {
+                                    _latDiff = FlightGlobals.ActiveVessel.latitude - coordinate.Current.gpsCoordinates.x;
+                                }
+                                else
+                                {
+                                    if (FlightGlobals.ActiveVessel.latitude <= coordinate.Current.gpsCoordinates.x)
+                                    {
+                                        _latDiff = FlightGlobals.ActiveVessel.latitude - coordinate.Current.gpsCoordinates.x;
+                                    }
+                                    else
+                                    {
+
+                                        _latDiff = coordinate.Current.gpsCoordinates.x - FlightGlobals.ActiveVessel.latitude;
+                                    }
+                                }
+                            }
+
+                            if (coordinate.Current.gpsCoordinates.y >= 0)
+                            {
+                                if (FlightGlobals.ActiveVessel.longitude >= coordinate.Current.gpsCoordinates.y)
+                                {
+                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - coordinate.Current.gpsCoordinates.y;
+                                }
+                                else
+                                {
+                                    _lonDiff = coordinate.Current.gpsCoordinates.y - FlightGlobals.ActiveVessel.latitude;
+                                }
+                            }
+                            else
+                            {
+                                if (FlightGlobals.ActiveVessel.longitude >= 0)
+                                {
+                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - coordinate.Current.gpsCoordinates.y;
+                                }
+                                else
+                                {
+                                    if (FlightGlobals.ActiveVessel.longitude <= coordinate.Current.gpsCoordinates.y)
+                                    {
+                                        _lonDiff = FlightGlobals.ActiveVessel.longitude - coordinate.Current.gpsCoordinates.y;
+                                    }
+                                    else
+                                    {
+
+                                        _lonDiff = coordinate.Current.gpsCoordinates.y - FlightGlobals.ActiveVessel.longitude;
+                                    }
+                                }
+                            }
+
+                            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                            double _altDiffDeg = _altDiff * degPerMeter;
+                            double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                            double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+
+                            if (targetDistance >= _targetDistance)
+                            {
+                                targetDistance = _targetDistance;
+                                Vector3 targetVect = (FlightGlobals.ActiveVessel.transform.position - coordinate.Current.gpsCoordinates).normalized;
+                                heading = Vector3.Angle(targetVect, NorthVect);
+
+                                if (Math.Sign(Vector3.Dot(targetVect, EastVect)) < 0)
+                                {
+                                    heading = 360 - heading; // westward headings become angles greater than 180
+                                }
+                            }
+
+                            if (scanDelay >= 120)
+                            {
+                                scanDelay = 120;
+                            }
+
+                            if (_targetDistance <= 2000)
+                            {
+                                targetDistance = _targetDistance;
+
+                                Debug.Log("======================================= TARGET Name: " + coordinate.Current.name);
+
+                                Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                                Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                                Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                                Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                                Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+
+                                scanning = false;
+                                checking = false;
+                                missionHoloSpawned = true;
+                                nextLocation = coordinate.Current.gpsCoordinates;
+                                StartCoroutine(SpawnHoloCache(coordinate.Current.gpsCoordinates, false, false, coordinate.Current.name));
+                                checking = false;
+                                break;
+                            }
+                            else
+                            {
+                                Debug.Log("======================================= TARGET Name: " + coordinate.Current.name);
+                                Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                                Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                                Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                                Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                                Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+                            }
                         }
-                        else
-                        {
-                            scanning = false;
-                            checking = false;
-                            StartCoroutine(SpawnHoloCache(SpawnCoords, true, false));
-                        }
+                        coordinate.Dispose();
                     }
                     else
                     {
-                        yield return new WaitForFixedUpdate();
+                        showTargetOnScreen = true;
+
+                        if (FlightGlobals.ActiveVessel.altitude <= nextLocation.z)
+                        {
+                            _altDiff = nextLocation.z - FlightGlobals.ActiveVessel.altitude;
+                        }
+                        else
+                        {
+                            _altDiff = FlightGlobals.ActiveVessel.altitude - nextLocation.z;
+                        }
+
+                        if (nextLocation.x >= 0)
+                        {
+                            if (FlightGlobals.ActiveVessel.latitude >= nextLocation.x)
+                            {
+                                _latDiff = FlightGlobals.ActiveVessel.latitude - nextLocation.x;
+                            }
+                            else
+                            {
+                                _latDiff = nextLocation.x - FlightGlobals.ActiveVessel.latitude;
+                            }
+                        }
+                        else
+                        {
+                            if (FlightGlobals.ActiveVessel.latitude >= 0)
+                            {
+                                _latDiff = FlightGlobals.ActiveVessel.latitude - nextLocation.x;
+                            }
+                            else
+                            {
+                                if (FlightGlobals.ActiveVessel.latitude <= nextLocation.x)
+                                {
+                                    _latDiff = FlightGlobals.ActiveVessel.latitude - nextLocation.x;
+                                }
+                                else
+                                {
+
+                                    _latDiff = nextLocation.x - FlightGlobals.ActiveVessel.latitude;
+                                }
+                            }
+                        }
+
+                        if (nextLocation.y >= 0)
+                        {
+                            if (FlightGlobals.ActiveVessel.longitude >= nextLocation.y)
+                            {
+                                _lonDiff = FlightGlobals.ActiveVessel.longitude - nextLocation.y;
+                            }
+                            else
+                            {
+                                _lonDiff = nextLocation.y - FlightGlobals.ActiveVessel.latitude;
+                            }
+                        }
+                        else
+                        {
+                            if (FlightGlobals.ActiveVessel.longitude >= 0)
+                            {
+                                _lonDiff = FlightGlobals.ActiveVessel.longitude - nextLocation.y;
+                            }
+                            else
+                            {
+                                if (FlightGlobals.ActiveVessel.longitude <= nextLocation.y)
+                                {
+                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - nextLocation.y;
+                                }
+                                else
+                                {
+
+                                    _lonDiff = nextLocation.y - FlightGlobals.ActiveVessel.longitude;
+                                }
+                            }
+                        }
+
+                        double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                        double _altDiffDeg = _altDiff * degPerMeter;
+                        double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                        double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+
+                        if (targetDistance >= _targetDistance)
+                        {
+                            targetDistance = _targetDistance;
+                        }
+
+                        if (scanDelay >= 60)
+                        {
+                            scanDelay = 60;
+                        }
+
+                        if (_targetDistance <= 2000)
+                        {
+                            Debug.Log("======================================= TARGET Name: " + HoloCacheName + gpsCount);
+
+                            Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                            Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                            Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                            Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                            Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+
+                            showTargetOnScreen = true;
+
+                            scanning = false;
+                            checking = false;
+                            missionHoloSpawned = true;
+                            StartCoroutine(SpawnHoloCache(nextLocation, true, false, HoloCacheName + gpsCount));
+                            checking = false;
+                        }
+                        else
+                        {
+                            Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                            Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                            Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                            Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                            Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+                        }
+                    }
+
+                    if (checking)
+                    {
+                        Debug.Log("======================================= SCAN DELAY: " + scanDelay);
+                        yield return new WaitForSeconds(Convert.ToSingle(scanDelay));
                         StartCoroutine(CheckTargetDistance(b));
                     }
                 }
             }
         }
-        IEnumerator CheckTargetDistanceMission()
+
+        float scanDelay = 0;
+
+        IEnumerator CheckTargetDistanceMission(Vector3d vect)
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                targetDistance = Vector3d.Distance(new Vector3d(FlightGlobals.ActiveVessel.latitude,
-                    FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude), tpoint);
+                if (checking)
+                {
+                    showTargetOnScreen = true;
+                    targetDistance = double.MaxValue;
 
-                if (targetDistance <= 5)
-                {
-                    scanning = false;
-                    checking = false;
-                    GetNextCoord();
-                }
-                else
-                {
-                    yield return new WaitForFixedUpdate();
-                    StartCoroutine(CheckTargetDistanceMission());
+                    double _latDiff = 0;
+                    double _lonDiff = 0;
+                    double _altDiff = 0;
+
+                    if (FlightGlobals.ActiveVessel.altitude <= vect.z)
+                    {
+                        _altDiff = vect.z - FlightGlobals.ActiveVessel.altitude;
+                    }
+                    else
+                    {
+                        _altDiff = FlightGlobals.ActiveVessel.altitude - vect.z;
+                    }
+
+                    if (vect.x >= 0)
+                    {
+                        if (FlightGlobals.ActiveVessel.latitude >= vect.x)
+                        {
+                            _latDiff = FlightGlobals.ActiveVessel.latitude - vect.x;
+                        }
+                        else
+                        {
+                            _latDiff = vect.x - FlightGlobals.ActiveVessel.latitude;
+                        }
+                    }
+                    else
+                    {
+                        if (FlightGlobals.ActiveVessel.latitude >= 0)
+                        {
+                            _latDiff = FlightGlobals.ActiveVessel.latitude - vect.x;
+                        }
+                        else
+                        {
+                            if (FlightGlobals.ActiveVessel.latitude <= vect.x)
+                            {
+                                _latDiff = FlightGlobals.ActiveVessel.latitude - vect.x;
+                            }
+                            else
+                            {
+
+                                _latDiff = vect.x - FlightGlobals.ActiveVessel.latitude;
+                            }
+                        }
+                    }
+
+                    if (vect.y >= 0)
+                    {
+                        if (FlightGlobals.ActiveVessel.longitude >= vect.y)
+                        {
+                            _lonDiff = FlightGlobals.ActiveVessel.longitude - vect.y;
+                        }
+                        else
+                        {
+                            _lonDiff = vect.y - FlightGlobals.ActiveVessel.latitude;
+                        }
+                    }
+                    else
+                    {
+                        if (FlightGlobals.ActiveVessel.longitude >= 0)
+                        {
+                            _lonDiff = FlightGlobals.ActiveVessel.longitude - vect.y;
+                        }
+                        else
+                        {
+                            if (FlightGlobals.ActiveVessel.longitude <= vect.y)
+                            {
+                                _lonDiff = FlightGlobals.ActiveVessel.longitude - vect.y;
+                            }
+                            else
+                            {
+
+                                _lonDiff = vect.y - FlightGlobals.ActiveVessel.longitude;
+                            }
+                        }
+                    }
+
+                    double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                    double _altDiffDeg = _altDiff * degPerMeter;
+                    double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                    double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+
+                    if (targetDistance >= _targetDistance)
+                    {
+                        targetDistance = _targetDistance;
+                    }
+
+                    if (_targetDistance <= 25)
+                    {
+                        Debug.Log("======================================= TARGET Name: " + HoloCacheName + gpsCount);
+
+                        Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                        Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                        Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                        Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                        Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+
+
+                        scanning = false;
+                        checking = false;
+                        missionHoloSpawned = true;
+                        GetNextCoord();
+                        checking = false;
+                    }
+                    else
+                    {
+                        Debug.Log("======================================= TARGET Name: " + HoloCacheName + gpsCount);
+
+                        Debug.Log("======================================= TARGET Meters per Degree: " + mPerDegree);
+                        Debug.Log("======================================= TARGET Degrees per Meter: " + degPerMeter);
+                        Debug.Log("======================================= TARGET Degree offset 2D: " + Math.Sqrt(diffSqr));
+                        Debug.Log("======================================= TARGET Degree offset 3D: " + Math.Sqrt(altAdded));
+                        Debug.Log("======================================= TARGET Distance in Meters: " + _targetDistance);
+                        scanDelay = Convert.ToSingle(targetDistance / FlightGlobals.ActiveVessel.srfSpeed) / 10;
+                        if (scanDelay >= 120)
+                        {
+                            scanDelay = 120;
+                        }
+                        Debug.Log("======================================= SCAN DELAY: " + scanDelay);
+                        yield return new WaitForSeconds(delay);
+                        StartCoroutine(CheckTargetDistanceMission(vect));
+                    }
                 }
             }
         }
-
         public void GetNextCoord()
         {
             GuiEnabledOrXMissions = false;
             challengeRunning = true;
             checkingMission = true;
-            if (targetCoord != null)
+            if (targetCube != null)
             {
-                var mom = targetCoord.FindPartModuleImplementing<ModuleOrXMission>();
+                var mom = targetCube.FindPartModuleImplementing<ModuleOrXMission>();
                 if (mom != null)
                 {
                     if (mom.boid)
@@ -4717,6 +5274,24 @@ namespace OrX
                                 altMission = double.Parse(data[3]);
                                 nextLocation = new Vector3d(latMission, lonMission, altMission);
                                 Debug.Log("[OrX Mission] NEXT LOCATION ACQUIRED ...... ");
+                                /*
+                                Vector3d surfacePoint = new Vector3d(latMission, lonMission, altMission);
+                                Waypoint waypoint = new Waypoint();
+                                System.Random r = new System.Random();
+                                int waypointColor = (int)(r.NextDouble() * seeds.Count());
+                                waypoint.id = "marker";
+                                waypoint.seed = seeds[waypointColor];
+                                waypoint.name = craftToSpawn;
+                                waypoint.celestialName = name;
+                                waypoint.longitude = FlightGlobals.ActiveVessel.mainBody.GetLongitude(surfacePoint);
+                                waypoint.latitude = FlightGlobals.ActiveVessel.mainBody.GetLatitude(surfacePoint);
+                                waypoint.height = TerrainHeight(latMission, lonMission, FlightGlobals.ActiveVessel.mainBody);
+                                waypoint.altitude = alt - waypoint.height;
+
+                                Debug.Log("[OrX HoloCache] ====================================== ADDING WAYPOINT FOR " + craftToSpawn + gpsCount + " ===");
+                                ScenarioCustomWaypoints.RemoveWaypoint(waypoint);
+                                ScenarioCustomWaypoints.AddWaypoint(waypoint);
+                                */
                                 break;
                             }
                         }
@@ -4729,12 +5304,12 @@ namespace OrX
                     }
                 }
                 coords.Dispose();
-                coordSpawn = false;
                 scanning = true;
                 checking = true;
                 spawnHoloCache = false;
                 tpoint = nextLocation;
-                SpawnCoords = tpoint;
+                showTargetOnScreen = true;
+
                 Debug.Log("[Module OrX Mission] === BOID CHECKING DISTANCE ===");
                 StartCoroutine(CheckTargetDistance(true));
             }
@@ -4756,14 +5331,36 @@ namespace OrX
             Debug.Log("[Spawn OrX HoloCache] Lat: " + lat + " - Lon:" + longi + " - Alt: " + alt);
             return new Vector3d(lat, longi, alt);
         }
-        public Vector3d _SpawnCoords_()
-        {
-            return FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt);
-        }
 
-        IEnumerator SpawnHoloCache(Vector3d vect, bool b, bool empty)
+        public bool spawnByOrx = false;
+        public bool spawnByChallenge = false;
+        public bool triggerKerbSetup = false;
+
+        public void SpawnByChallengeBuilder(Vessel v)
         {
+            spawnByChallenge = true;
+            if (challengeType == "DAKAR RACING")
+            {
+                dakarSetup = true;
+            }
+            StartCoroutine(SpawnHoloCache(new Vector3d(v.latitude, v.longitude, v.altitude + 2), false, false, HoloCacheName));
+        }
+        public void SpawnByOrX(Vector3d vect)
+        {
+            spawnByOrx = true;
+            StartCoroutine(SpawnHoloCache(vect, false, true, string.Empty));
+        }
+        IEnumerator SpawnHoloCache(Vector3d vect, bool b, bool empty, string name)
+        {
+            mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+            degPerMeter = 1 / mPerDegree;
+
+            spawnByOrx = true;
+            craftFile = name;
             string holoFileLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/HoloCache/HoloCache.craft";
+            showTargetOnScreen = false;
+
+            yield return new WaitForFixedUpdate();
 
             if (b)
             {
@@ -4772,24 +5369,36 @@ namespace OrX
             }
 
             emptyholo = empty;
-            Debug.Log("[Spawn OrX HoloCache] Spawning Empty HoloCache ...... " + craftFile);
-            _timer = true;
             holo = true;
 
             _lat = vect.x;
             _lon = vect.y;
             if (empty)
             {
+                Debug.Log("[Spawn OrX HoloCache] Spawning Empty HoloCache ...... ");
+
                 _alt = vect.z + 1f;
-                tpoint = _SpawnCoords_() + FlightGlobals.ActiveVessel.transform.forward * 1.3f;
+                tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt) + FlightGlobals.ActiveVessel.transform.forward * 1.3f;
             }
             else
             {
-                _alt = vect.z;
-                tpoint = _SpawnCoords_();
+                Debug.Log("[Spawn OrX HoloCache] Spawning " + craftFile);
+
+                if (buildingMission)
+                {
+                    _alt = vect.z + 1.5f;
+                    tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt) + FlightGlobals.ActiveVessel.transform.forward * 1.3f;
+                }
+                else
+                {
+                    _alt = vect.z;
+                    tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt);
+                }
             }
-            loadingCraft = true;
-            Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+
+            yield return new WaitForFixedUpdate();
+
+            Vector3d gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
 
             HoloCacheData newData = new HoloCacheData();
 
@@ -4797,14 +5406,10 @@ namespace OrX
             newData.latitude = gpsPos.x;
             newData.longitude = gpsPos.y;
             newData.altitude = gpsPos.z;
-
-            Debug.Log("[Spawn OrX HoloCache] SpawnVesselFromCraftFile Altitude: " + newData.altitude);
-
             newData.body = FlightGlobals.currentMainBody;
             newData.heading = 90;
             newData.pitch = 0;
             newData.orbiting = false;
-
             newData.flagURL = flagURL;
             newData.owned = true;
             newData.vesselType = VesselType.Unknown;
@@ -4851,7 +5456,7 @@ namespace OrX
                 // Set the name
                 if (string.IsNullOrEmpty(newData.name))
                 {
-                    newData.name = craftFile;
+                    newData.name = name;
                 }
 
                 // Set some parameters that need to be at the part level
@@ -5039,14 +5644,7 @@ namespace OrX
                     protoVesselNode.SetValue("hgt", hgt.ToString(), true);
                 }
 
-                if (spawningMissionCraft)
-                {
-                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(rot), true);
-                }
-                else
-                {
-                    protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
-                }
+                protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
 
                 Vector3 nrm = (rotation * Vector3.forward);
                 protoVesselNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
@@ -5060,7 +5658,9 @@ namespace OrX
 
             ProtoVessel protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
             newData.id = protoVessel.vesselRef.id;
-            holoCube = protoVessel.vesselRef;
+            _HoloKron = new Vessel();
+            _HoloKron = protoVessel.vesselRef;
+
             foreach (Part p in FindObjectsOfType<Part>())
             {
                 if (!p.vessel)
@@ -5069,54 +5669,100 @@ namespace OrX
                 }
             }
             yield return new WaitForFixedUpdate();
-            loadingCraft = true;
-            holoCube.isPersistent = true;
-            holoCube.Landed = false;
-            holoCube.situation = Vessel.Situations.FLYING;
-            while (holoCube.packed)
+            _HoloKron.isPersistent = true;
+            _HoloKron.Landed = false;
+            _HoloKron.situation = Vessel.Situations.FLYING;
+            while (_HoloKron.packed)
             {
                 yield return null;
             }
-            holoCube.SetWorldVelocity(Vector3d.zero);
+            _HoloKron.SetWorldVelocity(Vector3d.zero);
             yield return null;
-            var mom = holoCube.FindPartModuleImplementing<ModuleOrXMission>();
+            var mom = _HoloKron.FindPartModuleImplementing<ModuleOrXMission>();
             if (mom == null)
             {
-                holoCube.rootPart.AddModule("ModuleOrXMission", true);
-                mom = holoCube.FindPartModuleImplementing<ModuleOrXMission>();
+                _HoloKron.rootPart.AddModule("ModuleOrXMission", true);
+                mom = _HoloKron.FindPartModuleImplementing<ModuleOrXMission>();
+                mom.HoloCacheName = name;
+                mom.missionType = missionType;
             }
-            mom.HoloCacheName = HoloCacheName;
-            mom.missionType = missionType;
+            else
+            {
+                HoloCacheName = name;
+                missionType = mom.missionType;
+            }
             mom.latitude = tpoint.x;
             mom.longitude = tpoint.y;
             mom.altitude = tpoint.z;
-            targetCoord = holoCube;
-            SpawnCoords = tpoint;
-            holoCube.GoOffRails();
-            holoCube.IgnoreGForces(240);
+            mom.pos = new Vector3d(mom.latitude, mom.longitude, mom.altitude);
+
+            _HoloKron.GoOffRails();
+            _HoloKron.IgnoreGForces(240);
             StageManager.BeginFlight();
 
             if (!b)
             {
-                if (!emptyholo)
+                if (!empty)
                 {
-                    missionHoloSpawned = true;
-                    StartCoroutine(SpawnLocalVessels());
+                    if (dakarSetup)
+                    {
+                        Debug.Log("[Spawn OrX HoloCache] " + newData.name + " IS A DAKAR CHALLENGE .... SWITCHING VESSEL");
+                        dakarSetup = false;
+                        challengeHolo = _HoloKron;
+                        var h = challengeHolo.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                        h.StartBuild();
+                    }
+                    else
+                    {
+                        Debug.Log("[Spawn OrX HoloCache] " + newData.name + " HAS DATA .... CHECKING FOR VESSELS TO SPAWN");
+
+                        missionHoloSpawned = true;
+                        StartCoroutine(SpawnLocalVessels(name));
+                    }
                 }
                 else
                 {
-                    SetupHolo(holoCube);
+                    if (dakarSetup)
+                    {
+                        Debug.Log("[Spawn OrX HoloCache] " + newData.name + " IS A DAKAR CHALLENGE .... SWITCHING VESSEL");
+                        dakarSetup = false;
+                        challengeHolo = _HoloKron;
+                        var h = challengeHolo.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                        h.StartBuild();
+                    }
+                    else
+                    {
+                        if (addCoordSetup)
+                        {
+                            Debug.Log("[Spawn OrX HoloCache] " + newData.name + " IS MISSION HOLO .... SETTING UP COORD MENU");
+
+                            addCoordSetup = false;
+                            AddMissionCoordsSetup();
+                        }
+                        else
+                        {
+                            Debug.Log("[Spawn OrX HoloCache] " + newData.name + " IS PRIMARY HOLO .... SETTING UP HOLOCACHE");
+                            SetupHolo();
+                        }
+                    }
                 }
             }
             else
             {
                 mom.boid = true;
-                scanning = true;
-                checking = true;
-                StartCoroutine(CheckTargetDistanceMission());
+
+                if (!buildingMission)
+                {
+                    scanning = true;
+                    checking = true;
+                    targetCube = _HoloKron;
+                    StartCoroutine(CheckTargetDistanceMission(gpsPos));
+                }
+                else
+                {
+                }
             }
             mom.isLoaded = true;
-            loadingCraft = false;
             holo = false;
             spawnHoloCache = false;
             boid = false;
@@ -5124,62 +5770,131 @@ namespace OrX
             spawningMissionCraft = false;
             emptyholo = true;
         }
-        IEnumerator SpawnLocalVessels()
+        IEnumerator SpawnLocalVessels(string name)
         {
-            Debug.Log("[OrX Mission] === Spawning Local Vessels === "); ;
+            HoloCacheName = name;
+            Debug.Log("[Spawn OrX Local Vessels] === Spawning Local Vessels === ");
+            _file = new ConfigNode();
+            _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + name + "/" + name + ".orx");
 
-            //ResetData();
+            if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/" + name))
+            {
+                Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/" + name);
+            }
             yield return new WaitForFixedUpdate();
+
+            ConfigNode _toArchive = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/" + name + "/" + name + ".orx");
+            if (_toArchive == null)
+            {
+                _toArchive = new ConfigNode();
+                _toArchive = _file;
+                _toArchive.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloArchive/" + name + "/" + name + ".orx");
+            }
 
             if (HoloCacheName != "")
             {
-                ec = 0;
-                _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                int _hcCount = 0;
                 ConfigNode node = _file.GetNode("OrX");
 
                 foreach (ConfigNode spawnCheck in node.nodes)
                 {
-                    if (spawnCheck.name.Contains("HC" + hcCount + "OrXv"))
+                    if (spawnCheck.name.Contains("OrXHoloCacheCoords" + _hcCount))
                     {
-                        if (spawnCheck.name != "HC" + hcCount + "OrXv0")
+                        Debug.Log("[Spawn OrX Local Vessels] === FOUND HOLOCACHE === " + _hcCount); ;
+
+                        ConfigNode HoloCacheNode = node.GetNode("OrXHoloCacheCoords" + _hcCount);
+
+                        foreach (ConfigNode.Value data in HoloCacheNode.values)
                         {
-                            Debug.Log("[OrX Mission] === GRABBING CRAFT FILE FOR " + spawnCheck.name + " ===");
+                            if (data.name == "spawned")
+                            {
+                                if (data.value == "False")
+                                {
+                                    Debug.Log("[Spawn OrX Local Vessels] === HOLOCACHE " + _hcCount + " has not spawned ... ");
+                                    HoloCacheNode.SetValue("spawned", "True", true);
+                                    _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + name + "/" + name + ".orx");
+                                    break;
+                                }
+                                else
+                                {
+                                    Debug.Log("[Spawn OrX Local Vessels] === HOLOCACHE " + _hcCount + " has spawned ... CHECKING FOR EXTRAS");
+
+                                    if (HoloCacheNode.HasValue("extras"))
+                                    {
+                                        var t = HoloCacheNode.GetValue("extras");
+                                        if (t == "False")
+                                        {
+                                            Debug.Log("[Spawn OrX Local Vessels] === HOLOCACHE " + _hcCount + " has no extras ... END TRANSMISSION");
+                                            _hcCount = int.MaxValue;
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            Debug.Log("[Spawn OrX Local Vessels] === HOLOCACHE " + _hcCount + " has extras ... SEARCHING");
+                                            _hcCount += 1;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Debug.Log("[Spawn OrX Local Vessels] === DATA PROCESSED ===");
+                    }
+
+                    if (spawnCheck.name.Contains("HC" + _hcCount + "OrXv"))
+                    {
+                        if (spawnCheck.name != "HC" + _hcCount + "OrXv0")
+                        {
+                            Debug.Log("[Spawn OrX Local Vessels] === GRABBING CRAFT FILE FOR " + spawnCheck.name + " ===");
                             holo = false;
                             emptyholo = false;
                             spawningMissionCraft = true;
 
-                            loadingCraft = true;
-                            _timer = true;
+                            float _left = 0;
+                            float _pitch = 0;
+                            double _al = 0;
+                            double _la = 0;
+                            double _lo = 0;
+                            int _serial = 0;
 
                             ConfigNode location = spawnCheck.GetNode("coords");
+
                             foreach (ConfigNode.Value loc in location.values)
                             {
-                                string locEncryptedName = OrXLog.instance.Decrypt(loc.name);
-                                if (locEncryptedName == "lat")
+                                string cvEncryptedName = OrXLog.instance.Decrypt(loc.name);
+                                string cvEncryptedValue = OrXLog.instance.Decrypt(loc.value);
+                                loc.name = cvEncryptedName;
+                                loc.value = cvEncryptedValue;
+
+                                if (loc.name == "lat")
                                 {
-                                    string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
-                                    la = double.Parse(locEncryptedValue);
+                                    _la = double.Parse(loc.value);
                                 }
-                                if (locEncryptedName == "lon")
+                                if (loc.name == "lon")
                                 {
-                                    string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
-                                    lo = double.Parse(locEncryptedValue);
+                                   _lo = double.Parse(loc.value);
                                 }
-                                if (locEncryptedName == "alt")
+                                if (loc.name == "alt")
                                 {
-                                    string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
-                                    al = double.Parse(locEncryptedValue);
+                                    _al = double.Parse(loc.value);
                                 }
-                                if (locEncryptedName == "heading")
+                                if (loc.name == "left")
                                 {
-                                    string locEncryptedValue = OrXLog.instance.Decrypt(loc.value);
-                                    heading = float.Parse(locEncryptedValue);
+                                    _left = float.Parse(loc.value);
+                                }
+                                if (loc.name == "pitch")
+                                {
+                                    _pitch = float.Parse(loc.value);
+                                }
+                                if (loc.name == "pas")
+                                {
+                                    pas = loc.value;
                                 }
                             }
 
-                            Debug.Log("[OrX Mission] === VESSEL SPAWN COORDS READY ===");
+                            Debug.Log("[Spawn OrX Local Vessels] === VESSEL SPAWN COORDS READY ===");
 
-                            Debug.Log("[OrX Mission] === DECRYPTING CRAFT FILE DATA FOR " + spawnCheck.name + " ===");
+                            Debug.Log("[Spawn OrX Local Vessels] === DECRYPTING CRAFT FILE DATA FOR " + spawnCheck.name + " ===");
 
                             ConfigNode craftFile = spawnCheck.GetNode("craft");
                             foreach (ConfigNode.Value cv in craftFile.values)
@@ -5189,6 +5904,8 @@ namespace OrX
                                 cv.name = cvEncryptedName;
                                 cv.value = cvEncryptedValue;
                             }
+
+
                             foreach (ConfigNode cn in craftFile.nodes)
                             {
                                 foreach (ConfigNode.Value cv in cn.values)
@@ -5203,43 +5920,40 @@ namespace OrX
                                 {
                                     foreach (ConfigNode.Value cv2 in cn2.values)
                                     {
-                                        string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
-                                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
-                                        cv2.name = cvEncryptedName;
-                                        cv2.value = cvEncryptedValue;
+                                        if (cv2.name != "currentRotation")
+                                        {
+                                            string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                                            cv2.name = cvEncryptedName;
+                                            cv2.value = cvEncryptedValue;
+                                        }
                                     }
                                 }
                             }
 
-                            Debug.Log("[OrX Mission] === VESSEL DECRYPTED - READY FOR SPAWNING ===");
+                            Debug.Log("[Spawn OrX Local Vessels] === VESSEL DECRYPTED - READY FOR SPAWNING ===");
 
                             craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
-
                             missionCraftLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp";
-                            SpawnCoords = new Vector3d(la, lo, al);
-                            Debug.Log("[Spawn OrX HoloCache] Spawning HoloCache Craft");
 
-                            Vector3 gpsPos = WorldPositionToGeoCoords(SpawnCoords, FlightGlobals.currentMainBody);
                             yield return new WaitForFixedUpdate();
 
                             HoloCacheData newData = new HoloCacheData();
-
                             newData.craftURL = missionCraftLoc;
-                            newData.latitude = la;
-                            newData.longitude = lo;
-                            newData.altitude = al + 1;
-
-                            Debug.Log("[Spawn OrX HoloCache] SpawnVesselFromCraftFile Altitude: " + newData.altitude);
+                            newData.latitude = _la;
+                            newData.longitude = _lo;
+                            newData.altitude = _al + 100;
                             newData.body = FlightGlobals.currentMainBody;
-                            newData.heading = heading;
-                            newData.pitch = pitch;
+                            newData.heading = 0;
+                            newData.pitch = 0;
                             newData.orbiting = false;
-                            newData.flagURL = flagURL;
+                            newData.flagURL = "";
                             newData.owned = false;
                             newData.vesselType = VesselType.Unknown;
+                            newData.name = spawnCheck.name;
 
-                            //      string gameDataDir = KSPUtil.ApplicationRootPath;
-                            Debug.Log("[Spawn OrX HoloCache] Spawning " + spawnCheck.name);
+                            Debug.Log("[Spawn OrX Local Vessels] Spawning " + spawnCheck.name);
+                            Debug.Log("[Spawn OrX Local Vessels] Altitude: " + newData.altitude);
 
                             bool landed = false;
                             if (!landed)
@@ -5252,234 +5966,101 @@ namespace OrX
                                 newData.orbit.UpdateFromStateVectors(pos, newData.body.getRFrmVel(pos), newData.body, Planetarium.GetUniversalTime());
                             }
 
+                            Debug.Log("[Spawn OrX Local Vessels] Orbit Data Processed");
+
                             ConfigNode[] partNodes;
                             ShipConstruct shipConstruct = null;
-                            bool hasClamp = false;
-                            float lcHeight = 0;
 
-                            if (!string.IsNullOrEmpty(newData.craftURL))
+                            ConfigNode currentShip = ShipConstruction.ShipConfig;
+                            shipConstruct = ShipConstruction.LoadShip(newData.craftURL);
+                            ShipConstruction.ShipConfig = currentShip;
+                            uint missionID = (uint)Guid.NewGuid().GetHashCode();
+                            uint launchID = HighLogic.CurrentGame.launchID++;
+
+                            Debug.Log("[Spawn OrX Local Vessels] Ship construct created");
+
+                            foreach (Part p in shipConstruct.parts)
                             {
-                                // Save the current ShipConstruction ship, otherwise the player will see the spawned ship next time they enter the VAB!
-                                ConfigNode currentShip = ShipConstruction.ShipConfig;
-
-                                shipConstruct = ShipConstruction.LoadShip(newData.craftURL);
-                                if (shipConstruct == null)
-                                {
-                                    Debug.Log("[Spawn OrX HoloCache] ShipConstruct was null when tried to load '" + newData.craftURL +
-                                      "' (usually this means the file could not be found).");
-                                    //return;//continue;
-                                }
-
-                                lcHeight = 0;
-                                // Restore ShipConstruction ship
-                                ShipConstruction.ShipConfig = currentShip;
-
-                                // Set the name
-                                if (string.IsNullOrEmpty(newData.name))
-                                {
-                                    newData.name = spawnCheck.name;
-                                }
-
-                                // Set some parameters that need to be at the part level
-                                uint missionID = (uint)Guid.NewGuid().GetHashCode();
-                                uint launchID = HighLogic.CurrentGame.launchID++;
-                                foreach (Part p in shipConstruct.parts)
-                                {
-                                    p.flightID = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
-                                    p.missionID = missionID;
-                                    p.launchID = launchID;
-                                    p.flagURL = flagURL;
-                                    p.temperature = 1.0;
-                                    if (p.Modules.Contains<KerbalEVA>())
-                                    {
-                                        ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
-                                        crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                                          ? ProtoCrewMember.Gender.Female
-                                          : ProtoCrewMember.Gender.Male;
-                                        //crewMember.trait = "Clone";
-                                        
-                                        // Add them to the part
-                                        p.AddCrewmemberAt(crewMember, p.protoModuleCrew.Count);
-                                    }
-                                }
-
-                                ConfigNode empty = new ConfigNode();
-                                ProtoVessel dummyProto = new ProtoVessel(empty, null);
-                                Vessel dummyVessel = new Vessel();
-                                dummyVessel.parts = shipConstruct.parts;
-                                dummyProto.vesselRef = dummyVessel;
-
-                                // Create the ProtoPartSnapshot objects and then initialize them
-                                foreach (Part p in shipConstruct.parts)
-                                {
-                                    dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto));
-                                }
-                                foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
-                                {
-                                    p.storePartRefs();
-                                }
-
-                                List<ConfigNode> partNodesL = new List<ConfigNode>();
-                                foreach (ProtoPartSnapshot snapShot in dummyProto.protoPartSnapshots)
-                                {
-                                    ConfigNode partNode = new ConfigNode("PART");
-                                    snapShot.Save(partNode);
-                                    partNodesL.Add(partNode);
-                                }
-                                partNodes = partNodesL.ToArray();
-                            }
-                            else
-                            {
-                                uint flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
-                                partNodes = new ConfigNode[1];
-                                partNodes[0] = ProtoVessel.CreatePartNode(newData.craftPart.name, flightId, null);
-
-                                if (string.IsNullOrEmpty(newData.name))
-                                {
-                                    newData.name = newData.craftPart.name;
-                                }
+                                p.flightID = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
+                                p.missionID = missionID;
+                                p.launchID = launchID;
+                                p.flagURL = flagURL;
+                                p.temperature = 1.0;
                             }
 
-                            Debug.Log("[Spawn OrX HoloCache] CREATING ADDITIONAL NODES FOR " + newData.name);
+                            Debug.Log("[Spawn OrX Local Vessels] Part flight ID's processed");
+                            Debug.Log("[Spawn OrX Local Vessels] Constructing protovessel");
+
+                            ConfigNode empty = new ConfigNode();
+                            ProtoVessel dummyProto = new ProtoVessel(empty, null);
+                            Vessel dummyVessel = new Vessel();
+                            dummyVessel.parts = shipConstruct.parts;
+                            dummyProto.vesselRef = dummyVessel;
+
+                            Debug.Log("[Spawn OrX Local Vessels] Checking for crew space");
+
+                            foreach (Part p in shipConstruct.parts)
+                            {
+                                if (p.Modules.Contains<KerbalEVA>())
+                                {
+                                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                      ? ProtoCrewMember.Gender.Female
+                                      : ProtoCrewMember.Gender.Male;
+                                    System.Random r = new System.Random();
+                                    _serial = r.Next(1000, 9999);
+                                    crewMember.KerbalRef.crewMemberName = "TK-" + _serial;
+                                    p.AddCrewmember(crewMember);
+
+                                    newData.name = "TK-" + _serial;
+                                }
+
+                                dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto));
+                            }
+                            foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
+                            {
+                                p.storePartRefs();
+                            }
+
+                            List<ConfigNode> partNodesL = new List<ConfigNode>();
+                            foreach (ProtoPartSnapshot snapShot in dummyProto.protoPartSnapshots)
+                            {
+                                ConfigNode partNode = new ConfigNode("PART");
+                                snapShot.Save(partNode);
+                                partNodesL.Add(partNode);
+                            }
+                            partNodes = partNodesL.ToArray();
+
+                            Debug.Log("[Spawn OrX Local Vessels] CREATING ADDITIONAL NODES FOR " + newData.name);
                             ConfigNode[] additionalNodes = new ConfigNode[0];
                             ConfigNode protoVesselNode = ProtoVessel.CreateVesselNode(newData.name, newData.vesselType, newData.orbit, 0, partNodes, additionalNodes);
                             bool splashed = false;
 
-                            if (!newData.orbiting)
-                            {
-                                Vector3d norm = newData.body.GetRelSurfaceNVector(newData.latitude, newData.longitude);
-                                protoVesselNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
-                                  Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
-                                protoVesselNode.SetValue("landed", (landed && !splashed).ToString());
-                                protoVesselNode.SetValue("splashed", splashed.ToString());
-                                protoVesselNode.SetValue("lat", newData.latitude.ToString());
-                                protoVesselNode.SetValue("lon", newData.longitude.ToString());
-                                protoVesselNode.SetValue("alt", newData.altitude.ToString());
-                                protoVesselNode.SetValue("landedAt", newData.body.name);
+                            Vector3d norm = newData.body.GetRelSurfaceNVector(newData.latitude, newData.longitude);
+                            splashed = false;
+                            protoVesselNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
+                              Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
+                            protoVesselNode.SetValue("landed", (landed && !splashed).ToString());
+                            protoVesselNode.SetValue("splashed", splashed.ToString());
+                            protoVesselNode.SetValue("lat", newData.latitude.ToString());
+                            protoVesselNode.SetValue("lon", newData.longitude.ToString());
+                            protoVesselNode.SetValue("alt", newData.altitude.ToString());
+                            protoVesselNode.SetValue("landedAt", newData.body.name);
 
-                                float lowest = float.MaxValue;
-                                if (shipConstruct != null)
-                                {
-                                    foreach (Part p in shipConstruct.parts)
-                                    {
-                                        bool robotic = p.isRobotic();
-                                        if (!robotic)
-                                        {
-                                            foreach (Collider collider in p.GetComponentsInChildren<Collider>())
-                                            {
-                                                if (collider.gameObject.layer != 21 && collider.enabled)
-                                                {
-                                                    lowest = Mathf.Min(lowest, collider.bounds.min.y);
-                                                }
-                                            }
-                                        }
+                            Quaternion normal = Quaternion.LookRotation((Vector3)norm);
+                            Quaternion rotation = Quaternion.identity;
+                            rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
+                            rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
+                            protoVesselNode.SetValue("hgt", newData.height.ToString(), true);
+                            protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+                            Vector3 nrm = (rotation * Vector3.forward);
+                            protoVesselNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
+                            protoVesselNode.SetValue("prst", false.ToString(), true);
 
-                                        p.SetOpacity(0);
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (Part p in shipConstruct.parts)
-                                    {
-                                        bool roboticPart = p.isRobotic();
-                                        if (!roboticPart)
-                                        {
-                                            foreach (Collider collider in newData.craftPart.partPrefab.GetComponentsInChildren<Collider>())
-                                            {
-                                                if (collider.gameObject.layer != 21 && collider.enabled)
-                                                {
-                                                    lowest = Mathf.Min(lowest, collider.bounds.min.y);
-                                                }
-                                            }
-                                        }
-
-                                        p.SetOpacity(0);
-                                    }
-                                }
-
-                                if (lowest == float.MaxValue)
-                                {
-                                    lowest = 0;
-                                }
-
-                                Debug.Log("[Spawn OrX HoloCache] Figure out the surface height and rotation for " + newData.name);
-
-                                Quaternion normal = Quaternion.LookRotation(norm);
-                                Quaternion rotation = Quaternion.identity;
-                                float heading = newData.heading;
-                                if (shipConstruct == null)
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
-                                }
-                                else if (shipConstruct.shipFacility == EditorFacility.SPH)
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
-                                    heading += 180.0f;
-                                }
-                                else
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
-                                    rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
-                                    newData.heading = 0;
-                                    newData.pitch = 0;
-                                }
-
-
-                                newData.roll -= 90;
-
-
-                                rotation = rotation * Quaternion.AngleAxis(heading, Vector3.back);
-                                rotation = rotation * Quaternion.AngleAxis(newData.roll, Vector3.down);
-                                rotation = rotation * Quaternion.AngleAxis(newData.pitch, Vector3.left);
-
-                                // Set the height and rotation
-                                if (landed || splashed)
-                                {
-                                    float hgt = (shipConstruct != null ? shipConstruct.parts[0] : newData.craftPart.partPrefab).localRoot.attPos0.y - lowest;
-                                    hgt += newData.height;
-
-                                    foreach (Part p in shipConstruct.Parts)
-                                    {
-                                        LaunchClamp lc = p.FindModuleImplementing<LaunchClamp>();
-                                        if (lc)
-                                        {
-                                            hasClamp = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!hasClamp)
-                                    {
-                                        //hgt += 2;
-                                    }
-                                    else
-                                    {
-                                        hgt += lcHeight;
-                                    }
-                                    protoVesselNode.SetValue("hgt", hgt.ToString(), true);
-                                }
-
-                                if (!spawningMissionCraft)
-                                {
-                                    //protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(rot), true);
-                                }
-                                else
-                                {
-                                }
-                                protoVesselNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
-
-                                // Set the normal vector relative to the surface
-                                Vector3 nrm = (rotation * Vector3.forward);
-                                protoVesselNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
-
-                                protoVesselNode.SetValue("prst", false.ToString(), true);
-                            }
-
-                            // Add vessel to the game
                             ProtoVessel protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
                             protoVessel.vesselRef.transform.rotation = protoVessel.rotation;
                             newData.id = protoVessel.vesselRef.id;
-                            Vessel v = protoVessel.vesselRef;
+                            Vessel localVessel = protoVessel.vesselRef;
                             foreach (Part p in FindObjectsOfType<Part>())
                             {
                                 if (!p.vessel)
@@ -5487,42 +6068,108 @@ namespace OrX
                                     Destroy(p.gameObject);
                                 }
                             }
-                            yield return new WaitForFixedUpdate();
 
-                            loadingCraft = true;
-                            v.isPersistent = true;
-                            v.Landed = false;
-                            v.situation = Vessel.Situations.FLYING;
-                            while (v.packed)
-                            {
-                                yield return null;
-                            }
-                            v.SetWorldVelocity(Vector3d.zero);
-                            v.GoOffRails();
-                            v.IgnoreGForces(120);
-                            v.rootPart.AddModule("ModuleHideVessel", true);
-                            emptyholo = true;
-                            StageManager.BeginFlight();
-                            loadingCraft = false;
-                            holo = false;
-                            emptyholo = false;
-                            spawningMissionCraft = false;
-                            loadingCraft = false;
-                            _timer = false;
-                            spawnHoloCache = false;
+                            yield return new WaitForFixedUpdate();
                             ConfigNode craft = ConfigNode.Load(missionCraftLoc);
                             craft.ClearData();
                             craft.Save(missionCraftLoc);
-                            yield return new WaitForFixedUpdate();
+
+                            localVessel.isPersistent = true;
+                            localVessel.Landed = false;
+                            localVessel.situation = Vessel.Situations.FLYING;
+                            while (localVessel.packed)
+                            {
+                                yield return null;
+                            }
+                            localVessel.SetWorldVelocity(Vector3d.zero);
+                            localVessel.GoOffRails();
+                            localVessel.IgnoreGForces(240);
+                            localVessel.rootPart.AddModule("ModuleHideVessel", true);
+                            emptyholo = true;
+                            StageManager.BeginFlight();
+
+                            holo = false;
+                            spawningMissionCraft = false;
+                            spawnHoloCache = false;
+                            Debug.Log("[Spawn OrX Local Vessels] === FIXING ROTATION FOR " + spawnCheck.name + " ===");
+                            if (_left >= 360)
+                            {
+                                _left -= 360;
+                            }
+
+                            Vector3 UpVect = (localVessel.transform.position - localVessel.mainBody.position).normalized;
+                            Vector3 EastVect = localVessel.mainBody.getRFrmVel(localVessel.CoM).normalized;
+                            Vector3 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+                            Quaternion _fixRot = Quaternion.identity;
+
+                            localVessel.IgnoreGForces(240);
+                            localVessel.angularVelocity = Vector3.zero;
+                            localVessel.angularMomentum = Vector3.zero;
+                            localVessel.SetWorldVelocity(Vector3d.zero);
+                            _fixRot = Quaternion.FromToRotation(-localVessel.ReferenceTransform.right, NorthVect) * localVessel.ReferenceTransform.rotation;
+                            localVessel.SetRotation(_fixRot, true);
+                            _fixRot = Quaternion.AngleAxis(180, localVessel.ReferenceTransform.right) * localVessel.ReferenceTransform.rotation;
+                            localVessel.SetRotation(_fixRot, true);
+                            localVessel.IgnoreGForces(240);
+                            _fixRot = Quaternion.AngleAxis(_pitch - 90, localVessel.ReferenceTransform.right) * localVessel.ReferenceTransform.rotation;
+                            localVessel.SetRotation(_fixRot, true);
+                            _fixRot = Quaternion.AngleAxis(_left, UpVect) * localVessel.ReferenceTransform.rotation;
+                            localVessel.SetRotation(_fixRot, true);
+                            float localAlt = Convert.ToSingle(localVessel.radarAltitude);
+                            float dropRate = Mathf.Clamp((localAlt * 2), 0.1f, 200);
+                            Debug.Log("[Spawn OrX Local Vessels] === PLACING " + spawnCheck.name + " ===");
+
+                            while (dropRate >= 1 && !localVessel.LandedOrSplashed)
+                            {
+                                localVessel.IgnoreGForces(240);
+                                localVessel.angularVelocity = Vector3.zero;
+                                localVessel.angularMomentum = Vector3.zero;
+                                localVessel.SetWorldVelocity(Vector3.zero);
+                                dropRate = Mathf.Clamp((localAlt * 2), 0.1f, 200);
+
+                                if (dropRate > 2)
+                                {
+                                    localVessel.Translate(dropRate * Time.fixedDeltaTime * -UpVect);
+                                }
+                                else
+                                {
+                                    dropRate = 0.1f;
+                                    localVessel.SetWorldVelocity(dropRate * -UpVect);
+                                }
+                                localAlt -= dropRate * Time.fixedDeltaTime;
+                                yield return new WaitForFixedUpdate();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("[Spawn OrX Local Vessels] === HOLOCACHE " + _hcCount + " has no vessels ... END TRANSMISSION");
+                    }
+                }
+
+                foreach (ConfigNode spawnCheck in node.nodes)
+                {
+                    if (spawnCheck.name.Contains("OrXHoloCacheCoords"))
+                    {
+                        ConfigNode HoloCacheNode = node.GetNode("OrXHoloCacheCoords" + _hcCount);
+
+                        if (HoloCacheNode != null)
+                        {
+                            Debug.Log("[Spawn OrX Local Vessels] === FOUND HOLOCACHE " + _hcCount + " === UPDATING");
+
+
+                            Debug.Log("[Spawn OrX Local Vessels] === DATA PROCESSED ===");
                         }
                     }
                 }
             }
+
+            _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloCache/" + name + "/" + name + ".orx");
         }
 
         #endregion
 
-        ///
+        /// 
 
         #region Main GUI
 
@@ -5540,15 +6187,14 @@ namespace OrX
                     paused = false;
                 }
 
-                if (TargetHCGUI && scanning)
+                if (showTargetOnScreen)
                 {
-                    DrawTextureOnWorldPos(SpawnCoords, instance.HoloTargetTexture, new Vector2(8, 8));
+                    DrawTextureOnWorldPos(nextLocation, instance.HoloTargetTexture, new Vector2(8, 8));
                 }
 
                 if (OrXHCGUIEnabled)
                 {
                     WindowRectToolbar = GUI.Window(265227765, WindowRectToolbar, OrXHCGUI, "", OrXGUISkin.window);
-                    UseMouseEventInRect(WindowRectToolbar);
                 }
             }
             else
@@ -5557,7 +6203,6 @@ namespace OrX
                 {
                     if (!OrXHCGUIEnabled) return;
                     WindowRectToolbar = GUI.Window(266222695, WindowRectToolbar, OrXHCGUI, "", OrXGUISkin.window);
-                    UseMouseEventInRect(WindowRectToolbar);
                 }
             }
         }
@@ -5569,7 +6214,8 @@ namespace OrX
             {
                 Texture buttonTexture = GameDatabase.Instance.GetTexture(OrXDir + "OrX_icon", false); //texture to use for the button
                 ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
-                    ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+                    ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB 
+                    | ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION | ApplicationLauncher.AppScenes.MAPVIEW, buttonTexture);
                 hasAddedButton = true;
             }
         }
@@ -5577,9 +6223,9 @@ namespace OrX
         public void HideGameUI()
         {
             showScores = false;
-            building = false;
-            buildingMission = false;
-            addCoords = false;
+            //building = false;
+            //buildingMission = false;
+            //addCoords = false;
             GuiEnabledOrXMissions = false;
             OrXHCGUIEnabled = false;
             PlayOrXMission = false;
@@ -5590,14 +6236,21 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 vid = FlightGlobals.ActiveVessel.id;
-                if (!scanning && !buildingMission)
+                if (!buildingMission)
                 {
-                    ClearDatabase();
-                    LoadHoloCacheTargets();
+                    //ClearDatabase();
+                    //CheckSOI();
+                    Debug.Log("[OrX GUI] === Operation Dinner Out is a go !!!! ===");
+                    ScreenMsg("Operation 'Dinner Out' is a go !!!!");
                 }
+                else
+                {
+                    GuiEnabledOrXMissions = true;
+                    addCoords = true;
+                    building = true;
+                }
+                OrXHCGUIEnabled = true;
             }
-            OrXHCGUIEnabled = true;
-            //LoadHoloCacheTargets();
         }
         private void ToggleGUI()
         {
@@ -5611,13 +6264,40 @@ namespace OrX
                 {
                     pauseCheck = true;
                 }
-                building = false;
-                buildingMission = false;
-                addCoords = false;
-                GuiEnabledOrXMissions = false;
-                OrXHCGUIEnabled = false;
-                PlayOrXMission = false;
-                showScores = false;
+
+                if (!addCoords)
+                {
+                    building = false;
+                    buildingMission = false;
+                    addCoords = false;
+                    GuiEnabledOrXMissions = false;
+                    OrXHCGUIEnabled = false;
+                    PlayOrXMission = false;
+                    showScores = false;
+
+                    if (_HoloKron != null)
+                    {
+                        var h = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                        if (h.boid)
+                        {
+                            h.HideHolo();
+                        }
+                    }
+
+                    if (OrXLog.instance.keysSet)
+                    {
+                        OrXLog.instance.ResetFocusKeys();
+                    }
+
+                    ResetData();
+                }
+                else
+                {
+                    GuiEnabledOrXMissions = false;
+                    OrXHCGUIEnabled = false;
+                    PlayOrXMission = false;
+                    showScores = false;
+                }
             }
             else
             {
@@ -5702,9 +6382,9 @@ namespace OrX
                                     {
                                         Debug.Log("[OrX Mission] === ADDING BLUPRINTS === SPH");
 
-                                        if (savingToHoloCube)
+                                        if (savingToHoloKron)
                                         {
-                                            var p = EditorLogic.RootPart.FindModuleImplementing<ModuleOrXHoloCube>();
+                                            var p = EditorLogic.RootPart.FindModuleImplementing<ModuleOrXHoloKron>();
                                             p.blueprints = hcFile.Current;
                                             p.SaveBlueprints();
                                             ToggleCraftBrowser();
@@ -5752,7 +6432,7 @@ namespace OrX
                                     {
                                         Debug.Log("[OrX Mission] === ADDING BLUPRINTS === VAB");
 
-                                        if (savingToHoloCube)
+                                        if (savingToHoloKron)
                                         {
 
                                         }
@@ -5776,8 +6456,6 @@ namespace OrX
                             }
                             hcFile.Dispose();
                         }
-
-                        
                     }
                     else
                     {
@@ -6011,10 +6689,9 @@ namespace OrX
 
                         if (!addCoords)
                         {
-                            DrawHoloCacheName(line);
-                            line++;
                             DrawHoloCacheName2(line);
                             line++;
+                            DrawPassword(line);
                             line++;
                             DrawEditDescription(line);
                             line++;
@@ -6076,7 +6753,7 @@ namespace OrX
                                     }
                                 }
                             }
-                            line++;
+
                             if (missionDescription0 != "" && missionDescription0 != string.Empty)
                             {
                                 DrawClearDescription(line);
@@ -6090,20 +6767,22 @@ namespace OrX
                                 DrawRaceType(line);
                                 line++;
                             }
-                            line++;
+                            line += 0.4f;
                             DrawVessel(line);
                             line++;
+                            line += 0.4f;
                             DrawAddBlueprints(line);
                             line++;
                             DrawSaveLocal(line);
                             line++;
                             if (saveLocalVessels)
                             {
-                                line++;
+                                line += 0.4f;
                                 DrawLocalSaveRangeText(line);
                                 line++;
                                 DrawLocalSaveRange(line);
                                 line++;
+                                line += 0.3f;
                             }
 
                             line++;
@@ -6140,99 +6819,150 @@ namespace OrX
             {
                 GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
 
-                line += 0.6f;
-
-                if (!reload)
+                if (HighLogic.LoadedSceneIsEditor)
                 {
-                    GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth, WindowRectHCGUI.height));
-                    WindowHCGUI();
-                    GUI.EndGroup();
+                    line += 0.6f;
 
-                    if (!hide)
+                    if (!reload)
                     {
-                        HCGUILines = WindowRectHCGUI.height / entryHeight;
+                        GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth, WindowRectHCGUI.height));
+                        WindowHCGUI();
+                        GUI.EndGroup();
 
-                        HCGUIHeight = Mathf.Lerp(HCGUIHeight, HCGUILines, 0.15f);
-                        line += HCGUIHeight;
-
-                        line += 0.25f;
-
-                        if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Load HoloCache Data", OrXGUISkin.button))
+                        if (!hide)
                         {
-                            TargetHCGUI = false;
-                            reload = true;
-                            ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
-                            ClearDatabase();
-                            LoadHoloCacheTargets();
+                            HCGUILines = WindowRectHCGUI.height / entryHeight;
+
+                            HCGUIHeight = Mathf.Lerp(HCGUIHeight, HCGUILines, 0.15f);
+                            line += HCGUIHeight;
+
+                            line += 0.25f;
+
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Load HoloCache Data", OrXGUISkin.button))
+                            {
+                                TargetHCGUI = false;
+                                reload = true;
+                                ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
+                                ClearDatabase();
+                            }
                         }
                     }
+                    else
+                    {
+                        if (!hide)
+                        {
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "HoloCache Data Loading", OrXGUISkin.box))
+                            {
+                                // do nothing ... reload will turn false after OrXHoloCache is finished loading targets
+                            }
+                        }
+                    }
+
                 }
                 else
                 {
-                    if (!hide)
+                    if (HighLogic.LoadedSceneIsFlight)
                     {
-                        if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "HoloCache Data Loading", OrXGUISkin.box))
+                        var centerLabel = new GUIStyle
                         {
-                            // do nothing ... reload will turn false after OrXHoloCache is finished loading targets
-                        }
-                    }
-                }
-
-                if (HighLogic.LoadedSceneIsFlight)
-                {
-                    if (!hide)
-                    {
-                        line += 1.25f;
-
-                        if (!spawnHoloCache)
+                            alignment = TextAnchor.UpperCenter,
+                            normal = { textColor = Color.white }
+                        };
+                        var titleStyle = new GUIStyle(centerLabel)
                         {
-                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Create HoloCache", OrXGUISkin.button))
+                            fontSize = 12,
+                            alignment = TextAnchor.MiddleCenter
+                        };
+
+                        GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum", titleStyle);
+
+                        if (scanningForHolo)
+                        {
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Closest Holo is " + Math.Round((targetDistance / 1000), 2) + " km away", titleStyle);
+
+                            line++;
+
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Heading: " + Math.Round(heading, 2) + " degrees", titleStyle);
+
+                            line++;
+
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "ETA @current speed: " + Math.Round(scanDelay / 6, 1) + " minutes", titleStyle);
+
+                            line++;
+
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Next Scan in " + Math.Round(scanDelay, 2) + " seconds", titleStyle);
+
+                            line += 1.25f;
+
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Cancel Scan", OrXGUISkin.button))
                             {
-                                if (FlightGlobals.ActiveVessel.isEVA)
-                                {
-                                    if (FlightGlobals.ActiveVessel.LandedOrSplashed)
-                                    {
-                                        // SPAWN HOLOCACHE
-                                        GuiEnabledOrXMissions = true;
-                                        PlayOrXMission = false;
-                                        building = true;
-                                        buildingMission = true;
-                                        geoCache = true;
-                                        OrXHCGUIEnabled = false;
-                                        boid = false;
-                                        StartCoroutine(SpawnHoloCache(new Vector3d(FlightGlobals.ActiveVessel.latitude,FlightGlobals.ActiveVessel.longitude,FlightGlobals.ActiveVessel.altitude), false, true));
-                                    }
-                                    else
-                                    {
-                                        //buildingMission = true;
-                                        //OrXMissions.instance.StartMissionBuilder(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude), new Guid());
-                                        //HideGameUI();
-
-                                        ScreenMsg("<color=#cc4500ff><b>You must be Landed or Splashed</b></color>");
-                                        ScreenMsg("<color=#cc4500ff><b>to create a HoloCache</b></color>");
-                                    }
-                                }
-                                else
-                                {
-                                    ScreenMsg("<color=#cc4500ff><b>You must be EVA to create a HoloCache</b></color>");
-                                }
+                                scanningForHolo = false;
+                                checking = false;
                             }
                         }
                         else
                         {
-                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Creating HoloCache", OrXGUISkin.box))
+                            if (!hide)
                             {
-                                // do nothing ... spawnHoloCache will turn false after OrXHoloCache is finished spawning empty HoloCache
+                                line ++;
+
+                                if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Scan For HoloCache", OrXGUISkin.button))
+                                {
+                                    scanningForHolo = true;
+                                    checking = true;
+                                    ClearDatabase();
+                                }
+
+                                line += 1.25f;
+
+                                if (!spawnHoloCache)
+                                {
+                                    if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Create HoloCache", OrXGUISkin.button))
+                                    {
+                                        if (FlightGlobals.ActiveVessel.isEVA)
+                                        {
+                                            if (FlightGlobals.ActiveVessel.LandedOrSplashed)
+                                            {
+                                                // SPAWN HOLOCACHE
+                                                GuiEnabledOrXMissions = true;
+                                                PlayOrXMission = false;
+                                                building = true;
+                                                buildingMission = true;
+                                                geoCache = true;
+                                                OrXHCGUIEnabled = false;
+                                                boid = false;
+
+                                                //SetupHolo();
+                                                Vector3d hl = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude + 1.5);
+                                                StartCoroutine(SpawnHoloCache(hl, false, true, string.Empty));
+                                            }
+                                            else
+                                            {
+                                                //buildingMission = true;
+                                                //OrXMissions.instance.StartMissionBuilder(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude), new Guid());
+                                                //HideGameUI();
+
+                                                ScreenMsg("<color=#cc4500ff><b>You must be Landed or Splashed</b></color>");
+                                                ScreenMsg("<color=#cc4500ff><b>to create a HoloCache</b></color>");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            ScreenMsg("<color=#cc4500ff><b>You must be EVA to create a HoloCache</b></color>");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Creating HoloCache", OrXGUISkin.box))
+                                    {
+                                        // do nothing ... spawnHoloCache will turn false after OrXHoloCache is finished spawning empty HoloCache
+                                    }
+                                }
+                                line += 1F;
                             }
                         }
-                        line += 1F;
                     }
-                }
-                else
-                {
-                    GUI.BeginGroup(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth, WindowRectHCGUI.height));
-                    WindowHCGUI();
-                    GUI.EndGroup();
                 }
 
                 toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
@@ -6296,7 +7026,7 @@ namespace OrX
                                             TargetHCGUI = false;
                                             reload = true;
                                             ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Description</b></color>");
-                                            LoadHoloCacheTargets();
+                                            CheckSOI();
                                         }
 
                                         if (GUI.Button(new Rect(nameWidth, HCGUIEntryCount * HCGUIEntryHeight, listRect.width - HCGUIEntryHeight - nameWidth, HCGUIEntryHeight), label, OrXGUISkin.box))
@@ -6306,7 +7036,7 @@ namespace OrX
                                             TargetHCGUI = false;
                                             reload = true;
                                             ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Description</b></color>");
-                                            LoadHoloCacheTargets();
+                                            CheckSOI();
                                         }
                                     }
                                 }
@@ -6335,7 +7065,7 @@ namespace OrX
                                                 TargetHCGUI = false;
                                                 reload = true;
                                                 ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
-                                                LoadHoloCacheTargets();
+                                                CheckSOI();
                                             }
 
                                             if (GUI.Button(new Rect(nameWidth, HCGUIEntryCount * HCGUIEntryHeight, listRect.width - HCGUIEntryHeight - nameWidth, HCGUIEntryHeight), label, OrXGUISkin.box))
@@ -6346,7 +7076,7 @@ namespace OrX
                                                 TargetHCGUI = false;
                                                 reload = true;
                                                 ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
-                                                LoadHoloCacheTargets();
+                                                CheckSOI();
                                             }
                                         }
                                     }
@@ -6364,6 +7094,11 @@ namespace OrX
                                             resetTargetHCGUI = false;
                                             scanning = true;
                                             _craftFile = coordinate.Current.name;
+                                            if (HighLogic.LoadedScene == GameScenes.TRACKSTATION)
+                                            {
+
+                                            }
+
                                             // LOAD HOLOCACHE DESCRIPTION WINDOW
                                         }
 
@@ -6454,7 +7189,7 @@ namespace OrX
                                                 TargetHCGUI = false;
                                                 reload = true;
                                                 ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
-                                                LoadHoloCacheTargets();
+                                                CheckSOI();
                                             }
                                         }
                                     }
@@ -6487,7 +7222,7 @@ namespace OrX
                                                     TargetHCGUI = false;
                                                     reload = true;
                                                     ScreenMsg("<color=#cc4500ff><b>Loading HoloCache Targets</b></color>");
-                                                    LoadHoloCacheTargets();
+                                                    CheckSOI();
                                                 }
                                             }
                                         }
@@ -6506,20 +7241,17 @@ namespace OrX
                                                     OrXHCGUIEnabled = false;
                                                     HoloCacheName = coordinate.Current.name;
 
-                                                    lat = coordinate.Current.gpsCoordinates.x;
-                                                    lon = coordinate.Current.gpsCoordinates.y;
-                                                    alt = coordinate.Current.gpsCoordinates.z;
-                                                    _lat = coordinate.Current.gpsCoordinates.x;
-                                                    _lon = coordinate.Current.gpsCoordinates.y;
-                                                    _alt = coordinate.Current.gpsCoordinates.z;
-
                                                     TargetHCGUIIndex = index;
                                                     TargetHCGUI = true;
                                                     resetTargetHCGUI = false;
                                                     scanning = true;
-                                                    SpawnCoords = coordinate.Current.gpsCoordinates;
-
+                                                    _lat = coordinate.Current.gpsCoordinates.x;
+                                                    _lon = coordinate.Current.gpsCoordinates.y;
+                                                    _alt = coordinate.Current.gpsCoordinates.z;
+                                                    tpoint = new Vector3d(_lat, _lon, _alt);
                                                     _craftFile = coordinate.Current.name;
+                                                    mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+                                                    degPerMeter = 1 / mPerDegree;
 
                                                     if (!checking)
                                                     {
@@ -6549,22 +7281,20 @@ namespace OrX
                                                 OrXHCGUIEnabled = false;
 
                                                 HoloCacheName = coordinate.Current.name;
-                                                lat = coordinate.Current.gpsCoordinates.x;
-                                                lon = coordinate.Current.gpsCoordinates.y;
-                                                alt = coordinate.Current.gpsCoordinates.z;
-
                                                 HoloCacheName = coordinate.Current.name;
                                                 craftFile = coordinate.Current.name;
-                                                _lat = lat;
-                                                _lon = lon;
-                                                _alt = alt;
-                                                SpawnCoords = new Vector3d(lat, lon, alt);
-
                                                 TargetHCGUIIndex = index;
                                                 TargetHCGUI = true;
                                                 resetTargetHCGUI = false;
                                                 scanning = true;
                                                 _craftFile = coordinate.Current.name;
+                                                _lat = coordinate.Current.gpsCoordinates.x;
+                                                _lon = coordinate.Current.gpsCoordinates.y;
+                                                _alt = coordinate.Current.gpsCoordinates.z;
+                                                tpoint = new Vector3d(_lat, _lon, _alt);
+
+                                                mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+                                                degPerMeter = 1 / mPerDegree;
 
                                                 if (!checking)
                                                 {
@@ -6606,82 +7336,148 @@ namespace OrX
 
         #region Coords GUI
 
-        private void DrawAddCoords(float line)
+        public Vessel triggerVessel;
+        public bool _triggered = false;
+        int waypointColor = 0;
+        bool addCoordSetup = false;
+
+        public void AddMissionCoords()
+        {
+            triggerKerbSetup = true;
+            building = true;
+            buildingMission = true;
+            _triggered = true;
+            addCoordSetup = true;
+            addCoords = true;
+            System.Random r = new System.Random();
+            waypointColor = (int)(r.NextDouble() * seeds.Count());
+            triggerVessel = FlightGlobals.ActiveVessel;
+            challengeHolo = _HoloKron;
+
+            StartCoroutine(AddWaypoint(new Vector3d(latMission, lonMission, altMission), true));
+            SpawnByChallengeBuilder(triggerVessel);
+        }
+        private void AddMissionCoordsSetup()
+        {
+            var h = challengeHolo.rootPart.FindModuleImplementing<ModuleOrXMission>();
+            h._holoSetup = true;
+            OrXVesselMove.Instance._moveMode = 0;
+            FlightGlobals.ForceSetActiveVessel(challengeHolo);
+            OrXVesselMove.Instance.StartMove(challengeHolo, true);
+        }
+
+        public void HoloAddCoords()
+        {
+            if (!locAdded)
+            {
+                locAdded = true;
+            }
+
+            locCount += 1;
+            latMission = FlightGlobals.ActiveVessel.latitude;
+            lonMission = FlightGlobals.ActiveVessel.longitude;
+            altMission = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude +1;
+            //windIntensity = WindGUI.instance.windIntensity;
+            //windVariability = WindGUI.instance.windVariability;
+            //variationIntensity = WindGUI.instance.variationIntensity;
+            //heading = WindGUI.instance.heading;
+            //teaseDelay = WindGUI.instance.teaseDelay;
+            // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
+
+            if (windRacing)
+            {
+                if (FlightGlobals.ActiveVessel.altitude >= 0 && FlightGlobals.ActiveVessel.atmDensity >= 0.007)
+                {
+                    CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
+                        + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
+                }
+                else
+                {
+                    ScreenMsg("Unable to add coordinate to Wind Challenge if vessel is below water or not in an atmosphere");
+                }
+            }
+            else
+            {
+                if (Scuba)
+                {
+                    if (FlightGlobals.ActiveVessel.Splashed)
+                    {
+                        CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
+                            + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
+                    }
+                    else
+                    {
+                        ScreenMsg("Unable to add coordinate to Scuba Challenge if vessel is not Splashed");
+                    }
+
+                }
+                else
+                {
+                    CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
+                        + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
+                }
+            }
+
+            if (challengeType == "DAKAR RACING")
+            {
+                StartCoroutine(AddWaypoint(new Vector3d(latMission, lonMission, altMission), false));
+            }
+            else
+            {
+                StartCoroutine(SpawnHoloCache(new Vector3d(latMission, lonMission, altMission), true, false, HoloCacheName + "-STAGE " + locCount));
+            }
+        }
+        IEnumerator AddWaypoint(Vector3d vect, bool start)
+        {
+            Waypoint waypoint = new Waypoint();
+            System.Random r = new System.Random();
+            int waypointColor = (int)(r.NextDouble() * seeds.Count());
+            waypoint.id = "marker";
+            waypoint.seed = seeds[waypointColor];
+            waypoint.name = craftToSpawn + locCount;
+            waypoint.celestialName = FlightGlobals.currentMainBody.name;
+            waypoint.longitude = vect.y;
+            waypoint.latitude = vect.x;
+            waypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
+            waypoint.altitude = alt - waypoint.height;
+            int _iconsize = Convert.ToInt32(waypoint.iconSize / 2);
+            waypoint.iconSize = _iconsize;
+            Debug.Log("[OrX Target Manager] ====================================== ADDING WAYPOINT FOR " + craftToSpawn + " ===");
+            ScenarioCustomWaypoints.RemoveWaypoint(waypoint);
+            ScenarioCustomWaypoints.AddWaypoint(waypoint);
+
+
+            if (!start)
+            {
+                if (challengeType == "DAKAR RACING")
+                {
+                    yield return new WaitForFixedUpdate();
+                    OrXVesselMove.Instance.EndMove();
+                }
+            }
+            else
+            {
+
+            }
+        }
+
+        bool dakarSetup = false;
+
+        public void DakarContinue()
+        {
+            dakarSetup = true;
+            int dakarStageCount = hcCount + 1;
+            StartCoroutine(SpawnHoloCache(new Vector3d(challengeHolo.latitude, challengeHolo.longitude, challengeHolo.altitude + 2), false, false, HoloCacheName + "-STAGE " + dakarStageCount));
+        }
+
+        public void DrawAddCoords(float line)
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             if (GUI.Button(saveRect, "ADD LOCATION", HighLogic.Skin.button))
             {
-                if (!locAdded)
-                {
-                    locAdded = true;
-                }
-
-                if (windRacing)
-                {
-                    if (FlightGlobals.ActiveVessel.altitude >= 0 && FlightGlobals.ActiveVessel.atmDensity >= 0.007)
-                    {
-                        locCount += 1;
-                        lastCoord = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
-                        latMission = lastCoord.x;
-                        lonMission = lastCoord.y;
-                        altMission = lastCoord.z;
-                        windIntensity = WindGUI.instance.windIntensity;
-                        windVariability = WindGUI.instance.windVariability;
-                        variationIntensity = WindGUI.instance.variationIntensity;
-                        heading = WindGUI.instance.heading;
-                        teaseDelay = WindGUI.instance.teaseDelay;
-                        // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
-                        CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
-                            + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
-                    }
-                    else
-                    {
-                        ScreenMsg("Unable to add coordinate to Wind Challenge if vessel is below water or not in an atmosphere");
-                    }
-                }
-                else
-                {
-                    if (Scuba)
-                    {
-                        if (FlightGlobals.ActiveVessel.Splashed)
-                        {
-                            locCount += 1;
-                            lastCoord = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
-                            latMission = lastCoord.x;
-                            lonMission = lastCoord.y;
-                            altMission = lastCoord.z;
-                            windIntensity = WindGUI.instance.windIntensity;
-                            windVariability = WindGUI.instance.windVariability;
-                            variationIntensity = WindGUI.instance.variationIntensity;
-                            heading = WindGUI.instance.heading;
-                            teaseDelay = WindGUI.instance.teaseDelay;
-                            // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
-                            CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
-                                + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
-                        }
-                        else
-                        {
-                            ScreenMsg("Unable to add coordinate to Scuba Challenge if vessel is not Splashed");
-                        }
-
-                    }
-                    else
-                    {
-                        locCount += 1;
-                        lastCoord = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
-                        latMission = lastCoord.x;
-                        lonMission = lastCoord.y;
-                        altMission = lastCoord.z;
-                        windIntensity = WindGUI.instance.windIntensity;
-                        windVariability = WindGUI.instance.windVariability;
-                        variationIntensity = WindGUI.instance.variationIntensity;
-                        heading = WindGUI.instance.heading;
-                        teaseDelay = WindGUI.instance.teaseDelay;
-                        // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
-                        CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
-                            + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
-                    }
-                }
+                //OrXVesselMove.Instance._moveMode = OrXVesselMove.MoveModes.Slow;
+                HoloAddCoords();
+                //OrXVesselMove.Instance.EndMove();
             }
         }
         private void DrawClearLastCoord(float line)
@@ -6697,6 +7493,23 @@ namespace OrX
                 {
                     locAdded = false;
                 }
+                /*
+                Waypoint waypoint = new Waypoint();
+                System.Random r = new System.Random();
+                waypoint.id = "marker";
+                waypoint.seed = seeds[waypointColor];
+                waypoint.name = craftToSpawn + locCount;
+                waypoint.celestialName = FlightGlobals.currentMainBody.name;
+                waypoint.longitude = lonMission;
+                waypoint.latitude = latMission;
+                waypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
+                waypoint.altitude = alt - waypoint.height;
+
+                Debug.Log("[OrX Target Manager] ====================================== REMOVING WAYPOINT " + craftToSpawn + locCount + " ===");
+
+                ScenarioCustomWaypoints.RemoveWaypoint(waypoint);
+
+                */
             }
         }
         private void DrawClearAllCoords(float line)
@@ -6725,8 +7538,6 @@ namespace OrX
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Coord Count = " + locCount, titleStyle);
         }
-
-        bool getNextCoord = false;
 
         #endregion
 
@@ -7074,7 +7885,7 @@ namespace OrX
                         if (!challengeRunning)
                         {
                             challengeRunning = true;
-                            StartChallenge();
+                            StartCoroutine(StartChallenge());
                         }
                     }
                     else
@@ -7092,7 +7903,7 @@ namespace OrX
                     Debug.Log("[OrX Mission] === HOLO IS GEO-CACHE - CLOSING WINDOW ===");
 
                     challengeRunning = true;
-                    StartChallenge();
+                    StartCoroutine(StartChallenge());
                 }
             }
         }
@@ -7505,7 +8316,7 @@ namespace OrX
                     alignment = TextAnchor.MiddleCenter
                 };
 
-                GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), "HoloCubes Available", titleStyle);
+                GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, WindowWidth, 20), "HoloKrons Available", titleStyle);
             }
             else
             {
@@ -7565,27 +8376,12 @@ namespace OrX
 
             if (addCoords)
             {
-                GUI.Label(new Rect(0, 0, WindowWidth, 20), "Co-ordinate Editor", titleStyle);
+                GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Co-ordinate Editor", titleStyle);
             }
             else
             {
                 GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX HoloCache Creator", titleStyle);
             }
-        }
-        private void DrawHoloCacheName(float line)
-        {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Name your HoloCache below", titleStyle);
         }
         private void DrawHoloCacheName2(float line)
         {
@@ -7593,10 +8389,10 @@ namespace OrX
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "HoloCache Name: ",
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Name: ",
                 leftLabel);
-            float textFieldWidth = (WindowWidth / 2) - LeftIndent;
-            var fwdFieldRect = new Rect((WindowWidth / 2), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+            var fwdFieldRect = new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
             HoloCacheName = GUI.TextField(fwdFieldRect, HoloCacheName);
         }
         private void DrawMissionType(float line)
@@ -7621,6 +8417,7 @@ namespace OrX
 
                         geoCache = false;
                         missionType = "CHALLENGE";
+                        challengeType = "DAKAR RACING";
                     }
                     else
                     {
@@ -7639,7 +8436,7 @@ namespace OrX
                     {
                         ScreenMsg("HOLOCACHE TYPE CHANGED TO GEO-CACHE");
                         Debug.Log("[OrX Mission] === HOLOCACHE TYPE - GEO-CACHE ===");
-
+                        challengeType = "GEO_CACHE";
                         missionType = "GEO-CACHE";
                         geoCache = true;
                     }
@@ -7662,66 +8459,99 @@ namespace OrX
                 leftLabel);
             var bfRect = new Rect(LeftIndent + contentWidth - 120, ContentTop + line * entryHeight, 120, entryHeight);
 
-            if (windRacing && !Scuba)
+            if (geoCache)
             {
                 if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
                 {
+                    //locAdded = true;
                     if (!locAdded)
                     {
-                        Debug.Log("[OrX Mission] === CHALLENGE TYPE - WIND RACING ===");
-                        challengeType = "SCUBA";
+                        Debug.Log("[OrX Mission] === CHALLENGE TYPE - DAKAR RACING ===");
+                        //challengeType = "SCUBA";
+                        challengeType = "DAKAR RACING";
+                        ScreenMsg("CHALLENGE TYPE CHANGED TO " + challengeType);
 
+                        geoCache = false;
                         windRacing = false;
-                        Scuba = true;
+                        Scuba = false;
                     }
                     else
                     {
-                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS WIND RACING ===");
-
+                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS GEO-CACHE ===");
+                        ScreenMsg("CHALLENGE TYPE LOCKED AS GEO-CACHE");
                     }
                 }
             }
             else
             {
-                if (Scuba)
+                if (windRacing && !Scuba)
                 {
                     if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
                     {
                         if (!locAdded)
                         {
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE - SCUBA ===");
-                            challengeType = "OUTLAW RACING";
+                            Debug.Log("[OrX Mission] === CHALLENGE TYPE - WIND RACING ===");
+                            challengeType = "SCUBA";
 
                             windRacing = false;
-                            Scuba = false;
+                            Scuba = true;
                         }
                         else
                         {
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS SCUBA ===");
+                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS WIND RACING ===");
 
                         }
-
                     }
                 }
                 else
                 {
-                    if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
+                    if (Scuba)
                     {
-                        if (!locAdded)
+                        if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
                         {
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE - OUTLAW RACING ===");
-                            challengeType = "WIND RACING";
+                            if (!locAdded)
+                            {
+                                Debug.Log("[OrX Mission] === CHALLENGE TYPE - SCUBA ===");
+                                challengeType = "DAKAR RACING";
 
-                            windRacing = true;
-                            Scuba = false;
+                                windRacing = false;
+                                Scuba = false;
+                            }
+                            else
+                            {
+                                Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS SCUBA ===");
+
+                            }
+
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
                         {
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
+                            ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
+
+                            if (!locAdded)
+                            {
+                                //Debug.Log("[OrX Mission] === CHALLENGE TYPE - DAKAR RACING ===");
+                                // challengeType = "WIND RACING";
+                                //challengeType = "GEO_CACHE";
+                                //geoCache = true;
+                               // windRacing = true;
+                               // Scuba = false;
+                            }
+                            else
+                            {
+                                //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
+                                //ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
+
+                            }
 
                         }
                     }
                 }
+
             }
         }
         private void DrawVessel(float line)
@@ -7908,8 +8738,14 @@ namespace OrX
                 {
                     if (GUI.Button(saveRect, "SAVE AND EXIT", HighLogic.Skin.button))
                     {
+                        checking = false;
                         Debug.Log("[OrX Mission] === SAVING .orx ===");
-                        SaveConfig();
+                        _HoloKron = challengeHolo;
+                        dakarSetup = false;
+                        var h = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                        h.boid = true;
+                        h.KillHolo();
+                        FlightGlobals.ForceSetActiveVessel(triggerVessel);
                     }
                 }
                 else
@@ -7920,18 +8756,55 @@ namespace OrX
                         {
                             if (missionDescription0 != string.Empty && missionDescription0 != "")
                             {
-                                _file = ConfigNode.Load("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                                OrXLog.instance.SetFocusKeys();
+                                CoordDatabase = new List<string>();
+
+                                _file = ConfigNode.Load("GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
                                 if (_file == null)
                                 {
-                                    CoordDatabase = new List<string>();
+                                    checking = false;
                                     addCoords = true;
+                                    AddMissionCoords();
                                 }
                                 else
                                 {
-                                    ScreenMsg(HoloCacheName + " already exists ... Please choose a different name");
+                                    ConfigNode node = _file.GetNode("OrX");
 
-                                    //addCoords = true;
-                                    //OrXAppendCfg.instance.EnableGui();
+                                    foreach (ConfigNode spawnCheck in node.nodes)
+                                    {
+                                        if (spawnCheck.name.Contains("HC0OrXv"))
+                                        {
+                                            if (spawnCheck.name == "HC0OrXv0")
+                                            {
+                                                ConfigNode location = spawnCheck.GetNode("coords");
+
+                                                foreach (ConfigNode.Value loc in location.values)
+                                                {
+                                                    string cvEncryptedName = OrXLog.instance.Decrypt(loc.name);
+                                                    string cvEncryptedValue = OrXLog.instance.Decrypt(loc.value);
+                                                    loc.name = cvEncryptedName;
+                                                    loc.value = cvEncryptedValue;
+
+                                                    if (loc.name == "pas")
+                                                    {
+                                                        pas = loc.value;
+
+                                                        if (Password == pas)
+                                                        {
+                                                            addCoords = true;
+                                                            OrXAppendCfg.instance.EnableGui();
+                                                        }
+                                                        else
+                                                        {
+                                                            Debug.Log("[OrX Mission] === WRONG PASSWORD ===");
+
+                                                            ScreenMsg("WRONG PASSWORD");
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             else
@@ -7954,7 +8827,7 @@ namespace OrX
                     {
                         if (missionDescription0 != string.Empty && missionDescription0 != "")
                         {
-                            _file = ConfigNode.Load("GameData/OrX/HoloCache/" + HoloCacheName + "/" + HoloCacheName + ".orx");
+                            _file = ConfigNode.Load("GameData/OrX/HoloCache/" + HoloCacheName +  ".orx");
                             if (_file == null)
                             {
                                 Debug.Log("[OrX Mission] === SAVING .orx ===");
@@ -7967,9 +8840,16 @@ namespace OrX
                             }
                             else
                             {
-                                ScreenMsg(HoloCacheName + " already exists ... Please choose a different name");
+                                if (Password == pas)
+                                {
+                                    OrXAppendCfg.instance.EnableGui();
+                                }
+                                else
+                                {
+                                    Debug.Log("[OrX Mission] === WRONG PASSWORD ===");
 
-                                //OrXAppendCfg.instance.EnableGui();
+                                    ScreenMsg("WRONG PASSWORD");
+                                }
                             }
                         }
                         else
@@ -8000,8 +8880,8 @@ namespace OrX
                 {
                     Debug.Log("[OrX Mission] === CANCEL HOLOCACHE CREATION ===");
 
-                    var h = holoCube.rootPart.Modules.GetModule<ModuleOrXMission>();
-                    h.HideHolo();
+                    var h = _HoloKron.rootPart.FindModuleImplementing<ModuleOrXMission>();
+                    h.KillHolo();
                     CancelChallenge();
                 }
             }
@@ -8010,6 +8890,11 @@ namespace OrX
         public void CancelChallenge()
         {
             Debug.Log("[OrX Mission] === CANCEL CHALLENGE ===");
+
+            if (addCoords && FlightGlobals.ActiveVessel.rootPart.Modules.Contains<ModuleOrXMission>())
+            {
+                FlightGlobals.ForceSetActiveVessel(triggerVessel);
+            }
 
             locCount = 0;
             locAdded = false;

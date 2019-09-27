@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using OrXWind;
+//using OrXWind;
 
 namespace OrX
 {
@@ -667,28 +667,72 @@ namespace OrX
         }
         #endregion
 
-        public static void DrawTextureOnWorldPos(Vector3 worldPos, Texture texture, Vector2 size)
+        #region Keyboard Locks
+
+        private string lockID = "";
+        private bool setFocusKeys = true;
+        private KeyCode next;
+        private KeyCode prev;
+        private KeyCode next2;
+        private KeyCode prev2;
+
+        [KSPField(isPersistant = true)]
+        public bool keysSet = true;
+
+        public void SetFocusKeys()
         {
-            Vector3 screenPos = GetMainCamera().WorldToViewportPoint(worldPos);
-            if (screenPos.z < 0) return; //dont draw if point is behind camera
-            if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
-            if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
-            float xPos = screenPos.x * Screen.width - (0.5f * size.x);
-            float yPos = (1 - screenPos.y) * Screen.height - (0.5f * size.y);
-            Rect iconRect = new Rect(xPos, yPos, size.x, size.y);
-            GUI.DrawTexture(iconRect, texture);
-        }
-        public static Camera GetMainCamera()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (setFocusKeys)
             {
-                return FlightCamera.fetch.mainCamera;
+                setFocusKeys = false;
+                next = GameSettings.FOCUS_NEXT_VESSEL.primary.code;
+                prev = GameSettings.FOCUS_PREV_VESSEL.primary.code;
+
+                next2 = GameSettings.FOCUS_NEXT_VESSEL.secondary.code;
+                prev2 = GameSettings.FOCUS_PREV_VESSEL.secondary.code;
             }
-            else
-            {
-                return Camera.main;
-            }
+
+            keysSet = true;
+            Debug.Log("[OrX LOG]: Setting Vessel Focus Hotkeys");
+            Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
+
+            GameSettings.FOCUS_NEXT_VESSEL.primary.code = KeyCode.None;
+            GameSettings.FOCUS_PREV_VESSEL.primary.code = KeyCode.None;
+
+            Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
+
+            GameSettings.FOCUS_NEXT_VESSEL.secondary.code = KeyCode.None;
+            GameSettings.FOCUS_PREV_VESSEL.secondary.code = KeyCode.None;
         }
 
+        public void ResetFocusKeys()
+        {
+            keysSet = false;
+
+            Debug.Log("[OrX LOG]: Resetting Vessel Focus Hotkeys");
+
+            GameSettings.FOCUS_NEXT_VESSEL.primary.code = next;
+            GameSettings.FOCUS_PREV_VESSEL.primary.code = prev;
+            Debug.Log("[OrX LOG]: " + next + " re-enabled ............................");
+
+
+            GameSettings.FOCUS_NEXT_VESSEL.secondary.code = next2;
+            GameSettings.FOCUS_PREV_VESSEL.secondary.code = prev2;
+            Debug.Log("[OrX LOG]: " + next2 + " re-enabled ............................");
+
+        }
+
+        public void LockKeyboard()
+        {
+            InputLockManager.SetControlLock(ControlTypes.ACTIONS_ALL, lockID);
+        }
+
+        public void UnlockKeyboard()
+        {
+            InputLockManager.RemoveControlLock(lockID);
+        }
+
+
+
+        #endregion
     }
 }

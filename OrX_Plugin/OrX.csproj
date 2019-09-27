@@ -57,30 +57,20 @@
     <Compile Include="Missions\ModuleHideVessel.cs" />
     <Compile Include="Missions\ModuleOrXMission.cs" />
     <Compile Include="Missions\OrXScubaKerbMissions.cs" />
-    <Compile Include="OrXTech\MoveLaunch\MoveLaunch.cs" />
-    <Compile Include="OrXTech\MoveLaunch\MoveLaunchGPSLogger.cs" />
-    <Compile Include="OrXTech\MoveLaunch\MoveLaunchMassModifier.cs" />
-    <Compile Include="OrXTech\MoveLaunch\MoveLaunchVesselMove.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXAppendCfg.cs" />
-    <Compile Include="OrXTech\Wind\PartModules\ModuleCannon.cs" />
-    <Compile Include="OrXTech\Wind\PartModules\ModuleCannonBall.cs" />
-    <Compile Include="OrXTech\Wind\PartModules\ModuleSail.cs" />
-    <Compile Include="OrXTech\Wind\PartModules\ModuleWind.cs" />
-    <Compile Include="OrXTech\Wind\SpawnCannonBall.cs" />
-    <Compile Include="OrXTech\Wind\WindDirectionIndicator.cs" />
-    <Compile Include="OrXTech\Wind\WeatherFactory.cs" />
-    <Compile Include="OrXTech\Wind\WindGUI.cs" />
+    <Compile Include="OrXTech\OrXHoloCache\OrXTargetInfo.cs" />
     <Compile Include="OrXUtils\OrXAddModules.cs" />
     <Compile Include="OrXUtils\OrXLog.cs" />
     <Compile Include="OrXSpawn\SpawnOrX_HoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCache.cs" />
     <Compile Include="OrXTech\OrXHoloCache\OrXHoloCacheinfo.cs" />
-    <Compile Include="OrXTech\OrXHoloCache\OrXargetInfo.cs" />
     <Compile Include="OrXTech\OrX\ModuleOrX.cs" />
     <Compile Include="OrXSpawn\OrXSpawn.cs" />
     <Compile Include="OrXUtils\OrXPartCatalog.cs" />
+    <Compile Include="OrXUtils\OrXVesselMove.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

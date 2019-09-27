@@ -1,6 +1,6 @@
-OrX - Is There Anybody Out There
+OrX Kontinuum
 
-OrX brings Geo Caching, Scuba Diving, the joy of Wind and more to KSP
+OrX brings Geo Caching, Scuba Diving, the joy of W(ind/S) and more to KSP
 
 
 --Feature List--
@@ -13,35 +13,43 @@ The OrX Scuba Kerb system gives your kerbals the ability to explore the depths o
 
 When you are EVA and splashed, the Scuba Kerb menu will automatically open (if you are the active vessel) ... it will automatically close if you are no longer splashed or no longer EVA
 
-Balast can be controlled by hotkeys while your Kerbal is splashed ... Q to trim up, E to trim down, X to reset ballast to zero and Z to add 10x your Kerbals mass to emergency dive
+Balast can be controlled by hotkeys while your Kerbal is splashed ... Q to trim up, E to trim down, X to reset ballast to zero and Z to emergency dive
 
 The Oxygen slider displays your Kerbals total Oxygen amount which depletes over time while underwater
 
 If you are at the surface of the ocean or on land your Oxygen will replenish if in an atmosphere that contains Oxygen
 
-PLEASE NOTE: Beware of Nitrogen Narcosis (pay attention to your Martini's) and the Bends (Don't rise to the surface too fast)
-
 
 ------------------------------------------------------------------
---OrX Wind -- (EXPERIMENTAL)
+--OrX W[ind/S] -- (HIGHLY EXPERIMENTAL - CURRENTLY UNAVAILABLE)
 ------------------------------------------------------------------
 
-OrX Wind is a simple implementation of adding forces to a vessel ... The Weather Simulation in OrX Wind, not so much
+By filtering a low AC current through a signal generator using the W[ind/S] formula and passing the signal through a Ferrofluid composed of Buckeyballs, Magnetite and Soy sandwiched between multiple layers of Carbon Nanotube sheeting (a SAIL ... S-ratio Accumulated Inductance Laminate), oscillations are generated within the SAIL causing it to move
 
-The Weather Simulation is a controller for directing the wind direction based on a number of factors and is turned on from within the OrX Wind menu .... PLEASE NOTE: This is experimental and is in the process of being written so consider it a use at your own risk
+MATH:
 
-As for manual control of the wind, open the OrX Wind menu and you will see some sliders for controlling the wind intensity, variability and tease timing (how often things change) as well as an entry field to manually select the wind heading (0 to 360 degrees)
+	W = Webers' Law
+	i = an imaginary number
+	n = factorial
+	d = derivitives
+	S = S-ratio 
 
-There is also a button to turn the wind on or off in the menu
+W[ind/S] = W defines the derivitaves of the factorial of i divded by the S-ratio of a given material
 
-Wind affects a vessel in two ways if OrX Wind has been turned on ... 
+S-ratio is a rock magnetic parameter employed to provide a relative measure of the contributions of low and high coercivity material to a sample's Saturation Isothermal Remanent Magnetization (SIRM)
 
-- First, each vessel that is loaded in the flight scene has a slight force applied to it in the direction the wind is blowing
+Another kind of IRM can be obtained by first giving the magnet a saturation remanence in one direction and then applying and removing a magnetic field in the opposite direction. This is called demagnetization remanence or DC demagnetization remanence.
+Yet another kind of remanence can be obtained by demagnetizing the saturation remanence in an ac field. This is called AC demagnetization remanence or alternating field demagnetization remanence.
 
-- Second, any part with ModuleLiftingSurface will have a button in the PAW that enables and disables the part as a sail ... When the sail button is active the part will have a force applied to it in a direction obtained by bisecting it's up transform and the wind direction
-PLEASE NOTE: Sailing into the wind may not work very well at this time
+Webers' Law states that a derivitave of a factorial of an imaginary number divided by the S-ratio of a given material is a constant in relation to the ratio of the increment threshold to the background intensity ... PLEASE NOTE: When you measure increment thresholds (the threshold here being oscillation amplitude) on varied intensity backgrounds, the thresholds increase in proportion to the background (the background in this case being the magnetic flux of the planetary body)
 
-The amount of force applied to parts with sail mode activated is directly proportional to it's exposed surface area divided by 2 multiplied by the ModuleLiftingSurface lift coefficient for the part divided by the angle at which the wind vector hits the part up transform (0 to 90 degrees ... higher angle means lower force)
+For manual control of W[ind/S], open the OrX Wind menu and you will see some sliders for controlling the wind intensity, variability and tease timing (how often things change) as well as an entry field to manually select the w(ind/S) heading (0 to 360 degrees)
+
+There is also a button to turn the W(ind/S) on or off in the menu
+
+The amount of force applied to a SAIL is directly proportional to it's exposed surface area divided by 2 divided by the angle at which the wind vector hits the part up transform (0 to 90 degrees ... higher angle means lower force)
+
+The Weather Simulation is a controller for controlling the W[ind/S] direction based on a number of factors and is turned on from within the OrX W[ind/S] menu .... PLEASE NOTE: This is experimental and is in the process of being written so consider it a use at your own risk
 
 
 ------------------------------------------------------------------
@@ -50,52 +58,55 @@ The amount of force applied to parts with sail mode activated is directly propor
 
 The OrX HoloCache System brings GeoCaching to KSP ... Now you can leave a trail of breadcrumbs spanning the solar system (and beyond?)
 
-Now Kerbo-not's can go to a location and create a 'HoloCache' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) ... PLEASE NOTE: If within an atmosphere the HoloCache must be landed or splashed before you can proceed with its creation as well as YOU MUST BE EVA TO CREATE A HOLOCACHE
+Now Kerbo-not's can go to a location and create a 'HoloCache' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) ... Orbital HoloCache's are unavailable at this time due to reasons
+PLEASE NOTE: If within an atmosphere the HoloCache must be landed or splashed before you can proceed with its creation as well as YOU MUST BE EVA TO CREATE A HOLOCACHE
 
-A creator is also able to place a simple challenge in their holo ... Currently there are 3 types which are Wind, Scuba and OutLaw Racing (EXPERIMENTAL .... UNFINISHED)
+The .orx file created is saved inside of GameData/OrX/HoloCache/ ... Players can share the .orx files contained within the GameData/OrXHoloCache directory with other KSP players and the coordinates will be available to be loaded into OrX Kontinuum if they have OrX installed (copy shared .orx files to GameData/OrXHoloCache/)
 
-Each challenge in the HoloCache will have an associated scoreboard which keeps track of the best 10 challenger times which automatically updates the scoreboard in the .orx file when the challenge is completed
+The creator of a HoloCache can also add a craft file that is unlocked and saved to the users save game directory when the HoloCache is opened if the HoloCache type is a Geo-Cache ... If the HoloCache is a Challenge type then the blueprints will be saved when the challenge has been completed (SEE BELOW FOR INFO ON CHALLENGES)
 
-An additional file is generated when a challenge is completed called 'The HoloCache Name'.scores which can be found in the same directory as the .orx file ... This file records the challengers scores (created new if doesn't exist and overwrites only if the scores are better) and can be used to update the scoreboard in any .orx file of the same name by placing it into the OrX/Import directory (easy way for a HoloCache creator to keep the .orx file up to date with all challengers scores ... Top 10 scores only in descending order, all others get deleted)
-
-The creator of the HoloCache can also add a craft file that is unlocked and saved to the users save game directory when the holocache is opened, or if the holo has a challenge in it, after the player has completed the challenge
-
-The .orx file created is saved inside of GameData/OrXHoloCache/'The Holo Cache Name'/ ... Players can share the directories and .orx files contained within the GameData/OrXHoloCache directory with other KSP players and the coordinates will be available to be loaded into the HoloCache control menu in the flight scene if they have OrX installed (copy shared HoloCache directories to GameData/OrXHoloCache/'The Holo Cache Name'/)
+In addition to being able to add a craft file to the HoloCache, the creator can also save all local vessel within a selectable range (1km spherical radius limit controlled via a slider in the HoloCache creation menu) ... All local vessels saved to the HoloCache will have its location and orientation saved for later spawning
+PLEASE NOTE: Local vessels saved to a HoloCache will be spawned when the HoloCache spawns in their original position as well as in the same orientation ... These vessels are only available in the flight scene and will not be available in the editor
 
 Craft files contained in the .orx file have been put through encryption so as to make it difficult for anyone to 'hack' the HoloCache by config editing outside of the game ... If you want to hack the HoloCache you must use the OrX BlackHat (isn't a thing ... yet) or go through the trouble of decoding the .craft file manually (good luck ... lol)
 
-To load a HoloCache ... Open the HoloCache Control menu (green OrX button) then click on 'Load HoloCache Data' and any Holocache (.orx file) contained within GameData/OrXHoloCache and any directories found inside GameData/OrXHoloCache will be added to the list in the menu if the HoloCache was created while within the same SOI as the current active vessel ... While in the flight scene, click on a HoloCache in the list to have an indicator telling you where that location is visually (red dot on screen in flight scene) ... Click on it again to deselect it
+To creat a HoloCache you must be EVA ... Go to the location where you want to create the HoloCache, go EVA and open the OrX Kontinuum menu (button with OrX written in green), click on 'Create HoloCache' and a HoloKron will spawn just forward and above your head as well as the OrX HoloCache Creator will appear
+PLEASE NOTE: The HoloKron
 
-To creat a HoloCache you must be EVA ... Go to the location where you want to create the HoloCache and open the HoloCache Control menu, click on 'Spawn Empty HoloCache' and a HoloCache will spawn and the HoloCache Creation menu will appear ... Yes, it floats in the air slowly rotating
+In the 'Name:' text entry box enter a name for your HoloCache
 
-Click on the HoloCache Type button to select from a Geo-Caching holo or a Challenge holo
+In the 'Password:' text entry box enter a password for your HoloCache if you wish to lock it down (default is 'OrX')
+PLEASE NOTE: The password is there to provide a means for a creator to lock their HoloCache from being added to since multiple locations and missions can be added to one .orx file (I actually have reasons for including this feature ... future plans)
+ 
+Click on the HoloCache Type button to select from Geo-Caching or Challenge types
 
-Click on the Challenge Type to change the type of challenge ... Currently there is OutLaw Racing, Scuba and Wind (EXPERIMENTAL ... UNFINISHED)
+Click on the Challenge Type to change the type of challenge ... Currently there is only 'Dakar Racing' ('Outlaw Racing', "Drag Racing', 'Scuba' and 'W(ind/S)' types planned for the future)
+
+Add a description of your GeoCache/Challenge in the description text entry section ... as you type in a text entry field a new text entry box will appear below it, press 'TAB' to jump to the new text entry field (maximum of 10 lines)
+PLEASE NOTE: It is suggested that when typing into the description fields that you pay attention to the length of the line as there is no limit to the lines length and any text that extends beyond the width of the creator menu will not be shown in the challenge menu when a user opens the HoloCache 
 
 Click on the 'Add Blueprints' check box to open the OrX Craft Browser ... Select a hangar in the OrX Craft Browser (SPH or VAB from your current game save ... Default is SPH) then click on a craft in the list to add that craft file as a blueprint ... click cancel to return to the previous menu
 
-Click on the 'Save Local Vessels' check box to save all vessels within a 1km radius of the HoloCache ... Each vessel will be saved into the Holocache (.orx file) as well all information required for later spawning 
-- When you select a HoloCache location in the HoloCache Control menu, the system will check your distance from that point and if you are within 5km then the HoloCache will be spawned and then the HoloCache will spawn each of the saved vessels at their saved locations (save your mun base ????) ..... PLEASE NOTE: This is experimental and only kinda/sorta works at this time
+Click on the 'Save Local Vessels' check box to save all vessels within up to a 1km radius of the HoloCache (slider in menu)
 
-In the 'HoloCache Name:' text entry box enter a name for your HoloCache
+If the HoloCache being created is a Geo-Cache, click on the 'SAVE HOLOCACHE' button to save the HoloCache
 
-Add a description of your GeoCache/Challenge in the description text entry section ... as you type in a text entry field a new text entry box will appear below it, press 'TAB' to jump to the new text entry field (maximum of 10 lines)
+If your HoloCache is of the Challenge type then select 'ADD COORDS' to open the OrX Co-ordinate Editor menu to start adding stages to the challenge
+PLEASE NOTE: When you click on "ADD COORDS" a new HoloKron will spawn and focus will be switched to it. The HoloKron that spawns can be moved with the WASD keys
 
-If the HoloCache being created is a Geo-Cache, click on the 'SAVE HOLOCACHE' button to save the HoloCache ... If a HoloCache file exists with the same name you will have the option to add to that file, therby adding another location which would be unlocked upon opening/finishing a challenge in the Holocache that is being added to (each HoloCache will be unlocked in sequence ... meaning one after the other)
+- Pressing 'TAB' cycles through 3 different heights and speeds (Slow, Normal and Ludicrous)
+- Throttle up raises and throttle down decreases the altitude
+- Starting position as well as current position will be shown by an 'Unknown' marker while in the Map view
 
-If the HoloCache is a challenge type you will see an ADD COORDS button ... Click on this button to save the current data (holo name, description, type etc...) and the GPS coord entry menu will appear
-Either get into a vehicle, start running around with your kerbal or use Vessel Mover and start travelling around and saving GPS coords then click on the SAVE button when done
+Click on 'ADD LOCATION' to add the current latitude and logitude coordinates to the coord list with the altitude being roughly 2 meters above the terrain at that location ... The HoloKron will settle on the ground and a new HoloKron will spawn which will then become the active vessel ... Rinse and Repeat
 
-If setting up a Wind challenge, use the OrX Wind control menu to change the wind direction before saving a GPS location to the coord database in order to change the wind direction for the next stage ... Wind intensity, variability etc... is saved along with the GPS location in all challenge types
+When you select 'SAVE AND EXIT' the Kerbal which was the active vessel at the start of the HoloCache creation will become the active vessel and the HoloCache will be saved
 
-If setting up a Scuba challenge, all GPS coords for the challenge must be underwater
+Select 'CANCEL' at any time to cancel the HoloCache creation
 
-If setting up an OutLaw Racing challenge then pretty much anything goes (at this time)
+When you select 'Scan for HoloCache' in the OrX Kontinuum menu, the system will check your distance from every HoloCache in memory and if you are within 2km then the HoloCache will be spawned as well as each of the saved local vessels (if any) at their saved locations (save your mun base ????)
 
-HoloCaches are spawned in an unknown status and can only be opened while on EVA
-
-If you see a portal, please ignore ... You never know where you might end up
-
+If you see a portal, it's a test, please ignore
 
 
 ------------------------------------------------------------------
@@ -106,7 +117,7 @@ INSTALLATION INSTRUCTIONS
 
 In the release download (.zip file from the OrX releases section on GitHub) you will find a GameData directory (GameData/OrX)
 
-Copy the GameData/OrX directory and it's contents to your KSP's GameData directory
+Copy the OrX directory and it's contents to your KSP's GameData directory
 
 
 
@@ -116,7 +127,7 @@ License and Attribution
 ------------------------------------------------------------------
 ------------------------------------------------------------------
 
-OrX incorporates Vessel Mover released under the MIT License ... To comply with the requirements of the MIT license, the following permission notice, applicable to those parts of the code only, is included below:
+OrX incorporates code from Vessel Mover released under the MIT License ... To comply with the requirements of the MIT license, the following permission notice, applicable to those parts of the code only, is included below:
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -131,14 +142,6 @@ https://forum.kerbalspaceprogram.com/index.php?/topic/123646-11-vesselmover-v15-
 
 ------------------------------------------------------------------
 
-The OrX HoloCache System incorporates code from BD Armory Continued and is licensed under CC-BY-SA 2.0. (applicable to the OrX HoloCache System only).
-
-Please read about the license at https://creativecommons.org/licenses/by-sa/2.0/
-
-All credit goes to @BahamutoD for creating BD Armory and many thanks go to the BD Armory Continued team for maintaining and continuing development of this amazing mod
-
-------------------------------------------------------------------
-
 OrX incorporates code from the Cloaking Device mod ... All credit goes to @wasml 
 http://spacedock.info/mod/217/Cloaking%20Device
 
@@ -147,7 +150,7 @@ https://creativecommons.org/2015/10/08/cc-by-sa-4-0-now-one-way-compatible-with-
 
 ------------------------------------------------------------------
 
-All other code contained within OrX is licensed GPLv3
+All other code contained within OrX Kontinuum is licensed GPLv3
 
 Copyright © 2019 DoctorDavinci
 

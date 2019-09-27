@@ -1,5 +1,5 @@
 ﻿using OrX.spawn;
-using OrXWind;
+//using OrXWind;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace OrX
 {
-    public class ModuleOrXHoloCube : PartModule
+    public class ModuleOrXHoloKron : PartModule
     {
         #region Fields
 
@@ -47,7 +47,7 @@ namespace OrX
             {
                 part.force_activate();
                 part.SetOpacity(0);
-                Debug.Log("[Module OrX HoloCube] === OnStart(StartState state) ===");
+                Debug.Log("[Module OrX HoloKron] === OnStart(StartState state) ===");
                 recalcCloak = true;
                 recalcSurfaceArea();
             }

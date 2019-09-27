@@ -141,7 +141,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                "Rename your HoloCache below",
+                "Or rename your HoloCache below",
                 titleStyle);
         }
 
@@ -151,7 +151,14 @@ namespace OrX
 
             if (GUI.Button(saveRect, "Add to " + hcName, HighLogic.Skin.button))
             {
-                OrXHoloCache.instance.SaveConfig();
+                if (OrXHoloCache.instance.addCoords)
+                {
+                    OrXHoloCache.instance.AddMissionCoords();
+                }
+                else
+                {
+                    OrXHoloCache.instance.SaveConfig();
+                }
                 DisableGui();
             }
         }
@@ -192,7 +199,16 @@ namespace OrX
                 }
                 else
                 {
-                    OrXHoloCache.instance.SaveConfig();
+                    OrXHoloCache.instance.HoloCacheName = hcName;
+
+                    if (OrXHoloCache.instance.addCoords)
+                    {
+                        OrXHoloCache.instance.AddMissionCoords();
+                    }
+                    else
+                    {
+                        OrXHoloCache.instance.SaveConfig();
+                    }
                     DisableGui();
                 }
             }
@@ -204,9 +220,9 @@ namespace OrX
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Holo Name: ",
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "New Name: ",
                 leftLabel);
-            float textFieldWidth = 100;
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
             var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
                 ContentTop + line * entryHeight, textFieldWidth, entryHeight);
             hcName = GUI.TextField(fwdFieldRect, hcName);
@@ -218,6 +234,7 @@ namespace OrX
 
             if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
             {
+                OrXHoloCache.instance.CancelHoloCreation();
                 DisableGui();
             }
         }
