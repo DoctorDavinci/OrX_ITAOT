@@ -1,5 +1,5 @@
 ﻿using OrX.spawn;
-//using OrXWind;
+using OrXWind;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,14 +9,9 @@ using UnityEngine;
 
 namespace OrX
 {
-    public class ModuleOrXHoloKron : PartModule
+    public class ModuleHideVessel : PartModule
     {
         #region Fields
-
-        public string blueprints;
-
-        [KSPField(isPersistant = true)]
-        public string Bronze = string.Empty;
 
         public bool setup = false;
 
@@ -30,107 +25,47 @@ namespace OrX
         private float fadePerTime = 0.5f;
         private bool currentShadowState = true;
         private bool recalcCloak = true;
-        private float visiblilityLevel = UNCLOAKED;
-        private float fadeTime = 5f;
+        private float visiblilityLevel = 0;
+        private float fadeTime = 10f;
         private float shadowCutoff = 0.0f;
         private bool selfCloak = true;
 
         #endregion
-
-        [KSPField(unfocusedRange = 5, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = true, guiActive = true, guiName = "OPEN HOLOCACHE"),
-         UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
-        public bool deploy = false;
 
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
-                part.SetOpacity(0);
-                Debug.Log("[Module OrX HoloKron] === OnStart(StartState state) ===");
                 recalcCloak = true;
                 recalcSurfaceArea();
-            }
-            else
-            {
-                if (HighLogic.LoadedSceneIsEditor)
-                {
-                    OrXHoloCache.instance.ToggleCraftBrowser();
-                }
+                visiblilityLevel = 0;
+                part.SetOpacity(visiblilityLevel);
             }
             base.OnStart(state);
         }
 
-        public override void OnFixedUpdate()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (!setup)
-                {
-                    setup = true;
-                    StartCoroutine(Spawn());
-                }
-                else
-                {
-                    if (visiblilityLevel == maxfade)
-                    {
-                        this.vessel.DestroyVesselComponents();
-                        this.vessel.Die();
-                    }
-                }
-            }
-            base.OnFixedUpdate();
-        }
-
-        public void SaveBlueprints()
-        {
-
-        }
-
-        IEnumerator Spawn()
-        {
-            // SPAWN CRAFT
-
-            yield return new WaitForSeconds(3);
-            engageCloak();
-        }
-
-        public void CloakOn()
-        {
-            cloakOn = true;
-            UpdateCloakField(null, null);
-        }
-
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (visiblilityLevel == 1)
             {
-                if (IsTransitioning())
-                {
-                    recalcCloak = false;
-                    calcNewCloakLevel();
+                Destroy(this);
+            }
 
-                    foreach (Part p in vessel.parts)
+            if (IsTransitioning())
+            {
+                recalcCloak = false;
+                calcNewCloakLevel();
+
+                foreach (Part p in vessel.parts)
+                {
+                    if (selfCloak || (p != part))
                     {
-                        if (selfCloak || (p != part))
-                        {
-                            p.SetOpacity(visiblilityLevel);
-                            SetRenderAndShadowStates(p, visiblilityLevel > shadowCutoff, 
-                                visiblilityLevel > RENDER_THRESHOLD);
-                        }
+                        p.SetOpacity(visiblilityLevel);
+                        SetRenderAndShadowStates(p, visiblilityLevel > shadowCutoff, visiblilityLevel > RENDER_THRESHOLD);
                     }
                 }
-
             }
-            else
-            {
-                this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-            }
-        }
-
-        public void OnDestroy()
-        {
-            //GameEvents.onVesselWasModified.Remove(ReconfigureEvent);
         }
 
         #region Cloak
@@ -234,7 +169,7 @@ namespace OrX
             if (cloakOn && (visiblilityLevel > maxfade))
                 delta = -delta;
 
-            visiblilityLevel = visiblilityLevel + delta;
+            visiblilityLevel += delta;
             visiblilityLevel = Mathf.Clamp(visiblilityLevel, maxfade, UNCLOAKED);
         }
         protected bool IsTransitioning()

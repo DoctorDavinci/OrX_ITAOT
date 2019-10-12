@@ -37,8 +37,8 @@ namespace OrX
         private void Start()
         {
             _windowRect = new Rect((Screen.width / 4) * 2 - (WindowWidth * 3) + 10, 50, WindowWidth, _windowHeight);
-            GameEvents.onHideUI.Add(GameUiDisableOrXAppendCfg);
-            GameEvents.onShowUI.Add(GameUiEnableOrXAppendCfg);
+            //GameEvents.onHideUI.Add(GameUiDisableOrXAppendCfg);
+            //GameEvents.onShowUI.Add(GameUiEnableOrXAppendCfg);
             _gameUiToggle = true;
             distance = 0;
         }
@@ -63,7 +63,7 @@ namespace OrX
 
         public void EnableGui()
         {
-            OrXHoloCache.instance.GuiEnabledOrXMissions = false;
+            OrXHoloKron.instance.GuiEnabledOrXMissions = false;
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = true;
@@ -72,7 +72,7 @@ namespace OrX
 
         public void DisableGui()
         {
-            OrXHoloCache.instance.GuiEnabledOrXMissions = true;
+            OrXHoloKron.instance.GuiEnabledOrXMissions = true;
             hcName = "";
             cancel = false;
             save = false;
@@ -141,7 +141,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                "Or rename your HoloCache below",
+                "Rename your HoloKron below",
                 titleStyle);
         }
 
@@ -151,13 +151,13 @@ namespace OrX
 
             if (GUI.Button(saveRect, "Add to " + hcName, HighLogic.Skin.button))
             {
-                if (OrXHoloCache.instance.addCoords)
+                if (OrXHoloKron.instance.spawningStartGate)
                 {
-                    OrXHoloCache.instance.AddMissionCoords();
+                    OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
                 }
                 else
                 {
-                    OrXHoloCache.instance.SaveConfig();
+                    OrXHoloKron.instance.SaveConfig();
                 }
                 DisableGui();
             }
@@ -177,7 +177,7 @@ namespace OrX
             line++;
             DrawTitle4(line);
             line++;
-            DrawHoloCacheName(line);
+            DrawHoloKronName(line);
             line++;
             DrawSave(line);
             line++;
@@ -195,34 +195,32 @@ namespace OrX
             {
                 if (hcName == "")
                 {
-                    ScreenMsg("Unable to save HoloCache with no name");
+                    ScreenMsg("Unable to create HoloKron with no name");
                 }
                 else
                 {
-                    OrXHoloCache.instance.HoloCacheName = hcName;
-
-                    if (OrXHoloCache.instance.addCoords)
+                    if (OrXHoloKron.instance.spawningStartGate)
                     {
-                        OrXHoloCache.instance.AddMissionCoords();
+                        OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
                     }
                     else
                     {
-                        OrXHoloCache.instance.SaveConfig();
+                        OrXHoloKron.instance.SaveConfig();
                     }
                     DisableGui();
                 }
             }
         }
 
-        private void DrawHoloCacheName(float line)
+        private void DrawHoloKronName(float line)
         {
             var leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "New Name: ",
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Holo Name: ",
                 leftLabel);
-            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+            float textFieldWidth = 100;
             var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
                 ContentTop + line * entryHeight, textFieldWidth, entryHeight);
             hcName = GUI.TextField(fwdFieldRect, hcName);
@@ -234,7 +232,6 @@ namespace OrX
 
             if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
             {
-                OrXHoloCache.instance.CancelHoloCreation();
                 DisableGui();
             }
         }

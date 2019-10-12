@@ -1,8 +1,8 @@
-ship = Boid
+ship = HoloCache
 version = 1.4.5
 description = 
 type = SPH
-size = 0.1,0.1,0.1
+size = 0.370279193,0.370278358,0.370279282
 steamPublishedFileId = 0
 persistentId = 2610965987
 rot = 0,0,0,0
@@ -10,7 +10,7 @@ missionFlag = OrX/Agencies/OrX
 vesselType = Debris
 PART
 {
-	part = HoloCube_4294594558
+	part = OrX.HoloKronV_4294594558
 	partName = Part
 	persistentId = 416549213
 	pos = 0,10,0
@@ -42,4 +42,5 @@ PART
 	PARTDATA
 	{
 	}
+
 }

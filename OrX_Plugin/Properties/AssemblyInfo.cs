@@ -5,8 +5,8 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("OrX")]
-[assembly: AssemblyDescription("OrX")]
+[assembly: AssemblyTitle("OrX Kontinuum")]
+[assembly: AssemblyDescription("OrX Kontinuum")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("")]

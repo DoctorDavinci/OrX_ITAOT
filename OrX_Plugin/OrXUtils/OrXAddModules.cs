@@ -24,7 +24,6 @@ namespace OrX
             {
                 PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
                 Debug.Log("[ORX] === ADDED OrX MODULE to kerbalEVA ===");
-
             }
             catch
             {

@@ -6,7 +6,7 @@ using KSP.UI.Screens;
 using System.IO;
 using System.Reflection;
 
-namespace OrX
+namespace OrX.spawn
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class OrXSpawn : MonoBehaviour
@@ -58,7 +58,7 @@ namespace OrX
         private double _lat_ = 2f;
         private double _lon_ = 2f;
 
-        public bool holocacheSpawn = false;
+        public bool holoKronSpawn = false;
         private int modAlt = 2;
         private int randomizeLoc = 0;
         public bool survival = false;
@@ -361,10 +361,10 @@ namespace OrX
         {
             yield return new WaitForFixedUpdate();
 
-            if (waldoAttack || holocacheSpawn || orx)
+            if (waldoAttack || holoKronSpawn || orx)
             {
                 waldoAttack = false;
-                holocacheSpawn = false;
+                holoKronSpawn = false;
                 worldPos = SpawnCoords;
             }
             else

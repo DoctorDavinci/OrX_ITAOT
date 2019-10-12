@@ -15,14 +15,14 @@ namespace OrX
 
         public enum MoveModes { Slow = 0, Normal = 1, Ludicrous = 2 }
 
-        public MoveModes _moveMode = MoveModes.Slow;
+        public MoveModes _moveMode = MoveModes.Normal;
         private bool _moving = false;
         public List<Vessel> _placingVessels = new List<Vessel>();
         private bool _hoverChanged;
 
         public float MoveHeight = 0;
         private float _hoverAdjust = 0f;
-        private readonly float[] _hoverHeights = new float[] { 5, 35, 3000 };
+        private readonly float[] _hoverHeights = new float[] { 5, 50, 3000 };
 
         private float HoverHeight
         {
@@ -32,7 +32,7 @@ namespace OrX
             }
         }
 
-        private readonly float[] _moveSpeeds = new float[] { 5, 20, 1500 };
+        private readonly float[] _moveSpeeds = new float[] { 5, 25, 750 };
 
         private float MoveSpeed
         {
@@ -42,7 +42,7 @@ namespace OrX
             }
         }
 
-        private readonly float[] _moveAccels = new float[] { 1, 10, 750 };
+        private readonly float[] _moveAccels = new float[] { 1, 15, 750 };
 
         private float MoveAccel
         {
@@ -52,21 +52,31 @@ namespace OrX
             }
         }
 
+        private readonly float[] _rotationSpeeds = new float[] {15, 25, 50 };
+
+        private float RotationSpeed
+        {
+            get
+            {
+                return _rotationSpeeds[(int)_moveMode] * Time.fixedDeltaTime;
+            }
+        }
+
         public bool IsMovingVessel = false;
         public Vessel MovingVessel;
-        //private Quaternion _startRotation;
-        //private Quaternion _currRotation;
+        private Quaternion _startRotation;
+        private Quaternion _currRotation;
         private float _currMoveSpeed = 0;
         private Vector3 _currMoveVelocity;
         private VesselBounds _vBounds;
         private LineRenderer _debugLr;
         private Vector3 _up;
-        //private Vector3 _startingUp;
+        private Vector3 _startingUp;
         private readonly float maxPlacementSpeed = 1050;
         private bool _hasRotated = false;
         private float _timeBoundsUpdated = 0;
         private ScreenMessage _moveMessage;
-
+        public bool startBuild = false;
         #endregion
 
         #region KSP Events
@@ -96,7 +106,21 @@ namespace OrX
             {
                 if (Input.GetKeyDown(KeyCode.Tab))
                 {
-                    ToggleMoveMode();
+                    if (spawningLocal)
+                    {
+                        if (_moveMode == MoveModes.Ludicrous || _moveMode == MoveModes.Slow)
+                        {
+                            _moveMode = MoveModes.Normal;
+                        }
+                        else
+                        {
+                            _moveMode = MoveModes.Slow;
+                        }
+                    }
+                    else
+                    {
+                        ToggleMoveMode();
+                    }
                 }
             }
 
@@ -116,7 +140,7 @@ namespace OrX
 
             if (_hasRotated && Time.time - _timeBoundsUpdated > 0.2f)
             {
-                UpdateBounds();
+                //UpdateBounds();
             }
         }
 
@@ -133,22 +157,19 @@ namespace OrX
         private void UpdateBounds()
         {
             _hasRotated = false;
-            _vBounds.UpdateBounds();
+            //_vBounds.UpdateBounds();
             _timeBoundsUpdated = Time.time;
         }
 
         private void UpdateMove()
         {
-            if (!MovingVessel)
-            {
-                EndMove();
-                return;
-            }
             MovingVessel.IgnoreGForces(240);
 
             // Lerp is animating move
             if (!_hoverChanged)
-                MoveHeight = Mathf.Lerp(MoveHeight, _vBounds.BottomLength + HoverHeight, 10 * Time.fixedDeltaTime);
+            {
+                //MoveHeight = Mathf.Lerp(MoveHeight, Convert.ToSingle(MovingVessel.radarAltitude) - _alt, 10 * Time.fixedDeltaTime);// + HoverHeight, 10 * Time.fixedDeltaTime);
+            }
             else
             {
                 double alt = MovingVessel.radarAltitude;
@@ -156,7 +177,7 @@ namespace OrX
                 if (MoveHeight < alt) MoveHeight = Convert.ToSingle(alt);
                 if (MoveHeight < 2) MoveHeight = 2;
 
-                MoveHeight = Mathf.Lerp(MoveHeight, _vBounds.BottomLength + _hoverAdjust, 10 * Time.fixedDeltaTime);
+                MoveHeight = Mathf.Lerp(MoveHeight, Convert.ToSingle(MovingVessel.radarAltitude) - _alt + _hoverAdjust, 10 * Time.fixedDeltaTime);
             }
             MovingVessel.ActionGroups.SetGroup(KSPActionGroup.RCS, false);
 
@@ -180,48 +201,88 @@ namespace OrX
 
             Vector3 offsetDirection = Vector3.zero;
             bool inputting = false;
+            bool allowMove = true;
+            double _targetDistance = double.MaxValue;
+            float _moveSpeed = MoveSpeed;
 
             //Altitude Adjustment
 
             if (GameSettings.THROTTLE_UP.GetKey())
             {
-                _hoverAdjust += MoveSpeed * Time.fixedDeltaTime;
+                _hoverAdjust += _moveSpeed * Time.fixedDeltaTime;
                 inputting = true;
                 _hoverChanged = true;
             }
 
             if (GameSettings.THROTTLE_DOWN.GetKey())
             {
-                _hoverAdjust += -(MoveSpeed * Time.fixedDeltaTime);
+                _hoverAdjust += -(_moveSpeed * Time.fixedDeltaTime);
                 inputting = true;
                 _hoverChanged = true;
             }
 
             if (GameSettings.PITCH_DOWN.GetKey())
             {
-                offsetDirection += (forward * MoveSpeed * Time.fixedDeltaTime);
+                offsetDirection += (forward * _moveSpeed * Time.fixedDeltaTime);
                 inputting = true;
             }
             if (GameSettings.PITCH_UP.GetKey())
             {
-                offsetDirection += (-forward * MoveSpeed * Time.fixedDeltaTime);
+                offsetDirection += (-forward * _moveSpeed * Time.fixedDeltaTime);
                 inputting = true;
             }
 
             if (GameSettings.YAW_RIGHT.GetKey())
             {
-                offsetDirection += (right * MoveSpeed * Time.fixedDeltaTime);
+                offsetDirection += (right * _moveSpeed * Time.fixedDeltaTime);
                 inputting = true;
             }
             if (GameSettings.YAW_LEFT.GetKey())
             {
-                offsetDirection += (-right * MoveSpeed * Time.fixedDeltaTime);
+                offsetDirection += (-right * _moveSpeed * Time.fixedDeltaTime);
                 inputting = true;
+            }
+
+            if (GameSettings.TRANSLATE_RIGHT.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(-RotationSpeed, MovingVessel.ReferenceTransform.forward) * _startRotation;
+                _hasRotated = true;
+            }
+            else if (GameSettings.TRANSLATE_LEFT.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(RotationSpeed, MovingVessel.ReferenceTransform.forward) * _startRotation;
+                _hasRotated = true;
+            }
+
+            if (GameSettings.TRANSLATE_DOWN.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(RotationSpeed, MovingVessel.ReferenceTransform.right) * _startRotation;
+                _hasRotated = true;
+            }
+            else if (GameSettings.TRANSLATE_UP.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(-RotationSpeed, MovingVessel.ReferenceTransform.right) * _startRotation;
+                _hasRotated = true;
+            }
+
+            if (GameSettings.ROLL_LEFT.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(RotationSpeed, MovingVessel.ReferenceTransform.up) * _startRotation;
+                _hasRotated = true;
+            }
+            else if (GameSettings.ROLL_RIGHT.GetKey())
+            {
+                _startRotation = Quaternion.AngleAxis(-RotationSpeed, MovingVessel.ReferenceTransform.up) * _startRotation;
+                _hasRotated = true;
+            }
+
+            if (spawningLocal)
+            {
             }
 
             if (inputting)
             {
-                _currMoveSpeed = Mathf.Clamp(Mathf.MoveTowards(_currMoveSpeed, MoveSpeed, MoveAccel * Time.fixedDeltaTime), 0, MoveSpeed);
+                _currMoveSpeed = Mathf.Clamp(Mathf.MoveTowards(_currMoveSpeed, _moveSpeed, MoveAccel * Time.fixedDeltaTime), 0, MoveSpeed);
             }
             else
             {
@@ -236,13 +297,10 @@ namespace OrX
             bool surfaceDetected = CapsuleCast(out ringHit);
             Vector3 finalOffset = Vector3.zero;
 
-            if (surfaceDetected)
-            {
-                Vector3 rOffset = Vector3.Project(ringHit.point - vSrfPt, _up);
-                Vector3 mOffset = (vSrfPt + offset) - MovingVessel.CoM;
-                finalOffset = rOffset + mOffset + (MoveHeight * _up);
-                MovingVessel.Translate(finalOffset);
-            }
+            Vector3 rOffset = Vector3.Project(ringHit.point - vSrfPt, _up);
+            Vector3 mOffset = (vSrfPt + offset) - MovingVessel.CoM;
+            finalOffset = rOffset + mOffset + (MoveHeight * _up);
+            MovingVessel.Translate(finalOffset);
 
             PQS bodyPQS = MovingVessel.mainBody.pqsController;
 
@@ -256,13 +314,6 @@ namespace OrX
 
             double srfHeight = bodyPQS.GetSurfaceHeight(bodyUpVector);
 
-            //double alt = srfHeight - bodyPQS.radius;         
-            //double rAlt = movingVessel.radarAltitude;
-            //double tAlt = TrueAlt(movingVessel);
-            //double pAlt = movingVessel.pqsAltitude;            
-            //double teralt = movingVessel.mainBody.TerrainAltitude(movingVessel.mainBody.GetLatitude(geoCoords), movingVessel.mainBody.GetLongitude(geoCoords));
-            //Debug.Log ("Surface height: "+movingVessel.mainBody.pqsController.GetSurfaceHeight(up));
-
             if (!surfaceDetected)
             {
                 Vector3 terrainPos = MovingVessel.mainBody.position + (float)srfHeight * _up;
@@ -271,25 +322,22 @@ namespace OrX
                 {
                     MovingVessel.SetPosition(terrainPos + (MoveHeight * _up) + offset);
                 }
-
-                //update vessel situation to splashed down:
-                //MovingVessel.UpdateLandedSplashed();
             }
 
             //fix surface rotation
-            //Quaternion srfRotFix = Quaternion.FromToRotation(_startingUp, _up);
-            //_currRotation = srfRotFix * _startRotation;
-            //MovingVessel.SetRotation(_currRotation);
-            /*
+            Quaternion srfRotFix = Quaternion.FromToRotation(_startingUp, _up);
+            _currRotation = srfRotFix * _startRotation;
+            MovingVessel.SetRotation(_currRotation);
+
             if (Vector3.Angle(_startingUp, _up) > 5)
             {
                 _startRotation = _currRotation;
                 _startingUp = _up;
             }
-            */
+
+            MovingVessel.angularVelocity = Vector3.zero;
+            MovingVessel.angularMomentum = Vector3.zero;
             MovingVessel.SetWorldVelocity(Vector3d.zero);
-            //MovingVessel.angularVelocity = Vector3.zero;
-            //MovingVessel.angularMomentum = Vector3.zero;
         }
 
         private Vector3d WorldPositionToGeoCoords(Vector3d worldPosition, CelestialBody body)
@@ -306,89 +354,46 @@ namespace OrX
             return new Vector3d(lat, longi, alt);
         }
 
-        public void StartMove(Vessel v, bool forceReleaseClamps)
-        {
-            if (OrXHoloCache.instance.triggerKerbSetup)
-            {
-                OrXHoloCache.instance.triggerKerbSetup = false;
-                var kerb = OrXHoloCache.instance.triggerVessel.rootPart.FindModuleImplementing<ModuleOrX>();
-                kerb.holoSave = true;
-            }
+        bool spawningLocal = false;
+        double degPerMeter = 0;
+        double mPerDegree = 0;
+        float _alt = 0;
 
+        public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _startBuild)
+        {
+            MovingVessel = new Vessel();
+            startBuild = _startBuild;
+            _alt = _altitude;
+            spawningLocal = _spawningLocal;
+            _moveMode = MoveModes.Normal;
             MovingVessel = v;
             IsMovingVessel = true;
+            MoveHeight = (float)MovingVessel.altitude + _alt;
+            mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+            degPerMeter = 1 / mPerDegree;
 
             _up = (v.transform.position - v.mainBody.transform.position).normalized;
-            //_startingUp = _up;
+            _startRotation = MovingVessel.transform.rotation;
+            _currRotation = _startRotation;
 
-            _vBounds = new VesselBounds(MovingVessel);
             _moving = true;
-            MoveHeight = _vBounds.BottomLength + 0.5f;
-
-            //_startRotation = MovingVessel.transform.rotation;
-            //_currRotation = _startRotation;
-
             _debugLr.enabled = true;
 
-            /*
-            if (!_placingVessels.Contains(v) && v.LandedOrSplashed)
-            {
-                foreach (LaunchClamp clamp in v.FindPartModulesImplementing<LaunchClamp>())
-                {
-                    if (forceReleaseClamps)
-                    {
-                        clamp.Release();
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-
-                ShowModeMessage();
-
-                MovingVessel = v;
-                IsMovingVessel = true;
-
-                _up = (v.transform.position - v.mainBody.transform.position).normalized;
-                _startingUp = _up;
-
-                _vBounds = new VesselBounds(MovingVessel);
-                _moving = true;
-                MoveHeight = _vBounds.BottomLength + 0.5f;
-
-                _startRotation = MovingVessel.transform.rotation;
-                _currRotation = _startRotation;
-
-                _debugLr.enabled = true;
-            }
-            */
+            FlightGlobals.ForceSetActiveVessel(MovingVessel);
         }
 
-        public void EndMove()
+        public void EndMove(bool addingCoords, bool _spawningLocal, bool drop)
         {
-            StartCoroutine(EndMoveRoutine(_vBounds));
+            spawningLocal = _spawningLocal;
+            Debug.Log("[OrX Vessel Move] ===== ENDING MOVE =====");
+
+            StartCoroutine(EndMoveRoutine(addingCoords, _spawningLocal));
             IsMovingVessel = false;
             _debugLr.enabled = false;
         }
 
-        public void DropMove()
+        private IEnumerator EndMoveRoutine(bool addingCoords, bool _spawningLocal)
         {
-            StartCoroutine(DropMoveRoutine(_vBounds));
-            IsMovingVessel = false;
-            _debugLr.enabled = false;
-        }
-
-        private IEnumerator EndMoveRoutine(VesselBounds vesselBounds)
-        {
-            Vessel v = vesselBounds.vessel;
-            if (!v) yield break;
-
-            yield return new WaitForFixedUpdate();
-            vesselBounds.UpdateBounds();
-
-            yield return new WaitForFixedUpdate();
-
             while (_moveMode != MoveModes.Normal)
             {
                 ToggleMoveMode();
@@ -396,65 +401,70 @@ namespace OrX
 
             _moving = false;
             MoveHeight = 0;
-            _placingVessels.Add(vesselBounds.vessel);
-            float bottomLength = _vBounds.BottomLength;
+            _placingVessels.Add(MovingVessel);
+            float altitude = Convert.ToSingle(MovingVessel.radarAltitude) - _alt;
 
-            float altitude = GetRaycastAltitude(vesselBounds);
-
-            while (v && !v.LandedOrSplashed)
+            while (MovingVessel && !MovingVessel.LandedOrSplashed)
             {
-                v.IgnoreGForces(240);
                 MovingVessel.IgnoreGForces(240);
 
-                _up = (v.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
-                float placeSpeed = Mathf.Clamp(((altitude - bottomLength) * 2), 0.1f, maxPlacementSpeed);
+                _up = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+                float placeSpeed = Mathf.Clamp(altitude, 0.1f, maxPlacementSpeed);
                 if (placeSpeed > 3)
                 {
-                    v.SetWorldVelocity(Vector3.zero);
+                    MovingVessel.SetWorldVelocity(Vector3.zero);
                     MovingVessel.angularVelocity = Vector3.zero;
                     MovingVessel.angularMomentum = Vector3.zero;
-                    v.Translate(placeSpeed * Time.fixedDeltaTime * -_up);
+                    MovingVessel.Translate(placeSpeed * Time.fixedDeltaTime * -_up);
                 }
                 else
                 {
-                    v.SetWorldVelocity(placeSpeed * -_up);
+                    MovingVessel.SetWorldVelocity(placeSpeed * -_up);
                 }
+
+                if (altitude <= 0.3f)
+                {
+                    altitude = 0.3f;
+                }
+
                 altitude -= placeSpeed * Time.fixedDeltaTime;
                 yield return new WaitForFixedUpdate();
             }
 
-            _placingVessels.Remove(v);
+            _placingVessels.Remove(MovingVessel);
             _hoverAdjust = 0f;
 
-            if (OrXHoloCache.instance.buildingMission)
-            {
-                IsMovingVessel = false;
-                _debugLr.enabled = false;
-                _moving = false;
-                MoveHeight = 0;
-                _hoverAdjust = 0f;
-
-                if (OrXHoloCache.instance.challengeType == "DAKAR RACING")
-                {
-                    OrXHoloCache.instance.DakarContinue();
-                }
-                else
-                {
-
-                }
-
-                MovingVessel = new Vessel();
-            }
-        }
-
-        private IEnumerator DropMoveRoutine(VesselBounds vesselBounds)
-        {
-            Vessel v = vesselBounds.vessel;
-            if (!v) yield break;
-
+            IsMovingVessel = false;
+            _debugLr.enabled = false;
             _moving = false;
             MoveHeight = 0;
             _hoverAdjust = 0f;
+
+            if (_spawningLocal)
+            {
+                spawningLocal = false;
+                MovingVessel.rootPart.AddModule("ModuleParkingBrake", true);
+                OrXHoloKron.instance.PlaceCraft();
+            }
+            else
+            {
+                if (addingCoords)
+                {
+                    OrXHoloKron.instance.saveLocalVessels = true;
+                    OrXHoloKron.instance.addCoords = true;
+                    OrXHoloKron.instance.GuiEnabledOrXMissions = true;
+                    OrXHoloKron.instance.movingCraft = false;
+                    OrXHoloKron.instance.OrXHCGUIEnabled = true;
+                    //StartMove(OrXHoloKron.instance._HoloKron, false, 5, false);
+                    OrXHoloKron.instance.SaveConfig();
+                }
+                else
+                {
+                    OrXHoloKron.instance.addingMission = true;
+                    OrXHoloKron.instance.SaveConfig();
+                }
+            }
+            MovingVessel = new Vessel();
         }
 
         private void UpdateDebugLines()
@@ -482,7 +492,7 @@ namespace OrX
 
             Vector3 forward = North();//Vector3.ProjectOnPlane((movingVessel.CoM)-FlightCamera.fetch.mainCamera.transform.position, up).normalized;
 
-            float radius = _vBounds.Radius;
+            float radius = _alt;
 
             Vector3 offsetVector = (radius * radiusFactor * forward);
             offsetVector = Quaternion.AngleAxis(angle, _up) * offsetVector;
@@ -495,16 +505,9 @@ namespace OrX
         private bool CapsuleCast(out RaycastHit rayHit)
         {
             //float radius = (Mathf.Max (Mathf.Max(vesselBounds.size.x, vesselBounds.size.y), vesselBounds.size.z)) + (currMoveSpeed*2);
-            float radius = _vBounds.Radius + Mathf.Clamp(_currMoveSpeed, 0, 200);
+            float radius = _alt + Mathf.Clamp(_currMoveSpeed, 0, 200);
 
             return Physics.CapsuleCast(MovingVessel.CoM + (250 * _up), MovingVessel.CoM + (249 * _up), radius, -_up, out rayHit, 2000, 1 << 15);
-        }
-
-        private float GetRadarAltitude(Vessel vessel)
-        {
-            //Not needed anymore - RadarAlt is part of vessel now 
-            float radarAlt = Mathf.Clamp((float)(vessel.mainBody.GetAltitude(vessel.CoM) - vessel.terrainAltitude), 0, (float)vessel.altitude);
-            return radarAlt;
         }
 
         private float GetRaycastAltitude(VesselBounds vesselBounds) //TODO do the raycast from the bottom point of the ship, and include vessels in layer mask, so you can safely place on top of vessel
@@ -530,24 +533,10 @@ namespace OrX
             }
         }
 
-        private Vector3 GetRaycastPosition(VesselBounds vesselBounds)
-        {
-            Vector3 ZeroVector = new Vector3(0, 0, 0);
-            RaycastHit hit;
-            if (Physics.Raycast(vesselBounds.vessel.CoM - (vesselBounds.BottomLength * _up), -_up, out hit, (float)vesselBounds.vessel.altitude, (1 << 15) | (1 << 0)))
-            {
-                return Vector3.Project(hit.point - vesselBounds.vessel.CoM, _up);
-            }
-            else
-            {
-                return ZeroVector;
-            }
-        }
-
         private void ToggleMoveMode()
         {
+
             _moveMode = (MoveModes)(int)Mathf.Repeat((float)_moveMode + 1, 3);
-            ShowModeMessage();
 
             switch (_moveMode)
             {
@@ -561,15 +550,6 @@ namespace OrX
                     _debugLr.material.SetColor("_EmissiveColor", XKCDColors.BluePurple);
                     break;
             }
-        }
-
-        private void ShowModeMessage()
-        {
-            if (_moveMessage != null)
-            {
-                ScreenMessages.RemoveMessage(_moveMessage);
-            }
-            _moveMessage = ScreenMessages.PostScreenMessage("Move Mode : " + _moveMode.ToString(), 3, ScreenMessageStyle.UPPER_CENTER);
         }
 
         private Vector3 North()

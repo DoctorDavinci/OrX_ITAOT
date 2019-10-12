@@ -1,5 +1,5 @@
 ﻿using OrX.spawn;
-//using OrXWind;
+using OrXWind;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ namespace OrX
         public bool completed = false;
 
         [KSPField(isPersistant = true)]
-        public string HoloCacheName = string.Empty;
+        public string HoloKronName = string.Empty;
 
         [KSPField(isPersistant = true)]
         public string missionName = string.Empty;
@@ -48,7 +48,7 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public bool blueprintsAdded = false;
 
-        public Vessel triggerCraft;
+        Vessel triggerCraft;
 
         [KSPField(isPersistant = true)]
         public double altitude = 0;
@@ -57,41 +57,35 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public double longitude = 0;
 
-        [KSPField(isPersistant = true)]
-        public bool _holoSetup = false;
-
-        public bool setup = false;
         public bool hideBoid = false;
+        public bool setup = false;
         private static float maxfade = 0f;
         private static float maxVis = 1f;
         private static float rLevel = 0.0f;
         private bool currentShadowState = true;
-        private float tLevel = 1;
-        private float rateOfFade = 4f;
+        private float tLevel = 0;
+        private float rateOfFade = 5f;
         private float shadowCutoff = 0.0f;
         private bool triggerHide = false;
         public Vector3d pos;
+        public Vector3d _pos;
+
         public bool boid = false;
         public int triggerRange = 10;
+        private bool checking = false;
         public bool isLoaded = false;
 
         #endregion
 
-        [KSPField(unfocusedRange = 20f, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOLOCACHE"),
+        [KSPField(unfocusedRange = 10, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOloKron"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool deploy = false;
-
-        [KSPEvent(guiActiveUnfocused = true, externalToEVAOnly = false, unfocusedRange = 10f, guiName = "Nearby Vessel")]
-        public void InRangeEvent()
-        {
-            deploy = true;
-        }
 
         void OnGUI()
         {
             if (HighLogic.LoadedSceneIsFlight && isLoaded)
             {
-                if (boid && !hideBoid)
+                if (!hideBoid)
                 {
                     DrawTextureOnWorldPos(pos, HoloTargetTexture, new Vector2(8, 8));
                 }
@@ -105,9 +99,13 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
+                pos = new Vector3d(this.vessel.latitude, this.vessel.longitude, this.vessel.altitude);
+                _pos = pos;
                 tLevel = 0;
                 part.SetOpacity(tLevel);
-                pos = new Vector3d(latitude, longitude, altitude);
+                HoloKronName = OrXHoloKron.instance.HoloKronName;
+                triggerCraft = FlightGlobals.ActiveVessel;
+                part.explosionPotential *= 0.2f;
             }
         }
 
@@ -115,43 +113,57 @@ namespace OrX
         {
             base.OnFixedUpdate();
 
-            if (HighLogic.LoadedSceneIsFlight && isLoaded)
+            if (!this.vessel.isActiveVessel)
             {
-                if (!this.vessel.isActiveVessel)
+                if (FlightGlobals.ActiveVessel.isEVA)
                 {
-                    if (deploy && !setup)
+                    if (OrXHoloKron.instance.Scuba)
                     {
-                        setup = true;
-                        deploy = false;
-                        if (HoloCacheName != "" && HoloCacheName != string.Empty)
+                        if (deploy)
                         {
-                            Debug.Log("[Module OrX Mission] === OPENING '" + HoloCacheName + "' ==="); ;
-                            OrXHoloCache.instance.OpenHoloCache(HoloCacheName, this.vessel);
+                            deploy = false;
+                            hideBoid = true;
+                            Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
+                            OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel);
+                        }
+                    }
+                    else
+                    {
+                        if (deploy)
+                        {
+                            deploy = false;
+                            ScreenMessages.PostScreenMessage(new ScreenMessage("Get into a vehicle to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
                         }
                     }
                 }
-
-                if (OrXHoloCache.instance.buildingMission && boid)
+                else
                 {
-                    //HideHolo();
+                    if (deploy)
+                    {
+                        deploy = false;
+                        Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
+                        OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel);
+                        //FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleParkingBrake");
+                    }
+                }
+
+                if (!setup && this.vessel.LandedOrSplashed && boid)
+                {
+                    setup = true;
+                    List<Part>.Enumerator p = this.vessel.parts.GetEnumerator();
+                    while (p.MoveNext())
+                    {
+                        if (p.Current != null)
+                        {
+                            if (p.Current.name.Contains("largeAdapter") || p.Current.partName.Contains("largeAdapter"))
+                            {
+                                p.Current.mass = 10000000;
+                            }
+                        }
+                    }
+                    p.Dispose();
                 }
             }
-        }
-
-
-        public void StartBuild()
-        {
-            _holoSetup = true;
-
-            if (OrXHoloCache.instance.triggerKerbSetup)
-            {
-                OrXHoloCache.instance.triggerKerbSetup = false;
-                var kerb = OrXHoloCache.instance.triggerVessel.rootPart.FindModuleImplementing<ModuleOrX>();
-                kerb.holoSave = true;
-            }
-
-            FlightGlobals.ForceSetActiveVessel(this.vessel);
-            OrXVesselMove.Instance.StartMove(this.vessel, true);
         }
 
         public void Update()
@@ -160,22 +172,31 @@ namespace OrX
             {
                 if (this.vessel.parts.Count == 1)
                 {
-                    if (this.vessel.radarAltitude >= 1)
-                    {
-                        this.vessel.IgnoreGForces(240);
-                        this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-                    }
+                    this.vessel.IgnoreGForces(240);
 
-                    if (!_holoSetup)
+                    this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+                    
+                    if (this.vessel.isActiveVessel && this.vessel != OrXVesselMove.Instance.MovingVessel)
                     {
-                        this.vessel.SetPosition(new Vector3d(latitude, longitude, altitude), true);
+                        this.vessel.SetPosition(pos, true);
+                    }
+                    else
+                    {
+                        this.vessel.SetPosition(pos, true);
                     }
                 }
 
-                if (tLevel == maxfade && hideBoid && boid)
+                if (tLevel == maxfade && triggerHide)
                 {
-                    part.explosionPotential *= 0.2f;
-                    this.part.explode();
+                    if (boid)
+                    {
+                        part.explosionPotential *= 0.2f;
+                        //this.part.explode();
+                    }
+                    else
+                    {
+                        //this.vessel.Die();
+                    }
                 }
 
                 if (hideBoid && (tLevel > maxfade) || !hideBoid && (tLevel < maxVis) || triggerHide)
@@ -223,19 +244,18 @@ namespace OrX
             }
         }
 
-        public void HideHolo()
+        public void HideHolo(bool b)
         {
-            Debug.Log("[Module OrX Mission] === HIDING HOLO ===");
-
-            hideBoid = true;
-            triggerHide = true;
-        }
-
-        public void KillHolo()
-        {
-            Debug.Log("[Module OrX Mission] === KILLING HOLO ===");
-            part.explosionPotential *= 0.2f;
-            this.part.explode();
+            if (b)
+            {
+                part.explosionPotential *= 0.2f;
+                //this.part.explode();
+            }
+            else
+            {
+                hideBoid = true;
+                triggerHide = true;
+            }
         }
 
         private Texture2D redDot;

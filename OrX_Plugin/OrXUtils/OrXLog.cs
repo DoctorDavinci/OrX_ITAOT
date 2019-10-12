@@ -3,7 +3,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-//using OrXWind;
+using OrXWind;
+using FinePrint;
 
 namespace OrX
 {
@@ -11,6 +12,8 @@ namespace OrX
     public class OrXLog : MonoBehaviour
     {
         public static OrXLog instance;
+
+        public List<Waypoint> waypoints;
 
         public static Dictionary<AddedTech, List<string>> UnlockedTech;
         public static Dictionary<AddedTech, List<string>> TechDatabase;
@@ -45,7 +48,7 @@ namespace OrX
         public bool unlockedBit = false;
         public bool unlockedWind = false;
 
-        // HoloCache Tech
+        // HoloKron Tech
         public bool addBlueprints = true;
         public bool addLocalVessels = true;
         public bool addTech = true;
@@ -82,6 +85,7 @@ namespace OrX
         private void Start()
         {
             owned = new List<string>();
+            waypoints = new List<Waypoint>();
             TechDatabase = new Dictionary<AddedTech, List<string>>();
             TechDatabase.Add(AddedTech.addedTech, new List<string>());
 
@@ -117,25 +121,70 @@ namespace OrX
             ImportVesselList();
         }
 
+        Waypoint currentWaypoint;
+        public static int[] _rColors = new int[]{669, 212, 1212, 359, 5, 1287};
+        int waypointColor = 0;
+
+        public void AddWaypoint(string HoloKronName, Vector3 nextLocation)
+        {
+            System.Random r = new System.Random();
+            waypointColor = (int)(r.NextDouble() * _rColors.Count());
+            currentWaypoint = new Waypoint();
+            currentWaypoint.id = "marker";
+            currentWaypoint.seed = _rColors[waypointColor];
+            currentWaypoint.name = HoloKronName;
+            currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
+            currentWaypoint.longitude = nextLocation.y;
+            currentWaypoint.latitude = nextLocation.x;
+            currentWaypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
+            currentWaypoint.altitude = nextLocation.z;
+            //currentWaypoint.iconSize = 1;
+            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + name + " ===");
+            waypoints.Add(currentWaypoint);
+            ScenarioCustomWaypoints.AddWaypoint(currentWaypoint);
+        }
+
+        public void RemoveWaypoint(string HoloKronName, Vector3 nextLocation)
+        {
+            currentWaypoint = new Waypoint();
+            currentWaypoint.id = "marker";
+            currentWaypoint.seed = _rColors[waypointColor];
+            currentWaypoint.name = HoloKronName;
+            currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
+            currentWaypoint.longitude = nextLocation.y;
+            currentWaypoint.latitude = nextLocation.x;
+            currentWaypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
+            currentWaypoint.altitude = nextLocation.z;
+            //currentWaypoint.iconSize = 1;
+            waypoints.Remove(currentWaypoint);
+            ScenarioCustomWaypoints.RemoveWaypoint(currentWaypoint);
+        }
+
         #region Checks
 
         public void onVesselChange(Vessel data)
         {
-            if (building)
+            if (OrXHoloKron.instance.buildingMission)
             {
 
             }
             else
             {
+                EVAUnlockWS();
+
                 if (!FlightGlobals.ActiveVessel.isEVA)
                 {
-
                 }
                 else
                 {
                     if (FlightGlobals.ActiveVessel.missionTime == 0)
                     {
                         AddToVesselList(FlightGlobals.ActiveVessel);
+                    }
+
+                    if (FlightGlobals.ActiveVessel.Splashed)
+                    {
+
                     }
                 }
             }
@@ -677,62 +726,155 @@ namespace OrX
         private KeyCode prev2;
 
         [KSPField(isPersistant = true)]
-        public bool keysSet = true;
+        public bool keysSet = false;
 
         public void SetFocusKeys()
         {
-            if (setFocusKeys)
+            if (!keysSet)
             {
-                setFocusKeys = false;
+                keysSet = true;
                 next = GameSettings.FOCUS_NEXT_VESSEL.primary.code;
                 prev = GameSettings.FOCUS_PREV_VESSEL.primary.code;
 
                 next2 = GameSettings.FOCUS_NEXT_VESSEL.secondary.code;
                 prev2 = GameSettings.FOCUS_PREV_VESSEL.secondary.code;
+                Debug.Log("[OrX LOG]: Setting Vessel Focus Hotkeys");
+                Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
+
+                GameSettings.FOCUS_NEXT_VESSEL.primary.code = KeyCode.None;
+                GameSettings.FOCUS_PREV_VESSEL.primary.code = KeyCode.None;
+                GameSettings.FOCUS_NEXT_VESSEL.secondary.code = KeyCode.None;
+                GameSettings.FOCUS_PREV_VESSEL.secondary.code = KeyCode.None;
             }
-
-            keysSet = true;
-            Debug.Log("[OrX LOG]: Setting Vessel Focus Hotkeys");
-            Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
-
-            GameSettings.FOCUS_NEXT_VESSEL.primary.code = KeyCode.None;
-            GameSettings.FOCUS_PREV_VESSEL.primary.code = KeyCode.None;
-
-            Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
-
-            GameSettings.FOCUS_NEXT_VESSEL.secondary.code = KeyCode.None;
-            GameSettings.FOCUS_PREV_VESSEL.secondary.code = KeyCode.None;
         }
-
         public void ResetFocusKeys()
         {
-            keysSet = false;
+            if (keysSet)
+            {
+                keysSet = false;
 
-            Debug.Log("[OrX LOG]: Resetting Vessel Focus Hotkeys");
-
-            GameSettings.FOCUS_NEXT_VESSEL.primary.code = next;
-            GameSettings.FOCUS_PREV_VESSEL.primary.code = prev;
-            Debug.Log("[OrX LOG]: " + next + " re-enabled ............................");
-
-
-            GameSettings.FOCUS_NEXT_VESSEL.secondary.code = next2;
-            GameSettings.FOCUS_PREV_VESSEL.secondary.code = prev2;
-            Debug.Log("[OrX LOG]: " + next2 + " re-enabled ............................");
-
+                Debug.Log("[OrX LOG]: Resetting Vessel Focus Hotkeys");
+                GameSettings.FOCUS_NEXT_VESSEL.primary.code = next;
+                GameSettings.FOCUS_PREV_VESSEL.primary.code = prev;
+                GameSettings.FOCUS_NEXT_VESSEL.secondary.code = next2;
+                GameSettings.FOCUS_PREV_VESSEL.secondary.code = prev2;
+                Debug.Log("[OrX LOG]: " + next2 + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + next + " re-enabled ............................");
+            }
         }
+
+        public bool _EVALockWS = false;
+        public bool _EVALockAD = false;
+
+        KeyCode w;
+        KeyCode a;
+        KeyCode s;
+        KeyCode d;
+        KeyCode w2;
+        KeyCode a2;
+        KeyCode s2;
+        KeyCode d2;
+
+        public void EVALockWS()
+        {
+            if (!_EVALockWS)
+            {
+                _EVALockWS = true;
+                w = GameSettings.EVA_forward.primary.code;
+                s = GameSettings.EVA_back.primary.code;
+                w2 = GameSettings.EVA_forward.secondary.code;
+                s2 = GameSettings.EVA_back.secondary.code;
+
+                Debug.Log("[OrX LOG]: Setting EVA Control Lock");
+                Debug.Log("[OrX LOG]: " + w + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + s + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + w2 + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + s2 + " changing to NONE");
+
+                GameSettings.EVA_forward.primary.code = KeyCode.None;
+                GameSettings.EVA_back.primary.code = KeyCode.None;
+                GameSettings.EVA_forward.secondary.code = KeyCode.None;
+                GameSettings.EVA_back.secondary.code = KeyCode.None;
+            }
+            EVALockAD();
+        }
+        public void EVALockAD()
+        {
+            if (!_EVALockAD)
+            {
+                _EVALockAD = true;
+                a = GameSettings.EVA_left.primary.code;
+                d = GameSettings.EVA_right.primary.code;
+                a2 = GameSettings.EVA_left.secondary.code;
+                d2 = GameSettings.EVA_right.secondary.code;
+
+                Debug.Log("[OrX LOG]: Setting EVA Control Lock");
+                Debug.Log("[OrX LOG]: " + a + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + d + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + a2 + " changing to NONE");
+                Debug.Log("[OrX LOG]: " + d2 + " changing to NONE");
+
+                GameSettings.EVA_left.primary.code = KeyCode.None;
+                GameSettings.EVA_right.primary.code = KeyCode.None;
+                GameSettings.EVA_left.secondary.code = KeyCode.None;
+                GameSettings.EVA_right.secondary.code = KeyCode.None;
+            }
+        }
+        public void EVAUnlockWS()
+        {
+            if (_EVALockWS)
+            {
+                _EVALockWS = false;
+
+                Debug.Log("[OrX LOG]: Resetting EVA Control Lock");
+                Debug.Log("[OrX LOG]: " + w + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + s + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + w2 + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + s2 + " re-enabled ............................");
+
+                GameSettings.EVA_forward.primary.code = w;
+                GameSettings.EVA_back.primary.code = s;
+                GameSettings.EVA_forward.secondary.code = w2;
+                GameSettings.EVA_back.secondary.code = s2;
+            }
+            EVAUnlockAD();
+        }
+        public void EVAUnlockAD()
+        {
+            if (_EVALockAD)
+            {
+                _EVALockAD = false;
+
+                Debug.Log("[OrX LOG]: Resetting EVA Control Lock");
+                Debug.Log("[OrX LOG]: " + a + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + d + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + a2 + " re-enabled ............................");
+                Debug.Log("[OrX LOG]: " + d2 + " re-enabled ............................");
+
+                GameSettings.EVA_left.primary.code = a;
+                GameSettings.EVA_right.primary.code = d;
+                GameSettings.EVA_left.secondary.code = a2;
+                GameSettings.EVA_right.secondary.code = d2;
+            }
+        }
+
 
         public void LockKeyboard()
         {
+            Debug.Log("[OrX LOG]: Locking Keyboard");
             InputLockManager.SetControlLock(ControlTypes.ACTIONS_ALL, lockID);
         }
 
         public void UnlockKeyboard()
         {
+            Debug.Log("[OrX LOG]: Unlocking Keyboard");
             InputLockManager.RemoveControlLock(lockID);
         }
 
 
 
         #endregion
+
     }
 }
