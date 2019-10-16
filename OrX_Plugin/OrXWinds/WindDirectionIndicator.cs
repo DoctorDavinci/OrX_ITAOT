@@ -46,7 +46,7 @@ namespace OrXWind
 
         private void OnGUI()
         {
-            if (GuiEnabledWindDI && _gameUiToggle)
+            if (WindGUI.instance.enableWind)
             {
                 _windowRect = GUI.Window(415237212, _windowRect, GuiWindowWindDI, "");
             }
@@ -65,15 +65,15 @@ namespace OrXWind
             };
             var titleStyle = new GUIStyle(centerLabel)
             {
-                fontSize = 14,
+                fontSize = 12,
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "W(ind/S) Direction: " + direction, titleStyle);
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), "W[ind/S] " + direction, titleStyle);
             line++;
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "" + degrees + " degrees", titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "" + Math.Round(degrees, 1) + " degrees", titleStyle);
             line++;
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "" + speed + " m/s", titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "" + Math.Round(speed, 1) + " m/s", titleStyle);
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;

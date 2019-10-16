@@ -23,7 +23,9 @@ namespace OrX
         private Rect _windowRect;
         public double distance = 0;
 
-        public string hcName = "";
+        public string HoloKronName = "";
+        public string _HoloKronName = "";
+
         public bool append = false;
         public bool save = false;
         public bool cancel = false;
@@ -56,14 +58,36 @@ namespace OrX
         /// GUI
         /// </summary>
 
-        private void ScreenMsg(string msg)
+        private void GuiWindowOrXAppendCfg(int OrXAppendCfg)
         {
-            ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 4, ScreenMessageStyle.UPPER_CENTER));
+            GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
+            float line = 0;
+            _contentWidth = WindowWidth - 2 * LeftIndent;
+
+            DrawTitle(line);
+            line++;
+            DrawTitle2(line);
+            line++;
+            OrXHoloKron.instance.DrawPlayPassword(line);
+            line++;
+            DrawAppend(line);
+            line++;
+            DrawTitle4(line);
+            line++;
+            DrawHoloKronName(line);
+            line++;
+            DrawSave(line);
+            line++;
+            DrawCancel(line);
+
+            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+            _windowRect.height = _windowHeight;
         }
 
-        public void EnableGui()
+        public void EnableGui(int _hkCount, string holoName)
         {
-            OrXHoloKron.instance.GuiEnabledOrXMissions = false;
+            _HoloKronName = holoName;
+            OrXHoloKron.instance.OrXHCGUIEnabled = false;
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = true;
@@ -72,23 +96,13 @@ namespace OrX
 
         public void DisableGui()
         {
-            OrXHoloKron.instance.GuiEnabledOrXMissions = true;
-            hcName = "";
+            OrXHoloKron.instance.OrXHCGUIEnabled = true;
+            HoloKronName = "";
             cancel = false;
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = false;
             Debug.Log("[OrX]: Hiding OrXAppendCfg GUI");
-        }
-
-        private void GameUiEnableOrXAppendCfg()
-        {
-            _gameUiToggle = true;
-        }
-
-        private void GameUiDisableOrXAppendCfg()
-        {
-            _gameUiToggle = false;
         }
 
         private void DrawTitle(float line)
@@ -105,7 +119,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                hcName + " already exists .....",
+                _HoloKronName + " contains " + OrXHoloKron.instance.hkCount + " HoloKrons",
                 titleStyle);
         }
 
@@ -123,7 +137,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                hcName + "What would you like to do?",
+                "What would you like to do?",
                 titleStyle);
         }
 
@@ -149,42 +163,25 @@ namespace OrX
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
 
-            if (GUI.Button(saveRect, "Add to " + hcName, HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "Add to " + _HoloKronName, HighLogic.Skin.button))
             {
-                if (OrXHoloKron.instance.spawningStartGate)
+                if (OrXHoloKron.instance.Password == OrXHoloKron.instance.pas)
                 {
-                    OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                    if (OrXHoloKron.instance.spawningStartGate)
+                    {
+                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.SaveConfig(_HoloKronName);
+                        DisableGui();
+                    }
                 }
                 else
                 {
-                    OrXHoloKron.instance.SaveConfig();
+                    OrXHoloKron.instance.ScreenMsg("WRONG PASSWORD");
                 }
-                DisableGui();
             }
-        }
-
-        private void GuiWindowOrXAppendCfg(int OrXAppendCfg)
-        {
-            GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
-            float line = 0;
-            _contentWidth = WindowWidth - 2 * LeftIndent;
-
-            DrawTitle(line);
-            line++;
-            DrawTitle2(line);
-            line++;
-            DrawAppend(line);
-            line++;
-            DrawTitle4(line);
-            line++;
-            DrawHoloKronName(line);
-            line++;
-            DrawSave(line);
-            line++;
-            DrawCancel(line);
-
-            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
-            _windowRect.height = _windowHeight;
         }
 
         private void DrawSave(float line)
@@ -193,21 +190,31 @@ namespace OrX
 
             if (GUI.Button(saveRect, "SAVE", HighLogic.Skin.button))
             {
-                if (hcName == "")
+                if (HoloKronName == "")
                 {
-                    ScreenMsg("Unable to create HoloKron with no name");
+                    OrXHoloKron.instance.ScreenMsg("Unable to create HoloKron with no name");
                 }
                 else
                 {
-                    if (OrXHoloKron.instance.spawningStartGate)
+                    if (OrXHoloKron.instance.CheckExports(HoloKronName))
                     {
-                        OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                        OrXHoloKron.instance.ScreenMsg(HoloKronName + " also exists .....");
+                        OrXHoloKron.instance.ScreenMsg("What would you like to do?");
+
+                        _HoloKronName = HoloKronName;
                     }
                     else
                     {
-                        OrXHoloKron.instance.SaveConfig();
+                        if (OrXHoloKron.instance.spawningStartGate)
+                        {
+                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                        }
+                        else
+                        {
+                            OrXHoloKron.instance.SaveConfig(HoloKronName);
+                            DisableGui();
+                        }
                     }
-                    DisableGui();
                 }
             }
         }
@@ -218,12 +225,12 @@ namespace OrX
             leftLabel.alignment = TextAnchor.UpperLeft;
             leftLabel.normal.textColor = Color.white;
 
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Holo Name: ",
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Name: ",
                 leftLabel);
-            float textFieldWidth = 100;
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
             var fwdFieldRect = new Rect(LeftIndent + contentWidth - textFieldWidth,
                 ContentTop + line * entryHeight, textFieldWidth, entryHeight);
-            hcName = GUI.TextField(fwdFieldRect, hcName);
+            HoloKronName = GUI.TextField(fwdFieldRect, HoloKronName);
         }
 
         private void DrawCancel(float line)

@@ -114,7 +114,7 @@ namespace OrX
                 {
                     if (martiniLevel <= 4)
                     {
-                        if (martiniLevel >= 2)
+                        if (martiniLevel >= 2.49)
                         {
                             rightLabel.normal.textColor = XKCDColors.Yellow;
                         }
@@ -134,7 +134,7 @@ namespace OrX
             else
             {
                 narcosisText = "You're Drunk";
-                rightLabel.normal.textColor = XKCDColors.Red;
+                rightLabel.normal.textColor = XKCDColors.PaleMagenta;
             }
 
             GUI.Label(new Rect((WindowWidth / 2) - LeftIndent, ContentTop + line * entryHeight, 140, entryHeight),
@@ -186,6 +186,5 @@ namespace OrX
         private void Dummy()
         {
         }
-
     }
 }

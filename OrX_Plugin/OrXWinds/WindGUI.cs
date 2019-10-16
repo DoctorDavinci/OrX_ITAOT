@@ -85,8 +85,8 @@ namespace OrXWind
 
         private void ToggleWind()
         {
-            _heading = "0";
-
+            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is experimental .....");
+            
             if (enableWind)
             {
                 blowing = false;
@@ -95,7 +95,8 @@ namespace OrXWind
             }
             else
             {
-                Debug.Log("[OrX Wind] ... Setting up weather");
+                Debug.Log("[OrX W[ind/S]] ... Setting up weather");
+                enableWind = true;
 
                 if (random360)
                 {
@@ -109,6 +110,7 @@ namespace OrXWind
 
                 AddModule();
             }
+            
         }
 
         private void AddModule()
@@ -121,35 +123,39 @@ namespace OrXWind
                 {
                     if (v.Current == null) continue;
                     if (v.Current.packed && !v.Current.loaded) continue;
-                    Debug.Log("[OrX Wind] ... waking the weatherman");
+                    Debug.Log("[OrX W[ind/S]] ... waking the weatherman");
 
-                    List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
-                    while (part.MoveNext())
+                    if (!v.Current.rootPart.Modules.Contains<KerbalEVA>())
                     {
-                        if (part.Current != null)
+                        List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
+                        while (part.MoveNext())
                         {
-                            if (part.Current.Modules.Contains<ModuleLiftingSurface>() && !part.Current.Modules.Contains<ModuleSail>())
+                            if (part.Current != null)
                             {
-                                part.Current.AddModule("ModuleSail", true);
+                                if (part.Current.Modules.Contains<ModuleLiftingSurface>() && !part.Current.Modules.Contains<ModuleSail>() && !part.Current.Modules.Contains<KerbalEVA>())
+                                {
+                                    part.Current.AddModule("ModuleSail", true);
+                                }
                             }
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    Debug.Log("[OrX Wind] ERROR ... RETRYING ... " + e);
+                    Debug.Log("[OrX W[ind/S]] ERROR ... RETRYING ... " + e);
                     listError = true;
                 }
             }
             v.Dispose();
 
-            if (listError)
+            if (!listError)
             {
+                blowing = true;
                 StartCoroutine(Tease(FlightGlobals.ActiveVessel));
             }
             else
             {
-
+                AddModule();
             }
         }
 
@@ -157,8 +163,9 @@ namespace OrXWind
         {
             if (blowing)
             {
-                Debug.Log("[OrX Wind] TEASING FOR " + Math.Round(teaseDelay, 0) + " seconds ...");
-
+                Debug.Log("[OrX W[ind/S]] TEASING FOR " + Math.Round(teaseDelay, 0) + " seconds ...");
+                setDirection = false;
+                manual = false;
                 UpVect = (FlightGlobals.ActiveVessel.transform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized;
                 EastVect = FlightGlobals.ActiveVessel.mainBody.getRFrmVel(FlightGlobals.ActiveVessel.CoM).normalized;
                 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
@@ -168,7 +175,7 @@ namespace OrXWind
         }
         private void Blow(Vessel v)
         {
-            Debug.Log("[OrX Wind] BLOWING ... INTENSITY: " + _wi);
+            Debug.Log("[OrX W[ind/S]] BLOWING ... INTENSITY: " + _wi);
 
             if (windVariability <= 1)
             {
@@ -196,14 +203,14 @@ namespace OrXWind
             if (random <= 30) 
             {
                 _wi = (windIntensity + (windSpeedMod / 50)) / 10;
-                Debug.Log("[OrX Wind] ... Changing wind speed " + _wi);
+                Debug.Log("[OrX W[ind/S]] ... Changing wind speed " + _wi);
             }
             else
             {
                 if (random >= 70)
                 {
                     _wi = (windIntensity - (windSpeedMod / 50)) / 10;
-                    Debug.Log("[OrX Wind] ... Changing wind speed " + _wi);
+                    Debug.Log("[OrX W[ind/S]] ... Changing wind speed " + _wi);
                 }
             }
 
@@ -235,7 +242,7 @@ namespace OrXWind
                 {
                     teaseDelay = 10;
                 }
-                Debug.Log("[OrX Wind] ... Tease Delay = " + teaseDelay);
+                Debug.Log("[OrX W[ind/S]] ... Tease Delay = " + teaseDelay);
 
                 // get the current vessel position ... create clean new vector
                 currentPos = new Vector3d(v.latitude, v.longitude, v.altitude);
@@ -251,13 +258,13 @@ namespace OrXWind
                 {
                     if (currentPos.x <= 0.6)
                     {
-                        Debug.Log("[OrX Wind] ... TropoSphere = NorthWesterlies");
+                        Debug.Log("[OrX W[ind/S]] ... TropoSphere = NorthWesterlies");
 
                         TropoSphere = NorthWesterlies;
                     }
                     else
                     {
-                        Debug.Log("[OrX Wind] ... TropoSphere = NorthTrades");
+                        Debug.Log("[OrX W[ind/S]] ... TropoSphere = NorthTrades");
 
                         TropoSphere = NorthTrades;
                     }
@@ -295,13 +302,13 @@ namespace OrXWind
                 {
                     if (currentPos.x >= -0.6)
                     {
-                        Debug.Log("[OrX Wind] ... TropoSphere = SouthWesterlies");
+                        Debug.Log("[OrX W[ind/S]] ... TropoSphere = SouthWesterlies");
 
                         TropoSphere = SouthWesterlies;
                     }
                     else
                     {
-                        Debug.Log("[OrX Wind] ... TropoSphere = SouthTrades");
+                        Debug.Log("[OrX W[ind/S]] ... TropoSphere = SouthTrades");
 
                         TropoSphere = SouthTrades;
                     }
@@ -352,7 +359,7 @@ namespace OrXWind
 
                     if (angle <= windVariability / 100)
                     {
-                        Debug.Log("[OrX Wind] ... Changing direction");
+                        Debug.Log("[OrX W[ind/S]] ... Changing direction");
                         if (!random360)
                         {
                             windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
@@ -367,13 +374,13 @@ namespace OrXWind
                         if (!random360)
                         {
                             variationCount += 1;
-                            Debug.Log("[OrX Wind] ... Changing direction for " + v.vesselName);
+                            Debug.Log("[OrX W[ind/S]] ... Changing direction for " + v.vesselName);
                             windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
                         }
                         else
                         {
                             variationCount += 1;
-                            Debug.Log("[OrX Wind] ... Changing direction for " + v.vesselName);
+                            Debug.Log("[OrX W[ind/S]] ... Changing direction for " + v.vesselName);
                             windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * GeneralWindDirection; // Change direction by adding the randomized yaw divided by 1000 from the wind direction Y vector
                         }
                     }
@@ -393,7 +400,7 @@ namespace OrXWind
 
                     if (angle <= windVariability / 100)
                     {
-                        Debug.Log("[OrX Wind] ... Changing direction for " + v.vesselName);
+                        Debug.Log("[OrX W[ind/S] ... Changing direction for " + v.vesselName);
                         if (!random360)
                         {
                             windDirection = Quaternion.Euler(0, randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
@@ -406,7 +413,7 @@ namespace OrXWind
                     else
                     {
                         variationCount += 1;
-                        Debug.Log("[OrX Wind] ... Changing direction for " + v.vesselName);
+                        Debug.Log("[OrX W[ind/S] ... Changing direction for " + v.vesselName);
                         if (!random360)
                         {
                             windDirection = Quaternion.Euler(0, -randomYaw / (variationIntensity * 10), 0) * windDirection; // Change direction by subtracting the randomized yaw divided by 1000 from the wind direction Y vector
@@ -425,12 +432,15 @@ namespace OrXWind
                 }
             }
 
-            heading = Vector3.Angle(windDirection, NorthVect);
+            if (random360)
+            {
+                heading = Vector3.Angle(windDirection, NorthVect);
+            }
+
             if (Math.Sign(Vector3.Dot(windDirection, EastVect)) < 0)
             {
                 heading = 360 - heading;
             }
-            WindDirectionIndicator.instance.degrees = heading;
             string direction = "";
 
             if (heading >= 349 && heading < 11) // 0
@@ -560,7 +570,9 @@ namespace OrXWind
             }
 
             WindDirectionIndicator.instance.direction = direction;
-            WindDirectionIndicator.instance.GuiEnabledWindDI = true;
+            WindDirectionIndicator.instance.degrees = heading;
+            WindDirectionIndicator.instance.speed = _wi;
+
             StartCoroutine(Tease(v));
         }
 
@@ -608,9 +620,13 @@ namespace OrXWind
 
             DrawTitle(line);
             line++;
-            DrawEnableWind(line);
+            Draw360Random(line);
+
             if (!random360)
             {
+                line++;
+                DrawEnableWind(line);
+                line++;
                 DrawHeadingText(line);
                 line++;
                 DrawHeadingSlider(line);
@@ -634,9 +650,6 @@ namespace OrXWind
                 line++;
                 DrawWindSetDirection(line);
             }
-            line++;
-            line++;
-            Draw360Random(line);
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
@@ -655,6 +668,9 @@ namespace OrXWind
         }
         public void EnableGui()
         {
+            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
+
+            /*
             UpVect = (FlightGlobals.ActiveVessel.transform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized;
             EastVect = FlightGlobals.ActiveVessel.mainBody.getRFrmVel(FlightGlobals.ActiveVessel.CoM).normalized;
             NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
@@ -666,12 +682,16 @@ namespace OrXWind
             GuiEnabled = true;
             guiOpen = true;
             Debug.Log("[Wind]: Showing GUI");
+            */
         }
         public void DisableGui()
         {
+            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
+            /*
             guiOpen = false;
             GuiEnabled = false;
             Debug.Log("[Wind]: Hiding GUI");
+            */
         }
         private void DrawTitle(float line)
         {
@@ -685,7 +705,7 @@ namespace OrXWind
                 fontSize = 14,
                 alignment = TextAnchor.MiddleCenter
             };
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX W(ind/S)", titleStyle);
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX W[ind/S]", titleStyle);
         }
         private void DrawIntensity(float line)
         {
@@ -699,7 +719,7 @@ namespace OrXWind
                 fontSize = 10,
                 alignment = TextAnchor.MiddleCenter
             };
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W(ind/S) Intensity", titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W[ind/S] Intensity", titleStyle);
         }
         private void DrawWindIntensity(float line)
         {
@@ -731,7 +751,7 @@ namespace OrXWind
                 fontSize = 10,
                 alignment = TextAnchor.MiddleCenter
             };
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W(ind/S) Variability", titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W[ind/S] Variability", titleStyle);
         }
         private void DrawWindVariability(float line)
         {
@@ -778,7 +798,7 @@ namespace OrXWind
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             if (!random360)
             {
-                if (GUI.Button(saveRect, "Simulate Weather", HighLogic.Skin.button))
+                if (GUI.Button(saveRect, "W[ind/S] Weather Sim", HighLogic.Skin.button))
                 {
                     ScreenMessages.PostScreenMessage(new ScreenMessage("Simulated weather is experimental", 5, ScreenMessageStyle.UPPER_CENTER));
                     random360 = true;
@@ -829,14 +849,14 @@ namespace OrXWind
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             if (!enableWind)
             {
-                if (GUI.Button(saveRect, "Enable W(ind/S)"))
+                if (GUI.Button(saveRect, "Enable W[ind/S]", HighLogic.Skin.button))
                 {
                     ToggleWind();
                 }
             }
             else
             {
-                if (GUI.Button(saveRect, "Disable W(ind/S)"))
+                if (GUI.Button(saveRect, "W[ind/S] Enabled", HighLogic.Skin.box))
                 {
                     ToggleWind();
                 }
@@ -854,7 +874,7 @@ namespace OrXWind
                 fontSize = 10,
                 alignment = TextAnchor.MiddleCenter
             };
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W(ind/S) Heading", titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "W[ind/S] Heading: " + heading, titleStyle);
         }
         private void DrawHeadingSlider(float line)
         {
@@ -870,18 +890,36 @@ namespace OrXWind
 
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             GUI.Label(new Rect(8, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "0", Style);
-            GUI.Label(new Rect(100, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "|", Style);
-            GUI.Label(new Rect(176, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "100", Style);
+            GUI.Label(new Rect(105, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "|", Style);
+            GUI.Label(new Rect(176, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "359", Style);
             heading = GUI.HorizontalSlider(saveRect, heading, 0, 359);
         }
         private void DrawWindSetDirection(float line)
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            if (GUI.Button(saveRect, "Update W(ind/s) Settings"))
+            if (!setDirection)
             {
-                setDirection = true;
-                manual = true;
-                enableWind = true;
+                if (GUI.Button(saveRect, "Update W[ind/S] Settings", HighLogic.Skin.button))
+                {
+                    setDirection = true;
+                    manual = true;
+                }
+            }
+            else
+            {
+                if (GUI.Button(saveRect, "Updating W[ind/S]", HighLogic.Skin.box))
+                {
+                    if (enableWind)
+                    {
+
+                    }
+                    else
+                    {
+                        setDirection = true;
+                        manual = true;
+                        enableWind = true;
+                    }
+                }
             }
         }
 

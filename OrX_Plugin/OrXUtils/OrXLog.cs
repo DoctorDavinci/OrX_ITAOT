@@ -110,6 +110,7 @@ namespace OrX
             GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
             CheckUpgrades();
         }
+        
 
         private void onCrewBoarding(GameEvents.FromToAction<Part, Part> data)
         {
@@ -125,7 +126,35 @@ namespace OrX
         public static int[] _rColors = new int[]{669, 212, 1212, 359, 5, 1287};
         int waypointColor = 0;
 
-        public void AddWaypoint(string HoloKronName, Vector3 nextLocation)
+        private Texture2D redDot;
+        public Texture2D HoloTargetTexture
+        {
+            get { return redDot ? redDot : redDot = GameDatabase.Instance.GetTexture("OrX/Plugin/HoloTarget", false); }
+        }
+        public static Camera GetMainCamera()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                return FlightCamera.fetch.mainCamera;
+            }
+            else
+            {
+                return Camera.main;
+            }
+        }
+        public static void DrawTextureOnWorldPos(Vector3 loc, Texture texture, Vector2 size)
+        {
+            Vector3 screenPos = GetMainCamera().WorldToViewportPoint(loc);
+            if (screenPos.z < 0) return; //dont draw if point is behind camera
+            if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
+            if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
+            float xPos = screenPos.x * Screen.width - (0.5f * size.x);
+            float yPos = (1 - screenPos.y) * Screen.height - (0.5f * size.y);
+            Rect iconRect = new Rect(xPos, yPos, size.x, size.y);
+            GUI.DrawTexture(iconRect, texture);
+        }
+
+        public void AddWaypoint(bool challenge, string HoloKronName, Vector3 nextLocation)
         {
             System.Random r = new System.Random();
             waypointColor = (int)(r.NextDouble() * _rColors.Count());
@@ -136,28 +165,35 @@ namespace OrX
             currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
             currentWaypoint.longitude = nextLocation.y;
             currentWaypoint.latitude = nextLocation.x;
-            currentWaypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
             currentWaypoint.altitude = nextLocation.z;
+            currentWaypoint.height = nextLocation.z + 1;
+
             //currentWaypoint.iconSize = 1;
-            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + name + " ===");
+            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + HoloKronName + " ===");
             waypoints.Add(currentWaypoint);
             ScenarioCustomWaypoints.AddWaypoint(currentWaypoint);
         }
 
         public void RemoveWaypoint(string HoloKronName, Vector3 nextLocation)
         {
-            currentWaypoint = new Waypoint();
-            currentWaypoint.id = "marker";
-            currentWaypoint.seed = _rColors[waypointColor];
-            currentWaypoint.name = HoloKronName;
-            currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
-            currentWaypoint.longitude = nextLocation.y;
-            currentWaypoint.latitude = nextLocation.x;
-            currentWaypoint.height = FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 1;//TerrainHeight(lat, longi, FlightGlobals.ActiveVessel.mainBody);
-            currentWaypoint.altitude = nextLocation.z;
-            //currentWaypoint.iconSize = 1;
-            waypoints.Remove(currentWaypoint);
-            ScenarioCustomWaypoints.RemoveWaypoint(currentWaypoint);
+            List<Waypoint>.Enumerator w = waypoints.GetEnumerator();
+            while (w.MoveNext())
+            {
+                if (w.Current != null)
+                {
+                    if (w.Current.name == HoloKronName || w.Current.FullName == HoloKronName)
+                    {
+                        Debug.Log("[OrX Target Manager] === REMOVING WAYPOINT FOR " + w.Current.name + ", " + w.Current.FullName + " ===");
+
+                        waypoints.Remove(w.Current);
+                        ScenarioCustomWaypoints.RemoveWaypoint(w.Current);
+                    }
+                    else
+                    {
+                        Debug.Log("[OrX Target Manager] === " + w.Current.name + " NOT FOUND ===");
+                    }
+                }
+            }
         }
 
         #region Checks

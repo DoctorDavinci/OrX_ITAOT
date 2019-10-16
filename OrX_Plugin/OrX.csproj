@@ -71,7 +71,7 @@
     <Compile Include="OrXHoloKron\OrXHoloKron.cs" />
     <Compile Include="OrXModules\ModuleOrX.cs" />
     <Compile Include="OrXSpawn\OrXSpawn.cs" />
-    <Compile Include="OrXUtils\OrXVesselMove.cs" />
+    <Compile Include="OrXSpawn\OrXVesselMove.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

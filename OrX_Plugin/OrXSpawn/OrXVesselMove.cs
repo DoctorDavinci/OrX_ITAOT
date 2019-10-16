@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace OrX
+namespace OrX.spawn
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class OrXVesselMove : MonoBehaviour
@@ -403,13 +403,20 @@ namespace OrX
             MoveHeight = 0;
             _placingVessels.Add(MovingVessel);
             float altitude = Convert.ToSingle(MovingVessel.radarAltitude) - _alt;
+            float hoverAlt = 1;
+            IsMovingVessel = true;
+            if (addingCoords)
+            {
+                hoverAlt = 5;
+            }
 
-            while (MovingVessel && !MovingVessel.LandedOrSplashed)
+            while (IsMovingVessel)
             {
                 MovingVessel.IgnoreGForces(240);
 
                 _up = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
                 float placeSpeed = Mathf.Clamp(altitude, 0.1f, maxPlacementSpeed);
+
                 if (placeSpeed > 3)
                 {
                     MovingVessel.SetWorldVelocity(Vector3.zero);
@@ -428,13 +435,15 @@ namespace OrX
                 }
 
                 altitude -= placeSpeed * Time.fixedDeltaTime;
+
+                if (MovingVessel.radarAltitude <= hoverAlt)
+                {
+                    IsMovingVessel = false;
+                }
                 yield return new WaitForFixedUpdate();
             }
 
             _placingVessels.Remove(MovingVessel);
-            _hoverAdjust = 0f;
-
-            IsMovingVessel = false;
             _debugLr.enabled = false;
             _moving = false;
             MoveHeight = 0;
@@ -450,18 +459,15 @@ namespace OrX
             {
                 if (addingCoords)
                 {
-                    OrXHoloKron.instance.saveLocalVessels = true;
-                    OrXHoloKron.instance.addCoords = true;
-                    OrXHoloKron.instance.GuiEnabledOrXMissions = true;
-                    OrXHoloKron.instance.movingCraft = false;
-                    OrXHoloKron.instance.OrXHCGUIEnabled = true;
-                    //StartMove(OrXHoloKron.instance._HoloKron, false, 5, false);
-                    OrXHoloKron.instance.SaveConfig();
+                    if (OrXHoloKron.instance.dakarRacing)
+                    {
+                        OrXHoloKron.instance.DakarAddNextCoord();
+                    }
                 }
                 else
                 {
                     OrXHoloKron.instance.addingMission = true;
-                    OrXHoloKron.instance.SaveConfig();
+                    OrXHoloKron.instance.SaveConfig("");
                 }
             }
             MovingVessel = new Vessel();

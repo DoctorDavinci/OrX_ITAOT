@@ -1,6 +1,6 @@
 OrX Kontinuum - Is There Anybody Out There
 
-OrX Kontinuum brings Geo Caching, Scuba Diving, the joy of W[ind/S] and more to KSP .....
+OrX Kontinuum brings Geo Caching, Scuba Diving, the joy of W[ind/S] and more to KSP ..... It's purpose is to give you more reasons and ways to explore
 
 
 --Feature List--
@@ -37,7 +37,7 @@ OrX Scuba Kerb gives your kerbals the ability to explore the depths of the ocean
 
 
 ------------------------------------------------------------------
---OrX W[ind/S] -- (HIGHLY EXPERIMENTAL)
+--OrX W[ind/S] -- (HIGHLY EXPERIMENTAL - CURRENTLY UNAVAILABLE)
 ------------------------------------------------------------------
 
 By filtering a low AC current through a signal generator using the W[ind/S] formula in relation with the Tesla Equation ( TL = Mc^2 ) and then passing the resulting signal through a Ferro-fluid composed of Buckyballs, Magnetite and Soy sandwiched between multiple layers of Carbon Nanotube sheeting (a SAIL ... S-ratio Accumulated Inductance Laminate), oscillations are generated within the SAIL causing it to move
@@ -76,9 +76,7 @@ OrX HoloKron System
 
 The OrX HoloKron System brings GeoCaching to KSP ... Now you can leave a trail of breadcrumbs spanning the solar system (and beyond?)
 
-Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) ... PLEASE NOTE: If within an atmosphere you must be landed or splashed as well as YOU MUST BE EVA OR IN A COMMAND SEAT TO CREATE A HOLOKRON
-
- 
+Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) ... PLEASE NOTE: If within an atmosphere you must be landed or splashed as well as YOU MUST BE EVA TO CREATE A HOLOKRON
 
 - The creator of the HoloKron can add a craft file that is unlocked and saved to the users save game directory when the HoloKron is opened
 
@@ -91,13 +89,14 @@ PLEASE NOTE: The distance, the altitude and heading to the closest HoloKron with
 
 - If you are within 2km of a HoloKron location then it will spawn and each of the vessels contained in the HoloKron will be spawned at their saved locations (save your mun base ????)
 
-- To creat a HoloKron you must be EVA (HoloKrons can be created while in a command seat) ... Go to the location where you want to create the HoloKron and right click on your Kerbal then click on 'HOLOKRONSPAWN' and the HoloKron Creation menu will appear as well as a HoloKron will spawn
-
-- In the 'Name:' text entry box enter a name for your HoloKron
-
-- In the 'Password:' text entry box enter a password for your HoloKron
+- To creat a HoloKron you must be EVA ... Go to the location where you want to create the HoloKron and right click on your Kerbal then click on 'HOLOKRONSPAWN' and the HoloKron Creation menu will appear as well as a HoloKron will spawn
 
 - Click on the HoloKron Type button to select from a Geo-Caching or a Challenge HoloKron (HoloKron type is currently locked as Geo-Cache)
+
+- In the 'Name:' text entry box enter a name for your HoloKron ... If a HoloKron of the same name is in the 'OrX/Export' directory the creator will be presented with options to add to the HoloKron of the same name or enter another name when saving
+PLEASE NOTE: You can add as many HoloKrons to a single .orx file as you wish, however each HoloKron contained in the .orx file is set up so that it will not be available to a player until the HoloKron that comes before it in the file has been opened (the first HoloKron in the .orx file is unlocked)
+
+- In the 'Password:' text entry box enter a password for your HoloKron ... The purpose of the password is to lock the HoloKron from being added to from an unauthorized HoloKron creator
 
 - Add a description of your HoloKron in the description text entry section ... as you type in a text entry field a new text entry box will appear below it, press 'TAB' to jump to the new text entry field (maximum of 10 lines)
 
@@ -108,9 +107,17 @@ PLEASE NOTE: The distance, the altitude and heading to the closest HoloKron with
 - If the HoloKron being created is a Geo-Cache, click on the save button to save the HoloKron
 
 
-If you see a portal, it's just a Test .... Please Ignore
+------------------------------------------------------------------
+ADDITIONAL NOTES
+------------------------------------------------------------------
 
- 
+- OrX Kontinuum has no dependancies
+
+- If you see a portal, it's just a Test .... Please Ignore
+
+- HoloKrons should work with mods and DLC parts, however if the user of your .orx file does not have the mods or DLC parts in their game that are on the vessels stored in the file then the vessels will not load
+
+
 
 Github download link: COMING SOON !!!!!!
 
@@ -118,7 +125,7 @@ Github issues link: COMING SOON !!!!!!
 
 
 ------------------------------------------------------------------
-INSTALLATION INSTRUCTIONS
+INSTALLATION INSTRUCTIONS 
 ------------------------------------------------------------------
 
 1 - In the release download linked above you will find a GameData directory
@@ -127,7 +134,14 @@ INSTALLATION INSTRUCTIONS
 
 3 - Profit .....
 
- 
+
+------------------------------------------------------------------
+SHARING ORX FILES
+------------------------------------------------------------------
+
+All that is needed is for the person you are sharing your.orx files with is for them to have OrX Kontinuum installed
+
+Copy shared .orx files to GameData/OrX/HoloKron
 
 
 ------------------------------------------------------------------
