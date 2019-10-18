@@ -169,7 +169,7 @@ namespace OrX
                 {
                     if (OrXHoloKron.instance.spawningStartGate)
                     {
-                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
                     }
                     else
                     {
@@ -207,7 +207,7 @@ namespace OrX
                     {
                         if (OrXHoloKron.instance.spawningStartGate)
                         {
-                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, true);
+                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
                         }
                         else
                         {

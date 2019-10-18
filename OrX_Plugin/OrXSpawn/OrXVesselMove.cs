@@ -15,44 +15,18 @@ namespace OrX.spawn
 
         public enum MoveModes { Slow = 0, Normal = 1, Ludicrous = 2 }
 
-        public MoveModes _moveMode = MoveModes.Normal;
+        public MoveModes _moveMode = MoveModes.Slow;
         private bool _moving = false;
         public List<Vessel> _placingVessels = new List<Vessel>();
         private bool _hoverChanged;
 
         public float MoveHeight = 0;
         private float _hoverAdjust = 0f;
-        private readonly float[] _hoverHeights = new float[] { 5, 50, 3000 };
 
-        private float HoverHeight
-        {
-            get
-            {
-                return _hoverHeights[(int)_moveMode];
-            }
-        }
+        public float MoveSpeed = 25;
+        public float MoveAccel = 15;
 
-        private readonly float[] _moveSpeeds = new float[] { 5, 25, 750 };
-
-        private float MoveSpeed
-        {
-            get
-            {
-                return _moveSpeeds[(int)_moveMode];
-            }
-        }
-
-        private readonly float[] _moveAccels = new float[] { 1, 15, 750 };
-
-        private float MoveAccel
-        {
-            get
-            {
-                return _moveAccels[(int)_moveMode];
-            }
-        }
-
-        private readonly float[] _rotationSpeeds = new float[] {15, 25, 50 };
+        private readonly float[] _rotationSpeeds = new float[] {5, 25, 50 };
 
         private float RotationSpeed
         {
@@ -76,7 +50,7 @@ namespace OrX.spawn
         private bool _hasRotated = false;
         private float _timeBoundsUpdated = 0;
         private ScreenMessage _moveMessage;
-        public bool startBuild = false;
+        public bool placingFinishGate = false;
         #endregion
 
         #region KSP Events
@@ -102,33 +76,38 @@ namespace OrX.spawn
 
         private void Update()
         {
-            if (_moving)
+            if (_moving && MovingVessel == OrXHoloKron.instance._HoloKron)
             {
                 if (Input.GetKeyDown(KeyCode.Tab))
                 {
-                    if (spawningLocal)
+                    if (MoveHeight <= 11)
                     {
-                        if (_moveMode == MoveModes.Ludicrous || _moveMode == MoveModes.Slow)
-                        {
-                            _moveMode = MoveModes.Normal;
-                        }
-                        else
-                        {
-                            _moveMode = MoveModes.Slow;
-                        }
+                        _debugLr.material.SetColor("_EmissiveColor", XKCDColors.AquaGreen);
+                        MoveHeight = 35;
+                        MoveSpeed = 25;
+                        MoveAccel = 15;
                     }
                     else
                     {
-                        ToggleMoveMode();
+                        if (MoveHeight <= 36)
+                        {
+                            _debugLr.material.SetColor("_EmissiveColor", XKCDColors.BluePurple);
+                            MoveHeight = 3000;
+                            MoveSpeed = 750;
+                            MoveAccel = 500;
+                        }
+                        else
+                        {
+                            if (MoveHeight >= 36)
+                            {
+                                _debugLr.material.SetColor("_EmissiveColor", XKCDColors.AcidGreen);
+                                MoveHeight = 10;
+                                MoveSpeed = 5;
+                                MoveAccel = 5;
+                            }
+                        }
                     }
                 }
-            }
-
-            // Changed to a GameEvents handler flag.  This test was too sensitive and caused issues with display.
-            // a latched setting will prevent misfires.
-            if (IsMovingVessel)
-            {
-                _debugLr.enabled = true;
             }
         }
 
@@ -172,14 +151,26 @@ namespace OrX.spawn
             }
             else
             {
-                double alt = MovingVessel.radarAltitude;
+                if (placingFinishGate)
+                {
+                    if (IsMovingVessel)
+                    {
+                        _alt = 5;
+                    }
+                }
+                else
+                {
+                    _alt = MoveHeight;
+                }
                 // sINCE Lerp is animating move from 0 to hoverheight, we do not want this going below current altitude
-                if (MoveHeight < alt) MoveHeight = Convert.ToSingle(alt);
-                if (MoveHeight < 2) MoveHeight = 2;
 
-                MoveHeight = Mathf.Lerp(MoveHeight, Convert.ToSingle(MovingVessel.radarAltitude) - _alt + _hoverAdjust, 10 * Time.fixedDeltaTime);
+                if (MoveHeight < _alt) MoveHeight = (float)_alt;
+                if (MoveHeight > _alt) MoveHeight = (float)_alt;
+                MoveHeight = Mathf.Lerp(MoveHeight, (float)_alt + _hoverAdjust, 10 * Time.fixedDeltaTime);
             }
             MovingVessel.ActionGroups.SetGroup(KSPActionGroup.RCS, false);
+
+            _hoverAdjust = 0;
 
             _up = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
 
@@ -201,46 +192,54 @@ namespace OrX.spawn
 
             Vector3 offsetDirection = Vector3.zero;
             bool inputting = false;
-            bool allowMove = true;
-            double _targetDistance = double.MaxValue;
-            float _moveSpeed = MoveSpeed;
+            float _moveSpeed = 0;
 
             //Altitude Adjustment
 
-            if (GameSettings.THROTTLE_UP.GetKey())
+            if (!OrXHoloKron.instance.spawningStartGate)
             {
-                _hoverAdjust += _moveSpeed * Time.fixedDeltaTime;
-                inputting = true;
-                _hoverChanged = true;
-            }
+                _moveSpeed = MoveSpeed;
 
-            if (GameSettings.THROTTLE_DOWN.GetKey())
-            {
-                _hoverAdjust += -(_moveSpeed * Time.fixedDeltaTime);
-                inputting = true;
-                _hoverChanged = true;
-            }
+                if (GameSettings.PITCH_DOWN.GetKey())
+                {
+                    offsetDirection += (forward * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
+                if (GameSettings.PITCH_UP.GetKey())
+                {
+                    offsetDirection += (-forward * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
 
-            if (GameSettings.PITCH_DOWN.GetKey())
-            {
-                offsetDirection += (forward * _moveSpeed * Time.fixedDeltaTime);
-                inputting = true;
-            }
-            if (GameSettings.PITCH_UP.GetKey())
-            {
-                offsetDirection += (-forward * _moveSpeed * Time.fixedDeltaTime);
-                inputting = true;
-            }
+                if (GameSettings.YAW_RIGHT.GetKey())
+                {
+                    offsetDirection += (right * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
+                if (GameSettings.YAW_LEFT.GetKey())
+                {
+                    offsetDirection += (-right * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
 
-            if (GameSettings.YAW_RIGHT.GetKey())
-            {
-                offsetDirection += (right * _moveSpeed * Time.fixedDeltaTime);
-                inputting = true;
-            }
-            if (GameSettings.YAW_LEFT.GetKey())
-            {
-                offsetDirection += (-right * _moveSpeed * Time.fixedDeltaTime);
-                inputting = true;
+
+                /*
+                 * 
+
+                if (GameSettings.THROTTLE_UP.GetKey())
+                {
+                    _hoverAdjust += _moveSpeed * Time.fixedDeltaTime;
+                    inputting = true;
+                    _hoverChanged = true;
+                }
+
+                if (GameSettings.THROTTLE_DOWN.GetKey())
+                {
+                    _hoverAdjust += -(_moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                    _hoverChanged = true;
+                }
+                */
             }
 
             if (GameSettings.TRANSLATE_RIGHT.GetKey())
@@ -359,16 +358,30 @@ namespace OrX.spawn
         double mPerDegree = 0;
         float _alt = 0;
 
-        public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _startBuild)
+        public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _placingFinishGate)
         {
             MovingVessel = new Vessel();
-            startBuild = _startBuild;
+            placingFinishGate = _placingFinishGate;
             _alt = _altitude;
             spawningLocal = _spawningLocal;
             _moveMode = MoveModes.Normal;
             MovingVessel = v;
             IsMovingVessel = true;
-            MoveHeight = (float)MovingVessel.altitude + _alt;
+            if (spawningLocal)
+            {
+                MoveHeight = (float)MovingVessel.altitude + _alt;
+            }
+            else
+            {
+                if (MovingVessel.parts.Count >= 1)
+                {
+                    MoveHeight = 10;
+                }
+                else
+                {
+                    MoveHeight = 10;
+                }
+            }
             mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
             degPerMeter = 1 / mPerDegree;
 
@@ -386,68 +399,58 @@ namespace OrX.spawn
         {
             spawningLocal = _spawningLocal;
             Debug.Log("[OrX Vessel Move] ===== ENDING MOVE =====");
-
             StartCoroutine(EndMoveRoutine(addingCoords, _spawningLocal));
-            IsMovingVessel = false;
-            _debugLr.enabled = false;
         }
 
         private IEnumerator EndMoveRoutine(bool addingCoords, bool _spawningLocal)
         {
-            while (_moveMode != MoveModes.Normal)
-            {
-                ToggleMoveMode();
-            }
-
-            _moving = false;
-            MoveHeight = 0;
+            _debugLr.enabled = false;
             _placingVessels.Add(MovingVessel);
-            float altitude = Convert.ToSingle(MovingVessel.radarAltitude) - _alt;
-            float hoverAlt = 1;
-            IsMovingVessel = true;
-            if (addingCoords)
-            {
-                hoverAlt = 5;
-            }
+            float altitude = _alt;
+            IsMovingVessel = false;
+            _moving = false;
+            _up = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            float localAlt = Convert.ToSingle(MovingVessel.radarAltitude);
 
-            while (IsMovingVessel)
+
+            Debug.Log("[OrX Spawn Local Vessels] === PLACING " + MovingVessel.name + " ===");
+            float dropRate = Mathf.Clamp((localAlt * 2), 0.1f, 200);
+
+            while (!MovingVessel.LandedOrSplashed)
             {
                 MovingVessel.IgnoreGForces(240);
+                MovingVessel.angularVelocity = Vector3.zero;
+                MovingVessel.angularMomentum = Vector3.zero;
+                MovingVessel.SetWorldVelocity(Vector3.zero);
+                dropRate = Mathf.Clamp((localAlt * 2), 0.1f, 200);
 
-                _up = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
-                float placeSpeed = Mathf.Clamp(altitude, 0.1f, maxPlacementSpeed);
-
-                if (placeSpeed > 3)
+                if (dropRate > 3)
                 {
-                    MovingVessel.SetWorldVelocity(Vector3.zero);
-                    MovingVessel.angularVelocity = Vector3.zero;
-                    MovingVessel.angularMomentum = Vector3.zero;
-                    MovingVessel.Translate(placeSpeed * Time.fixedDeltaTime * -_up);
+                    MovingVessel.Translate(dropRate * Time.fixedDeltaTime * -_up);
                 }
                 else
                 {
-                    MovingVessel.SetWorldVelocity(placeSpeed * -_up);
+                    MovingVessel.SetWorldVelocity(dropRate * -_up);
                 }
 
-                if (altitude <= 0.3f)
+                if (localAlt <= 0.5f)
                 {
-                    altitude = 0.3f;
+                    localAlt = 0.5f;
                 }
 
-                altitude -= placeSpeed * Time.fixedDeltaTime;
+                localAlt -= dropRate * Time.fixedDeltaTime;
 
-                if (MovingVessel.radarAltitude <= hoverAlt)
-                {
-                    IsMovingVessel = false;
-                }
                 yield return new WaitForFixedUpdate();
             }
 
+            MovingVessel.SetWorldVelocity(Vector3.zero);
+            MovingVessel.angularVelocity = Vector3.zero;
+            MovingVessel.angularMomentum = Vector3.zero;
+            MovingVessel.IgnoreGForces(240);
             _placingVessels.Remove(MovingVessel);
-            _debugLr.enabled = false;
-            _moving = false;
             MoveHeight = 0;
             _hoverAdjust = 0f;
+            MovingVessel = new Vessel();
 
             if (_spawningLocal)
             {
@@ -459,9 +462,17 @@ namespace OrX.spawn
             {
                 if (addingCoords)
                 {
-                    if (OrXHoloKron.instance.dakarRacing)
+                    if (placingFinishGate)
                     {
-                        OrXHoloKron.instance.DakarAddNextCoord();
+                        placingFinishGate = false;
+                        if (OrXHoloKron.instance.buildingMission)
+                        {
+                            OrXHoloKron.instance.ChallengeAddNextCoord();
+                        }
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.SpawnGoal();
                     }
                 }
                 else
@@ -470,7 +481,6 @@ namespace OrX.spawn
                     OrXHoloKron.instance.SaveConfig("");
                 }
             }
-            MovingVessel = new Vessel();
         }
 
         private void UpdateDebugLines()
@@ -541,19 +551,20 @@ namespace OrX.spawn
 
         private void ToggleMoveMode()
         {
-
             _moveMode = (MoveModes)(int)Mathf.Repeat((float)_moveMode + 1, 3);
+
+
+
+
+
 
             switch (_moveMode)
             {
                 case MoveModes.Normal:
-                    _debugLr.material.SetColor("_EmissiveColor", XKCDColors.AquaGreen);
                     break;
                 case MoveModes.Slow:
-                    _debugLr.material.SetColor("_EmissiveColor", XKCDColors.AcidGreen);
                     break;
                 case MoveModes.Ludicrous:
-                    _debugLr.material.SetColor("_EmissiveColor", XKCDColors.BluePurple);
                     break;
             }
         }

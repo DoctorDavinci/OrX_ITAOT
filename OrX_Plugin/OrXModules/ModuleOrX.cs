@@ -65,6 +65,8 @@ namespace OrX
         public double _bendsDepth = 0;
         public double hoverAlt = 2;
 
+        float localScale = 0;
+
         #endregion
 
         private KerbalEVA kerbal;
@@ -91,7 +93,7 @@ namespace OrX
             unlockedScuba = true;
             trimModifier = _trimModifier;
             forward = this.part.transform.forward;
-
+            localScale = this.part.transform.localScale.x;
             base.OnStart(state);
         }
         public void Update()
@@ -101,38 +103,6 @@ namespace OrX
 
             if (HighLogic.LoadedSceneIsFlight)
             {
-                /*
-                if (!this.vessel.isActiveVessel)
-                {
-                    if (!Fields["REVIVE"].guiActive && drunk)
-                    {
-                        Fields["REVIVE"].guiActive = true;
-                    }
-                }
-                else
-                {
-                    if (Fields["REVIVE"].guiActive)
-                    {
-                        Fields["REVIVE"].guiActive = false;
-                    }
-
-                    if (martiniLevel <= 5)
-                    {
-                        if (!Fields["HOLOKRONSPAWN"].guiActive)
-                        {
-                            Fields["HOLOKRONSPAWN"].guiActive = true;
-                        }
-                    }
-                    else
-                    {
-                        if (Fields["HOLOKRONSPAWN"].guiActive)
-                        {
-                            Fields["HOLOKRONSPAWN"].guiActive = false;
-                        }
-                    }
-                }
-
-                */
                 if (!bends)
                 {
                     if (!orx)
@@ -272,8 +242,23 @@ namespace OrX
                     }
                     else
                     {
-                        this.part.explosionPotential *= 0.2f;
-                        this.part.explode();
+                        int r = new System.Random().Next(1, 10);
+                        if (r >= 2)
+                        {
+                            if (r >= 8)
+                            {
+                                this.vessel.Translate((this.vessel.ReferenceTransform.position - this.vessel.mainBody.transform.position).normalized * 2);
+                            }
+                            else
+                            {
+                                StartCoroutine(PopKornRevival());
+                            }
+                        }
+                        else
+                        {
+                            this.part.explosionPotential *= 0.2f;
+                            this.part.explode();
+                        }
                     }
                 }
 
@@ -289,6 +274,7 @@ namespace OrX
                     }
                 }
 
+
                 if (this.vessel.Splashed)
                 {
                     if (this.vessel.isActiveVessel)
@@ -300,7 +286,7 @@ namespace OrX
 
                     if (this.vessel.altitude <= narcosisDepth * _scubaLevel)
                     {
-                        _scubaLevel += 0.00001f;
+                        _scubaLevel += 0.0001f;
 
                         if (_bendsDepth >= this.vessel.altitude)
                         {
@@ -308,16 +294,19 @@ namespace OrX
                         }
                     }
 
-                    if (this.vessel.altitude >= (_bendsDepth * 0.66f) * _scubaLevel)
+                    if (_scubaLevel >= 1.00002f)
                     {
-                        bends = true;
-                    }
-                    else
-                    {
-                        if (this.vessel.altitude >= _bendsDepth * 0.9f)
+                        if (this.vessel.altitude >= (_bendsDepth * 0.667f) * _scubaLevel)
                         {
-                            _bendsDepth += 0.1f;
-                            _scubaLevel -= 0.0001f;
+                            bends = true;
+                        }
+                        else
+                        {
+                            if (this.vessel.altitude >= _bendsDepth * 0.9f)
+                            {
+                                _bendsDepth += 0.1f;
+                                _scubaLevel -= 0.00001f;
+                            }
                         }
                     }
 
@@ -350,7 +339,7 @@ namespace OrX
                                 kerbal = kerbalControl();
                                 kerbal.canRecover = false;
                                 kerbal.isRagdoll = true;
-                                kerbal.SetupAnimations();
+                                MiniMe();
                             }
 
                             if (!this.vessel.Landed)
@@ -376,7 +365,14 @@ namespace OrX
                     }
                     else
                     {
-                        PopCorn();
+                        if (this.vessel.rootPart.Modules.Contains<KerbalEVA>() && _scubaLevel >= 1.0002f)
+                        {
+                            if (!poppingKorn)
+                            {
+                                poppingKorn = true;
+                                PopKorn();
+                            }
+                        }
                     }
                 }
                 else
@@ -384,6 +380,7 @@ namespace OrX
                     _scubaLevel = 1;
                     martiniLevel = 0;
                     drunk = false;
+                    revive = false;
                     narcosisCheck = false;
                 }
 
@@ -432,7 +429,9 @@ namespace OrX
             }
         }
 
-        private void PopCorn()
+        bool poppingKorn = false;
+
+        private void PopKorn()
         {
             bends = true;
             holdingDepth = false;
@@ -441,19 +440,66 @@ namespace OrX
             kerbal = kerbalControl();
             kerbal.canRecover = false;
             kerbal.isRagdoll = true;
-            StartCoroutine(PopGoesTheKerbal(this.part.transform.localScale));
+            this.vessel.UpdateCaches();
+            localScale = this.part.transform.localScale.x * 2;
+            StartCoroutine(PopGoesTheKerbal());
         }
 
         Vector3 _localScale;
-        IEnumerator PopGoesTheKerbal(Vector3 _localScale)
+        IEnumerator PopGoesTheKerbal()
         {
-            if (this.part.transform.localScale.x <= _localScale.x * 2)
+            if (this.part.transform.localScale.x <= localScale)
             {
                 yield return new WaitForSeconds(1);
-                this.part.transform.localScale += new Vector3(0.05f, 0.05f, 0.05f);
-                StartCoroutine(PopGoesTheKerbal(_localScale));
+                this.part.transform.localScale += new Vector3(0.01f, 0.01f, 0.01f);
+                StartCoroutine(PopGoesTheKerbal());
+            }
+            else
+            {
+                int r = new System.Random().Next(1, 10);
+                if (r >= 2)
+                {
+                    this.part.explosionPotential *= 0.2f;
+                    this.part.explode();
+                }
             }
         }
+
+        IEnumerator PopKornRevival()
+        {
+            if (this.part.transform.localScale.x >= localScale)
+            {
+                yield return new WaitForSeconds(1);
+                this.part.transform.localScale -= new Vector3(0.05f, 0.05f, 0.05f);
+                StartCoroutine(PopKornRevival());
+            }
+        }
+
+        private void MiniMe()
+        {
+            bends = false;
+            //holdingDepth = false;
+            //holdDepth = false;
+            //massModifier = 0;
+            kerbal = kerbalControl();
+            kerbal.canRecover = false;
+            kerbal.isRagdoll = true;
+            this.vessel.UpdateCaches();
+            //massModifier = 5;
+            localScale = this.part.transform.localScale.x / 2;
+            StartCoroutine(MiniMeKerbal());
+        }
+
+        IEnumerator MiniMeKerbal()
+        {
+            if (this.part.transform.localScale.x >= localScale)
+            {
+                yield return new WaitForSeconds(1);
+                this.part.transform.localScale += new Vector3(-0.05f, -0.05f, -0.05f);
+                StartCoroutine(MiniMeKerbal());
+            }
+        }
+
         //////////////////////////////////////////////////////////////////////////////
 
         #region OrX Jet Pack

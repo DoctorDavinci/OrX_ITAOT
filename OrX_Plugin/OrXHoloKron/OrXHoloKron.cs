@@ -110,7 +110,6 @@ namespace OrX
         public string missionType = string.Empty;
         public string challengeType = string.Empty;
         public string tech = string.Empty;
-        public int mCount = 0;
         public bool spawned = false;
         public string Gold = string.Empty;
         public string Silver = string.Empty;
@@ -199,7 +198,7 @@ namespace OrX
         List<string> CoordDatabase;
         int coordCount = 0;
 
-        Vector3 startLocation;
+        Vector3d startLocation;
 
         List<string> stageTimes;
         public double maxDepth = 0;
@@ -277,7 +276,6 @@ namespace OrX
         bool sph = true;
         bool holoHangar = false;
 
-        int _hkCount = 0;
         public bool saveLocalVessels = false;
         string saveLocalLabel = "Save Local Craft";
         public float localSaveRange = 1000;
@@ -296,9 +294,9 @@ namespace OrX
         public bool emptyholo = true;
         public int hkCount = 0;
         public bool showHoloTargets = false;
-        public int boidCount = 10;
+        public int GoalCount = 10;
         public int spawnRadius = 0;
-        public bool boid = false;
+        public bool Goal = false;
         public string missionCraftLoc = string.Empty;
         public bool coordSpawn = false;
 
@@ -319,6 +317,15 @@ namespace OrX
         public bool startGateSpawned = false;
         public bool spawningStartGate = false;
         public bool stageStart = false;
+        public bool shortTrackRacing = false;
+
+        public string raceType = "DAKAR RACING";
+        string loginName = "";
+        bool connectToKontinuum = false;
+        string pasKontinumm = "";
+        string _labelConnect = "Connect to Kontinuum";
+        string urlKontinumm = "";
+
         #endregion
 
         #region Core
@@ -357,7 +364,6 @@ namespace OrX
                 GameEvents.onGameStateLoad.Add(resetHoloKronSystem);
             }
         }
-
         public void Update()
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -386,6 +392,7 @@ namespace OrX
         }
         private void resetHoloKronSystem(ConfigNode data)
         {
+            
             //LoadResetDelay();
         }
 
@@ -548,7 +555,8 @@ namespace OrX
 
                 if (coordCount == 0)
                 {
-                    challengeRunning = false;
+                    movingCraft = false;
+                    PlayOrXMission = false;
                     checking = false;
                     OrXHCGUIEnabled = true;
                     GuiEnabledOrXMissions = false;
@@ -558,11 +566,12 @@ namespace OrX
                 }
                 else
                 {
+                    GuiEnabledOrXMissions = false;
+                    movingCraft = false;
+                    PlayOrXMission = false;
                     showTargets = false;
-                    challengeRunning = false;
                     checking = false;
                     OrXHCGUIEnabled = true;
-                    GuiEnabledOrXMissions = false;
                     Debug.Log("[OrX Load HoloKron Targets] === HoloKrons found ===");
                     ScreenMsg("Operation 'Dinner Out' is a go .....");
                 }
@@ -625,7 +634,6 @@ namespace OrX
                 return false;
             }
         }
-
         public void SaveConfig(string holoName)
         {
             if (holoName != "" && holoName != string.Empty)
@@ -633,15 +641,19 @@ namespace OrX
                 HoloKronName = holoName;
             }
             string hConfigLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + ".orx";
-            Debug.Log("[OrX Mission] === SAVING ===");
+            Debug.Log("[OrX Save Config] === SAVING ===");
+
+            //addingMission = false;
+            //addCoords = false;
+
 
             if (addingMission)
             {
-                _file = ConfigNode.Load(hConfigLoc);
+                //_file = ConfigNode.Load(hConfigLoc);
                 _mission = _file.GetNode("mission" + hkCount);
                 if (_mission == null)
                 {
-                    Debug.Log("[OrX Mission] === ADDING NODE 'mission" + hkCount + "' ===");
+                    Debug.Log("[OrX Add Mission] === ADDING NODE 'mission" + hkCount + "' ===");
 
                     _file.AddNode("mission" + hkCount);
                     _mission = _file.GetNode("mission" + hkCount);
@@ -709,7 +721,311 @@ namespace OrX
                     scoreboard8.AddValue("time", "");
                     scoreboard9.AddValue("name", "<empty>");
                     scoreboard9.AddValue("time", "");
+
+                    // ENCRYPTION
+                    foreach (ConfigNode.Value cv in _scoreboard_.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn in _scoreboard_.nodes)
+                    {
+                        foreach (ConfigNode.Value cv in cn.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                            cv.name = cvEncryptedName;
+                            cv.value = cvEncryptedValue;
+                        }
+
+                        foreach (ConfigNode cn2 in cn.nodes)
+                        {
+                            foreach (ConfigNode.Value cv2 in cn2.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                cv2.name = cvEncryptedName;
+                                cv2.value = cvEncryptedValue;
+                            }
+                        }
+                    }
+
                 }
+                else
+                {
+
+                }
+
+
+                if (saveLocalVessels)
+                {
+                    Debug.Log("[OrX Add Mission] === SAVING LOCAL VESELS ===");
+
+                    int count = 0;
+
+                    double _latDiff = 0;
+                    double _lonDiff = 0;
+                    double _altDiff = 0;
+
+                    ConfigNode node = _file.GetNode("OrX");
+
+                    List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+                    while (v.MoveNext())
+                    {
+                        try
+                        {
+                            if (v.Current == null) continue;
+                            if (v.Current.packed || !v.Current.loaded) continue;
+                            bool _saveVessel = true;
+                            Debug.Log("[OrX Add Mission] === CHECKING FOR EVA KERBAL ===");
+
+                            List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
+                            while (part.MoveNext())
+                            {
+                                if (part.Current.Modules.Contains<KerbalEVA>())
+                                {
+                                    Debug.Log("[OrX Add Mission] === FOUND KERBAL ... SKIPPING ===");
+
+                                    _saveVessel = false;
+                                    break;
+                                }
+                            }
+                            part.Dispose();
+
+                            if (!v.Current.rootPart.Modules.Contains<KerbalEVA>() && _saveVessel)
+                            {
+                                Debug.Log("[OrX Add Mission] === RANGE CHECK ===");
+
+                                if (v.Current.altitude <= _HoloKron.altitude)
+                                {
+                                    _altDiff = _HoloKron.altitude - v.Current.altitude;
+                                }
+                                else
+                                {
+                                    _altDiff = v.Current.altitude - _HoloKron.altitude;
+                                }
+
+                                if (_HoloKron.latitude >= 0)
+                                {
+                                    if (v.Current.latitude >= _HoloKron.latitude)
+                                    {
+                                        _latDiff = v.Current.latitude - _HoloKron.latitude;
+                                    }
+                                    else
+                                    {
+                                        _latDiff = _HoloKron.latitude - v.Current.latitude;
+                                    }
+                                }
+                                else
+                                {
+                                    if (v.Current.latitude >= 0)
+                                    {
+                                        _latDiff = v.Current.latitude - _HoloKron.latitude;
+                                    }
+                                    else
+                                    {
+                                        if (v.Current.latitude <= _HoloKron.latitude)
+                                        {
+                                            _latDiff = v.Current.latitude - _HoloKron.latitude;
+                                        }
+                                        else
+                                        {
+
+                                            _latDiff = _HoloKron.latitude - v.Current.latitude;
+                                        }
+                                    }
+                                }
+
+                                if (_HoloKron.longitude >= 0)
+                                {
+                                    if (v.Current.longitude >= _HoloKron.longitude)
+                                    {
+                                        _lonDiff = v.Current.longitude - _HoloKron.longitude;
+                                    }
+                                    else
+                                    {
+                                        _lonDiff = _HoloKron.longitude - v.Current.latitude;
+                                    }
+                                }
+                                else
+                                {
+                                    if (v.Current.longitude >= 0)
+                                    {
+                                        _lonDiff = v.Current.longitude - _HoloKron.longitude;
+                                    }
+                                    else
+                                    {
+                                        if (v.Current.longitude <= _HoloKron.longitude)
+                                        {
+                                            _lonDiff = v.Current.longitude - _HoloKron.longitude;
+                                        }
+                                        else
+                                        {
+
+                                            _lonDiff = _HoloKron.longitude - v.Current.longitude;
+                                        }
+                                    }
+                                }
+
+                                Debug.Log("[OrX Add Mission] Vessel " + v.Current.vesselName + " Identified .......................");
+
+                                double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                                double _altDiffDeg = _altDiff * degPerMeter;
+                                double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                                double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+                                bool _inRange = false;
+
+                                Debug.Log("[OrX Add Mission] === RANGE: " + _targetDistance);
+
+                                if (v.Current.LandedOrSplashed)
+                                {
+                                    if (_targetDistance <= localSaveRange)
+                                    {
+                                        _inRange = true;
+                                    }
+                                }
+                                else
+                                {
+                                    if (_targetDistance <= 8000)
+                                    {
+                                        _inRange = true;
+                                    }
+                                }
+
+                                if (_inRange)
+                                {
+                                    count += 1;
+
+                                    Vessel toSave = v.Current;
+                                    string shipDescription = v.Current.vesselName + " blueprints from " + HoloKronName + " " + hkCount;
+                                    Debug.Log("[OrX Add Mission] Saving " + v.Current.vesselName + "'s orientation .......................");
+
+                                    UpVect = (toSave.transform.position - toSave.mainBody.position).normalized;
+                                    EastVect = toSave.mainBody.getRFrmVel(toSave.CoM).normalized;
+                                    NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+
+                                    float _pitch = Vector3.Angle(toSave.ReferenceTransform.forward, UpVect);
+                                    float _left = Vector3.Angle(-toSave.ReferenceTransform.right, NorthVect); // left is 90 degrees behind vessel heading
+
+                                    if (Math.Sign(Vector3.Dot(-toSave.ReferenceTransform.right, EastVect)) < 0)
+                                    {
+                                        _left = 360 - _left; // westward headings become angles greater than 180
+                                    }
+
+                                    // Be sure to subtract 90 degrees from pitch and left as the vessel reference transform is offset 90 degrees
+                                    // from the respective vectors due to reasons
+
+                                    ShipConstruct ConstructToSave = new ShipConstruct(HoloKronName, shipDescription, v.Current.parts[0]);
+                                    ConfigNode craftConstruct = new ConfigNode("craft");
+                                    craftConstruct = ConstructToSave.SaveShip();
+                                    craftConstruct.RemoveValue("persistentId");
+                                    craftConstruct.RemoveValue("steamPublishedFileId");
+                                    craftConstruct.RemoveValue("rot");
+                                    craftConstruct.RemoveValue("missionFlag");
+                                    craftConstruct.RemoveValue("vesselType");
+                                    craftConstruct.RemoveValue("OverrideDefault");
+                                    craftConstruct.RemoveValue("OverrideActionControl");
+                                    craftConstruct.RemoveValue("OverrideAxisControl");
+                                    craftConstruct.RemoveValue("OverrideGroupNames");
+
+                                    foreach (ConfigNode cn in craftConstruct.nodes)
+                                    {
+                                        if (cn.name == "PART")
+                                        {
+                                            cn.RemoveValue("persistentId");
+                                            cn.RemoveValue("sameVesselCollision");
+                                        }
+                                    }
+
+                                    Debug.Log("[OrX Add Mission] Saving: " + v.Current.vesselName);
+                                    ScreenMsg("<color=#cfc100ff><b>Saving: " + v.Current.vesselName + "</b></color>");
+
+                                    ConfigNode craftData = node.AddNode("HC" + hkCount + "OrXv" + count);
+                                    craftData.AddValue("vesselName", v.Current.vesselName);
+                                    ConfigNode location = craftData.AddNode("coords");
+                                    location.AddValue("holo", hkCount);
+                                    location.AddValue("pas", Password);
+                                    location.AddValue("lat", v.Current.latitude);
+                                    location.AddValue("lon", v.Current.longitude);
+                                    location.AddValue("alt", v.Current.altitude + 1);
+                                    location.AddValue("left", _left);
+                                    location.AddValue("pitch", _pitch);
+                                    Quaternion or = toSave.rootPart.transform.rotation;
+                                    location.AddValue("rot", or.x + "," + or.y + "," + or.z + "," + or.w);
+
+                                    foreach (ConfigNode.Value cv in location.values)
+                                    {
+                                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                        cv.name = cvEncryptedName;
+                                        cv.value = cvEncryptedValue;
+                                    }
+
+
+                                    ConfigNode craftFile = craftData.AddNode("craft");
+                                    ScreenMsg("<color=#cfc100ff><b>Saving to " + HoloKronName + " " + hkCount + "</b></color>");
+                                    craftConstruct.CopyTo(craftFile);
+
+                                    // ADD ENCRYPTION
+
+                                    foreach (ConfigNode.Value cv in craftFile.values)
+                                    {
+                                        if (cv.name == "ship")
+                                        {
+                                            cv.value = v.Current.vesselName;
+                                        }
+
+                                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                        cv.name = cvEncryptedName;
+                                        cv.value = cvEncryptedValue;
+                                    }
+
+                                    foreach (ConfigNode cn in craftFile.nodes)
+                                    {
+                                        foreach (ConfigNode.Value cv in cn.values)
+                                        {
+                                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                            cv.name = cvEncryptedName;
+                                            cv.value = cvEncryptedValue;
+                                        }
+
+                                        foreach (ConfigNode cn2 in cn.nodes)
+                                        {
+                                            foreach (ConfigNode.Value cv2 in cn2.values)
+                                            {
+                                                if (cv2.name != "currentRotation")
+                                                {
+                                                    string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                                    string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                                    cv2.name = cvEncryptedName;
+                                                    cv2.value = cvEncryptedValue;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Debug.Log("[OrX Add Mission] === " + v.Current.vesselName + " ENCRYPTED ===");
+                                    saveShip = false;
+                                    Debug.Log("[OrX Add Mission] " + v.Current.vesselName + " Saved to " + HoloKronName);
+                                    ScreenMsg("<color=#cfc100ff><b>" + v.Current.vesselName + " Saved</b></color>");
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.Log("[OrX Add Mission] === EXCEPTION: " + e + " in " + HoloKronName + " ===");
+                        }
+                    }
+                    v.Dispose();
+                }
+
+                saveLocalVessels = false;
+
                 _file.Save(hConfigLoc);
                 Debug.Log("[OrX Add Mission] === " + HoloKronName + " Saved ===");
 
@@ -734,16 +1050,22 @@ namespace OrX
                     _lat = FlightGlobals.ActiveVessel.latitude;
                     _lon = FlightGlobals.ActiveVessel.longitude;
                     _alt = FlightGlobals.ActiveVessel.altitude + 2;
-                    CoordDatabase = new List<string>();
+                    if (dakarRacing)
+                    {
+                        CoordDatabase = new List<string>();
+                    }
                     getNextCoord = true;
                     showTargets = false;
-
-                    //StartCoroutine(AddGoalPosts());
+                    movingCraft = true;
+                    addCoords = true;
+                    PlayOrXMission = false;
+                    GuiEnabledOrXMissions = true;
+                    OrXHCGUIEnabled = true;
+                    addingMission = false;
                 }
             }
             else
             {
-                mCount = 0;
                 _file = ConfigNode.Load(hConfigLoc);
                 if (_file == null)
                 {
@@ -759,14 +1081,13 @@ namespace OrX
                     node = _file.GetNode("OrX");
 
                     hkCount = 0;
-                    mCount = 0;
                     ConfigNode HoloKronNode = null;
 
                     foreach (ConfigNode cn in node.nodes)
                     {
                         if (cn.name.Contains("OrXHoloKronCoords" + hkCount))
                         {
-                            Debug.Log("[OrX Mission] === HoloKron " + hkCount + " FOUND ===");
+                            Debug.Log("[OrX Save Config] === HoloKron " + hkCount + " FOUND ===");
                             cn.SetValue("extras", "True");
                             hkCount += 1;
                         }
@@ -774,7 +1095,7 @@ namespace OrX
 
                     if (node.HasNode("OrXHoloKronCoords" + hkCount))
                     {
-                        Debug.Log("[OrX Mission] === ERROR === HOloKron " + hkCount + " FOUND AGAIN ===");
+                        Debug.Log("[OrX OrX Save Config] === ERROR === HOloKron " + hkCount + " FOUND AGAIN ===");
 
                         foreach (ConfigNode n in node.GetNodes("OrXHoloKronCoords" + hkCount))
                         {
@@ -794,9 +1115,10 @@ namespace OrX
                             HoloKronNode.AddValue("unlocked", "False");
                             HoloKronNode.AddValue("tech", tech);
 
-                            HoloKronNode.AddValue("missionName", missionName);
+                            HoloKronNode.AddValue("missionName", HoloKronName + " " + hkCount);
                             HoloKronNode.AddValue("missionType", missionType);
                             HoloKronNode.AddValue("challengeType", challengeType);
+                            HoloKronNode.AddValue("raceType", raceType);
 
                             HoloKronNode.AddValue("missionDescription0", missionDescription0);
                             HoloKronNode.AddValue("missionDescription1", missionDescription1);
@@ -814,7 +1136,7 @@ namespace OrX
                             HoloKronNode.AddValue("bronze", Bronze);
 
                             HoloKronNode.AddValue("completed", completed);
-                            HoloKronNode.AddValue("count", mCount);
+                            HoloKronNode.AddValue("count", hkCount);
 
                             HoloKronNode.AddValue("lat", _lat);
                             HoloKronNode.AddValue("lon", _lon);
@@ -823,7 +1145,7 @@ namespace OrX
                     }
                     else
                     {
-                        Debug.Log("[OrX Mission] === CREATING HoloKron " + hkCount + " ===");
+                        Debug.Log("[OrX OrX Save Config] === CREATING HoloKron " + hkCount + " ===");
 
                         HoloKronNode = node.AddNode("OrXHoloKronCoords" + hkCount);
                         HoloKronNode.AddValue("SOI", FlightGlobals.ActiveVessel.mainBody.name);
@@ -835,6 +1157,7 @@ namespace OrX
                         HoloKronNode.AddValue("missionName", missionName);
                         HoloKronNode.AddValue("missionType", missionType);
                         HoloKronNode.AddValue("challengeType", challengeType);
+                        HoloKronNode.AddValue("raceType", raceType);
 
                         HoloKronNode.AddValue("missionDescription0", missionDescription0);
                         HoloKronNode.AddValue("missionDescription1", missionDescription1);
@@ -852,7 +1175,7 @@ namespace OrX
                         HoloKronNode.AddValue("bronze", Bronze);
 
                         HoloKronNode.AddValue("completed", completed);
-                        HoloKronNode.AddValue("count", mCount);
+                        HoloKronNode.AddValue("count", hkCount);
 
                         HoloKronNode.AddValue("lat", _lat);
                         HoloKronNode.AddValue("lon", _lon);
@@ -865,7 +1188,7 @@ namespace OrX
                     + missionName + "," + missionType + "," + challengeType + ":" + FlightGlobals.currentMainBody.name + "," + HoloKronName + "," + "Password" + "," + _lat + "," + _lon + "," + _alt + ","
                     + missionName + "," + missionType + "," + challengeType, true);
 
-                    Debug.Log("[OrX Mission] === ADDING NODE 'HoloKron" + hkCount + "' ===");
+                    Debug.Log("[OrX OrX Save Config] === ADDING NODE 'HoloKron" + hkCount + "' ===");
                     node.AddNode("HoloKron" + hkCount);
                     ConfigNode HCnode = node.GetNode("HoloKron" + hkCount);
                     ConfigNode holoFileLoc = ConfigNode.Load(holoToAdd);
@@ -903,7 +1226,7 @@ namespace OrX
                         }
                     }
 
-                    Debug.Log("[OrX Mission] === HOLO CRAFT ENCRYPTED ===");
+                    Debug.Log("[OrX OrX Save Config] === HOLO CRAFT ENCRYPTED ===");
 
                     if (blueprintsAdded)
                     {
@@ -978,15 +1301,13 @@ namespace OrX
                                 }
                             }
                             _file.Save(hConfigLoc);
-                            Debug.Log("[OrX Mission] " + craftToAddMission + " Saved to " + HoloKronName);
+                            Debug.Log("[OrX OrX Save Config] " + craftToAddMission + " Saved to " + HoloKronName);
                             ScreenMsg("<color=#cfc100ff><b>" + craftToAddMission + " Saved</b></color>");
                             blueprintsFile = "";
                             craftToAddMission = "";
                             blueprintsAdded = false;
                         }
                     }
-
-                    _hkCount = hkCount;
                 }
                 coordCount = 0;
 
@@ -1013,7 +1334,7 @@ namespace OrX
                             List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
                             while (part.MoveNext())
                             {
-                                if (part.Current.Modules.Contains<KerbalEVA>() || part.Current.Modules.Contains<ModuleOrXMission>())
+                                if (part.Current.Modules.Contains<KerbalEVA>())
                                 {
                                     Debug.Log("[OrX Mission] === FOUND KERBAL ... SKIPPING ===");
 
@@ -1128,12 +1449,12 @@ namespace OrX
                                     count += 1;
 
                                     Vessel toSave = v.Current;
-                                    string shipDescription = v.Current.vesselName + " blueprints from " + HoloKronName + _hkCount;
+                                    string shipDescription = v.Current.vesselName + " blueprints from " + HoloKronName + " " + hkCount;
                                     Debug.Log("[OrX Mission] Saving " + v.Current.vesselName + "'s orientation .......................");
 
-                                    Vector3 UpVect = (toSave.transform.position - toSave.mainBody.position).normalized;
-                                    Vector3 EastVect = toSave.mainBody.getRFrmVel(toSave.CoM).normalized;
-                                    Vector3 NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+                                    UpVect = (toSave.transform.position - toSave.mainBody.position).normalized;
+                                    EastVect = toSave.mainBody.getRFrmVel(toSave.CoM).normalized;
+                                    NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
 
                                     float _pitch = Vector3.Angle(toSave.ReferenceTransform.forward, UpVect);
                                     float _left = Vector3.Angle(-toSave.ReferenceTransform.right, NorthVect); // left is 90 degrees behind vessel heading
@@ -1171,10 +1492,10 @@ namespace OrX
                                     Debug.Log("[OrX Mission] Saving: " + v.Current.vesselName);
                                     ScreenMsg("<color=#cfc100ff><b>Saving: " + v.Current.vesselName + "</b></color>");
 
-                                    ConfigNode craftData = node.AddNode("HC" + _hkCount + "OrXv" + count);
+                                    ConfigNode craftData = node.AddNode("HC" + hkCount + "OrXv" + count);
                                     craftData.AddValue("vesselName", v.Current.vesselName);
                                     ConfigNode location = craftData.AddNode("coords");
-                                    location.AddValue("holo", _hkCount);
+                                    location.AddValue("holo", hkCount);
                                     location.AddValue("pas", Password);
                                     location.AddValue("lat", v.Current.latitude);
                                     location.AddValue("lon", v.Current.longitude);
@@ -1194,7 +1515,7 @@ namespace OrX
 
 
                                     ConfigNode craftFile = craftData.AddNode("craft");
-                                    ScreenMsg("<color=#cfc100ff><b>Saving to " + HoloKronName + _hkCount + "</b></color>");
+                                    ScreenMsg("<color=#cfc100ff><b>Saving to " + HoloKronName + " " + hkCount + "</b></color>");
                                     craftConstruct.CopyTo(craftFile);
 
                                     // ADD ENCRYPTION
@@ -1256,15 +1577,17 @@ namespace OrX
 
                 //_file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + ".arch");
                 _file.Save(hConfigLoc);
-                Debug.Log("[OrX Mission] " + HoloKronName + " Saved");
+                Debug.Log("[OrX OrX Save Config] " + HoloKronName + " " + hkCount + " Saved");
 
                 if (!addCoords)
                 {
+                    Debug.Log("[OrX OrX Save Config] " + HoloKronName + " building complete ... Saving");
+
                     challengeRunning = false;
                     OrXLog.instance.building = false;
                     OrXLog.instance.ResetFocusKeys();
                     addingMission = false;
-                    GuiEnabledOrXMissions = false;
+                    GuiEnabledOrXMissions = true;
                     OrXHCGUIEnabled = false;
                     building = false;
                     buildingMission = false;
@@ -1277,7 +1600,11 @@ namespace OrX
                 }
                 else
                 {
-                    OrXVesselMove.Instance.StartMove(FlightGlobals.ActiveVessel, false, 0, true);
+                    Debug.Log("[OrX OrX Save Config] Adding to " + HoloKronName + " ..... Current count: " + hkCount);
+                    getNextCoord = true;
+                    showTargets = false;
+                    movingCraft = false;
+                    OrXVesselMove.Instance.StartMove(FlightGlobals.ActiveVessel, false, 0, false);
                 }
             }
         }
@@ -1285,12 +1612,25 @@ namespace OrX
         {
             yield return new WaitForSeconds(2f);
             FlightGlobals.ForceSetActiveVessel(triggerVessel);
+            challengeRunning = false;
         }
 
         public void Dummy() { }
         public void ScreenMsg(string msg)
         {
             ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 4, ScreenMessageStyle.UPPER_CENTER));
+        }
+        public void AddToolbarButton()
+        {
+            string OrXDir = "OrX/Plugin/";
+
+            if (!hasAddedButton)
+            {
+                Texture buttonTexture = GameDatabase.Instance.GetTexture(OrXDir + "OrX_icon", false); //texture to use for the button
+                ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
+                    ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
+                hasAddedButton = true;
+            }
         }
 
         #endregion
@@ -1307,7 +1647,7 @@ namespace OrX
             buildingMission = true;
             geoCache = true;
             OrXHCGUIEnabled = true;
-            boid = false;
+            Goal = false;
             triggerVessel = FlightGlobals.ActiveVessel;
             OrXSpawnHoloKron.instance.StartSpawn(new Vector3d(), vect, false, true, true, HoloKronName, missionType);
         }
@@ -1322,6 +1662,7 @@ namespace OrX
             holoToAdd = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/HoloKron/HoloKron.craft";
             missionType = "GEO-CACHE";
             challengeType = "GEO-CACHE";
+            raceType = "";
             geoCache = true;
             locAdded = false;
 
@@ -1361,7 +1702,6 @@ namespace OrX
             coordCount = 0;
             _scoreboard = new List<string>();
             stageTimes = new List<string>();
-            hkCount = 0;
             crafttosave = string.Empty;
             int c = 0;
 
@@ -1370,8 +1710,10 @@ namespace OrX
             string _missionName = "missionName";
             string _missionType = "missionType";
             string _challengeType = "challengeType";
+            string _raceType = "raceType";
+
             string _tech = "tech";
-            string _mCount = "mCount";
+            string _hkCount = "hkCount";
             string _spawned = "spawned";
             string _Gold = "Gold";
             string _Silver = "Silver";
@@ -1448,6 +1790,11 @@ namespace OrX
                                 challengeType = data.value;
                             }
 
+                            if (data.name == _raceType)
+                            {
+                                raceType = data.value;
+                            }
+
                             if (data.name == _missionDescription0)
                             {
                                 missionDescription0 = data.value;
@@ -1505,10 +1852,6 @@ namespace OrX
                             if (data.name == _Bronze)
                             {
                                 Bronze = data.value;
-                            }
-                            if (data.name == _mCount)
-                            {
-                                mCount = int.Parse(data.value);
                             }
                         }
 
@@ -1664,10 +2007,10 @@ namespace OrX
 
                 Debug.Log("[OrX Mission] === BLUEPRINTS PROCESSED ===");
 
-                _mission = _file.GetNode("mission" + mCount);
+                _mission = _file.GetNode("mission" + hkCount);
                 if (_mission != null)
                 {
-                    Debug.Log("[OrX Open HoloKron] === MISSION " + mCount + " FOUND ===");
+                    Debug.Log("[OrX Open HoloKron] === MISSION " + hkCount + " FOUND ===");
                     CoordDatabase = new List<string>();
 
                     foreach (ConfigNode.Value cv in _mission.values)
@@ -1679,7 +2022,7 @@ namespace OrX
                         }
                     }
 
-                    Debug.Log("[OrX Open HoloKron] === FOUND " + coordCount + " COORDS IN MISSION " + mCount + " ===");
+                    Debug.Log("[OrX Open HoloKron] === FOUND " + coordCount + " COORDS IN MISSION " + hkCount + " ===");
 
                     if (CoordDatabase.Count >= 0)
                     {
@@ -1870,7 +2213,7 @@ namespace OrX
             mom.missionType = missionType;
             mom.challengeType = challengeType;
             mom.tech = tech;
-            mom.mCount = mCount;
+            mom.hkCount = hkCount;
             mom.Gold = Gold;
             mom.Silver = Silver;
             mom.Bronze = Bronze;
@@ -2018,8 +2361,38 @@ namespace OrX
         public void SaveScore()
         {
             _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName +  ".orx");
-            _mission = _file.GetNode("mission" + mCount);
+            _mission = _file.GetNode("mission" + hkCount);
             _scoreboard_ = _mission.GetNode("scoreboard");
+
+            foreach (ConfigNode.Value cv in _scoreboard_.values)
+            {
+                string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                cv.name = cvEncryptedName;
+                cv.value = cvEncryptedValue;
+            }
+
+            foreach (ConfigNode cn in _scoreboard_.nodes)
+            {
+                foreach (ConfigNode.Value cv in cn.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn2 in cn.nodes)
+                {
+                    foreach (ConfigNode.Value cv2 in cn2.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                        cv2.name = cvEncryptedName;
+                        cv2.value = cvEncryptedValue;
+                    }
+                }
+            }
 
             if (coordCount >= 0)
             {
@@ -2055,7 +2428,6 @@ namespace OrX
                     }
                     tempChallengerEntry.AddValue("totalTime", totalTimeChallenger);
                     Debug.Log("[OrX Mission Scoreboard] === STAGE TIME LIST CREATED ===");
-
                 }
 
                 ConfigNode scores = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".scores");
@@ -2066,12 +2438,42 @@ namespace OrX
                     scores = new ConfigNode();
                     scores.AddValue("name", HoloKronName);
 
-                    scores.AddNode("mission" + mCount);
-                    ConfigNode mis = scores.GetNode("mission" + mCount);
+                    scores.AddNode("mission" + hkCount);
+                    ConfigNode mis = scores.GetNode("mission" + hkCount);
 
                     foreach (ConfigNode.Value cv in tempChallengerEntry.values)
                     {
                         mis.AddValue(cv.name, cv.value);
+                    }
+
+                    foreach (ConfigNode.Value cv in scores.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn in _scoreboard_.nodes)
+                    {
+                        foreach (ConfigNode.Value cv in cn.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                            cv.name = cvEncryptedName;
+                            cv.value = cvEncryptedValue;
+                        }
+
+                        foreach (ConfigNode cn2 in cn.nodes)
+                        {
+                            foreach (ConfigNode.Value cv2 in cn2.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                cv2.name = cvEncryptedName;
+                                cv2.value = cvEncryptedValue;
+                            }
+                        }
                     }
 
                     scores.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".scores");
@@ -2080,7 +2482,37 @@ namespace OrX
                 }
                 else
                 {
-                    ConfigNode mis = scores.GetNode("mission" + mCount);
+                    foreach (ConfigNode.Value cv in scores.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn in scores.nodes)
+                    {
+                        foreach (ConfigNode.Value cv in cn.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                            cv.name = cvEncryptedName;
+                            cv.value = cvEncryptedValue;
+                        }
+
+                        foreach (ConfigNode cn2 in cn.nodes)
+                        {
+                            foreach (ConfigNode.Value cv2 in cn2.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                                string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                                cv2.name = cvEncryptedName;
+                                cv2.value = cvEncryptedValue;
+                            }
+                        }
+                    }
+
+                    ConfigNode mis = scores.GetNode("mission" + hkCount);
 
                     foreach (ConfigNode.Value cv in mis.values)
                     {
@@ -2096,9 +2528,40 @@ namespace OrX
                             }
                         }
                     }
+
+                    foreach (ConfigNode.Value cv in scores.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn in scores.nodes)
+                    {
+                        foreach (ConfigNode.Value cv in cn.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                            cv.name = cvEncryptedName;
+                            cv.value = cvEncryptedValue;
+                        }
+
+                        foreach (ConfigNode cn2 in cn.nodes)
+                        {
+                            foreach (ConfigNode.Value cv2 in cn2.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                cv2.name = cvEncryptedName;
+                                cv2.value = cvEncryptedValue;
+                            }
+                        }
+                    }
+
+                    scores.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".scores");
                 }
 
-                scores.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".scores");
                 Debug.Log("[OrX Mission Scoreboard] === STAGE TIME LIST SAVED TO SCORES FILE ===");
 
                 // CHECK PODIUM LIST
@@ -2927,55 +3390,106 @@ namespace OrX
             }
 
             ConfigNode node = _file.GetNode("OrX");
-            int _hkCount = 0;
 
-            foreach (ConfigNode spawnCheck in node.nodes)
+            ConfigNode HoloKronNode = node.GetNode("OrXHoloKronCoords" + hkCount);
+
+            if (HoloKronNode != null)
             {
-                if (spawnCheck.name.Contains("OrXHoloKronCoords"))
+                Debug.Log("[OrX Mission Scoreboard] === FOUND " + HoloKronName + " " + hkCount + " ==="); ;
+
+                if (HoloKronNode.HasValue("completed"))
                 {
-                    ConfigNode HoloKronNode = node.GetNode("OrXHoloKronCoords" + _hkCount);
-
-                    if (HoloKronNode != null)
+                    var t = HoloKronNode.GetValue("completed");
+                    if (t == "False")
                     {
-                        Debug.Log("[OrX Mission Scoreboard] === FOUND " + HoloKronName + " " + _hkCount + " ==="); ;
+                        HoloKronNode.SetValue("completed", "True", true);
 
-                        if (HoloKronNode.HasValue("completed"))
-                        {
-                            var t = HoloKronNode.GetValue("completed");
-                            if (t == "False")
-                            {
-                                HoloKronNode.SetValue("completed", "True", true);
-
-                                Debug.Log("[OrX Mission] === " + HoloKronName + " " + _hkCount + " was not completed ... CHANGING TO TRUE ==="); ;
-                                break;
-                            }
-                            else
-                            {
-                                Debug.Log("[OrX Mission] === " + HoloKronName + " " + _hkCount + " is already completed ==="); ;
-                                _hkCount += 1;
-                            }
-                        }
+                        Debug.Log("[OrX Mission] === " + HoloKronName + " " + hkCount + " was not completed ... CHANGING TO TRUE ==="); ;
+                    }
+                    else
+                    {
+                        Debug.Log("[OrX Mission] === " + HoloKronName + " " + hkCount + " is already completed ==="); ;
                     }
                 }
             }
 
-            Debug.Log("[OrX Mission Scoreboard] === DATA PROCESSED ===");
+            foreach (ConfigNode.Value cv in _scoreboard_.values)
+            {
+                string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                cv.name = cvEncryptedName;
+                cv.value = cvEncryptedValue;
+            }
+
+            foreach (ConfigNode cn in _scoreboard_.nodes)
+            {
+                foreach (ConfigNode.Value cv in cn.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn2 in cn.nodes)
+                {
+                    foreach (ConfigNode.Value cv2 in cn2.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                        cv2.name = cvEncryptedName;
+                        cv2.value = cvEncryptedValue;
+                    }
+                }
+            }
+
+            Debug.Log("[OrX Mission Scoreboard] === DATA PROCESSED AND ENCRYPTED ===");
             _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName +  ".orx");
         }
         public void ImportScores()
         {
-            updatingScores = false;
+            updatingScores = true;
 
-            Debug.Log("[OrX Mission] === CHECKING FOR SCORE IMPORT FILES ===");
+            Debug.Log("[OrX Import Scores] === CHECKING FOR SCORE IMPORT FILES ===");
 
             ConfigNode scores = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Import/" + HoloKronName + ".scores");
             if (scores != null)
             {
-                Debug.Log("[OrX Mission] === SCORE IMPORT FILE FOR " + HoloKronName + " FOUND ===");
+                Debug.Log("[OrX Import Scores] === SCORE IMPORT FILE FOR " + HoloKronName + " FOUND ===");
 
                 _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName +  ".scores");
-                _mission = _file.GetNode("mission" + mCount);
+                _mission = _file.GetNode("mission" + hkCount);
                 _scoreboard_ = _mission.GetNode("scoreboard");
+
+                foreach (ConfigNode.Value cv in _scoreboard_.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn in _scoreboard_.nodes)
+                {
+                    foreach (ConfigNode.Value cv in cn.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn2 in cn.nodes)
+                    {
+                        foreach (ConfigNode.Value cv2 in cn2.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                            cv2.name = cvEncryptedName;
+                            cv2.value = cvEncryptedValue;
+                        }
+                    }
+                }
 
                 // GET PODIUM LIST
 
@@ -2990,9 +3504,39 @@ namespace OrX
                 scoreboard8 = _scoreboard_.GetNode("scoreboard8");
                 scoreboard9 = _scoreboard_.GetNode("scoreboard9");
 
+                foreach (ConfigNode.Value cv in scores.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
                 foreach (ConfigNode cn in scores.nodes)
                 {
-                    if (cn.name.Contains("mission"))
+                    foreach (ConfigNode.Value cv in cn.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn2 in cn.nodes)
+                    {
+                        foreach (ConfigNode.Value cv2 in cn2.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                            cv2.name = cvEncryptedName;
+                            cv2.value = cvEncryptedValue;
+                        }
+                    }
+                }
+
+                foreach (ConfigNode cn in scores.nodes)
+                {
+                    if (cn.name.Contains("mission" + hkCount))
                     {
                         string missionNumber = cn.name;
                         ConfigNode temp = null;
@@ -3037,7 +3581,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard0 = true;
+                                    ammendListscoreboard0 = false;
                                 }
                             }
                         }
@@ -3064,7 +3608,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard1 = true;
+                                    ammendListscoreboard1 = false;
                                 }
                             }
                         }
@@ -3091,7 +3635,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard2 = true;
+                                    ammendListscoreboard2 = false;
                                 }
                             }
                         }
@@ -3118,7 +3662,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard3 = true;
+                                    ammendListscoreboard3 = false;
                                 }
                             }
                         }
@@ -3145,7 +3689,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard4 = true;
+                                    ammendListscoreboard4 = false;
                                 }
                             }
                         }
@@ -3172,7 +3716,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard5 = true;
+                                    ammendListscoreboard5 = false;
                                 }
                             }
                         }
@@ -3199,7 +3743,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard6 = true;
+                                    ammendListscoreboard6 = false;
                                 }
                             }
                         }
@@ -3226,7 +3770,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard7 = true;
+                                    ammendListscoreboard7 = false;
                                 }
                             }
                         }
@@ -3253,7 +3797,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard8 = true;
+                                    ammendListscoreboard8 = false;
                                 }
                             }
                         }
@@ -3280,7 +3824,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    ammendListscoreboard9 = true;
+                                    ammendListscoreboard9 = false;
                                 }
                             }
                         }
@@ -3801,6 +4345,41 @@ namespace OrX
                         }
                     }
                 }
+
+                foreach (ConfigNode.Value cv in _scoreboard_.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn in _scoreboard_.nodes)
+                {
+                    foreach (ConfigNode.Value cv in cn.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn2 in cn.nodes)
+                    {
+                        foreach (ConfigNode.Value cv2 in cn2.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                            cv2.name = cvEncryptedName;
+                            cv2.value = cvEncryptedValue;
+                        }
+                    }
+                }
+
+                Debug.Log("[OrX Import Scores] === DATA PROCESSED AND ENCRYPTED ===");
+                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".orx");
+
+
             }
 
             updatingScores = false;
@@ -3808,9 +4387,41 @@ namespace OrX
         public void GetScoreboardData()
         {
             _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName +  ".orx");
-            _mission = _file.GetNode("mission" + mCount);
+            _mission = _file.GetNode("mission" + hkCount);
             _scoreboard_ = _mission.GetNode("scoreboard");
             int sbCount = 0;
+
+            foreach (ConfigNode.Value cv in _scoreboard_.values)
+            {
+                string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                cv.name = cvEncryptedName;
+                cv.value = cvEncryptedValue;
+            }
+
+            foreach (ConfigNode cn in _scoreboard_.nodes)
+            {
+                foreach (ConfigNode.Value cv in cn.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn2 in cn.nodes)
+                {
+                    foreach (ConfigNode.Value cv2 in cn2.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                        cv2.name = cvEncryptedName;
+                        cv2.value = cvEncryptedValue;
+                    }
+                }
+            }
+
+            bool _save = false;
 
             if (_scoreboard_.nodes.Contains("scoreboard0"))
             {
@@ -3860,8 +4471,7 @@ namespace OrX
                 scoreboard8.AddValue("time", "");
                 scoreboard9.AddValue("name", "<empty>");
                 scoreboard9.AddValue("time", "");
-
-                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName +  ".orx");
+                _save = true;
             }
 
             // CHECK PODIUM LIST
@@ -4005,6 +4615,42 @@ namespace OrX
                 {
                     timeSB9 = cv.value;
                 }
+            }
+
+            if (_save)
+            {
+                foreach (ConfigNode.Value cv in _scoreboard_.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn in _scoreboard_.nodes)
+                {
+                    foreach (ConfigNode.Value cv in cn.values)
+                    {
+                        string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                        string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                        cv.name = cvEncryptedName;
+                        cv.value = cvEncryptedValue;
+                    }
+
+                    foreach (ConfigNode cn2 in cn.nodes)
+                    {
+                        foreach (ConfigNode.Value cv2 in cn2.values)
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                            cv2.name = cvEncryptedName;
+                            cv2.value = cvEncryptedValue;
+                        }
+                    }
+                }
+
+                _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + HoloKronName + ".orx");
+
             }
             updatingScores = false;
             showScores = true;
@@ -4212,32 +4858,48 @@ namespace OrX
             FlightGlobals.ForceSetActiveVessel(triggerVessel);
         }
 
-        public void DakarAddNextCoord()
+        public void SpawnGoal()
         {
-            getNextCoord = false;
-            addingMission = true;
-            movingCraft = true;
-            dakarRacing = true;
-            saveLocalVessels = false;
-            addCoords = true;
-            GuiEnabledOrXMissions = true;
-            OrXHCGUIEnabled = true;
-            SaveConfig("");
+            ScreenMsg("Spawning Stage Finish Line ... ");
+            OrXSpawnHoloKron.instance.StartSpawn(startLocation, lastCoord, true, false, false, HoloKronName, missionType);
         }
-        IEnumerator AddGoalPosts()
+        public void ChallengeAddNextCoord()
         {
-            addingMission = false;
-            addingGoalPosts = true;
-            while (addingGoalPosts)
+            FlightGlobals.ActiveVessel.SetWorldVelocity(Vector3.zero);
+            FlightGlobals.ActiveVessel.angularVelocity = Vector3.zero;
+            FlightGlobals.ActiveVessel.angularMomentum = Vector3.zero;
+
+            if (FlightGlobals.ActiveVessel != _HoloKron)
             {
-                yield return null;
+                FlightGlobals.ForceSetActiveVessel(_HoloKron);
             }
-            _lat = FlightGlobals.ActiveVessel.latitude;
-            _lon = FlightGlobals.ActiveVessel.longitude;
-            _alt = FlightGlobals.ActiveVessel.altitude + 2;
-            CoordDatabase = new List<string>();
-            getNextCoord = true;
-            showTargets = false;
+
+            if (dakarRacing)
+            {
+                saveLocalVessels = true;
+                getNextCoord = false;
+                addingMission = true;
+                GuiEnabledOrXMissions = true;
+                OrXHCGUIEnabled = true;
+                movingCraft = true;
+                dakarRacing = true;
+                addCoords = true;
+            }
+            else
+            {
+                if (shortTrackRacing)
+                {
+                    saveLocalVessels = false;
+                    getNextCoord = false;
+                    addingMission = true;
+                    GuiEnabledOrXMissions = true;
+                    OrXHCGUIEnabled = true;
+                    movingCraft = true;
+                    dakarRacing = false;
+                    addCoords = true;
+                }
+            }
+            SaveConfig("");
         }
 
         #endregion
@@ -4268,19 +4930,6 @@ namespace OrX
                 }
             }
         }
-        public void AddToolbarButton()
-        {
-            string OrXDir = "OrX/Plugin/";
-
-            if (!hasAddedButton)
-            {
-                Texture buttonTexture = GameDatabase.Instance.GetTexture(OrXDir + "OrX_icon", false); //texture to use for the button
-                ApplicationLauncher.Instance.AddModApplication(ToggleGUI, ToggleGUI, Dummy, Dummy, Dummy, Dummy,
-                    ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
-                hasAddedButton = true;
-            }
-        }
-
         public void ToggleGUI()
         {
             if (OrXHCGUIEnabled)
@@ -4290,15 +4939,26 @@ namespace OrX
             }
             else
             {
-                Debug.Log("[OrX Mission]: Opening OrX HoloKron GUI");
-                OrXHCGUIEnabled = true;
-                if (!challengeRunning)
+                if (!buildingMission)
                 {
-                    LoadHoloKronTargets();
+                    Debug.Log("[OrX Mission]: Opening OrX HoloKron GUI");
+                    OrXHCGUIEnabled = true;
+                    if (!challengeRunning)
+                    {
+                        GuiEnabledOrXMissions = false;
+                        movingCraft = true;
+                        getNextCoord = false;
+                        GuiEnabledOrXMissions = true;
+                        LoadHoloKronTargets();
+                    }
+                }
+                else
+                {
+                    ScreenMsg("Unable to scan while creating .......");
+                    ScreenMsg("Dinner Out is Cancelled .....");
                 }
             }
         }
-
         public void OrXHCGUI(int OrX_HCGUI)
         {
             float line = 0;
@@ -4330,243 +4990,203 @@ namespace OrX
                 fontStyle = FontStyle.Bold
             };
 
-            if (GuiEnabledOrXMissions)
+            if (connectToKontinuum)
             {
-                GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
+                GUI.Label(new Rect(0, 1, WindowWidth, 20), "OrX Kontinuum", titleStyleLarge);
+                line++;
+                DrawBDAcOptions2(line);
+                line++;
+                DrawBDAcOptions3(line);
+                line++;
+                DrawBDAcOptions4(line);
+                line++;
 
-                if (movingCraft)
+                if (GUI.Button(new Rect(LeftIndent * 1.5f, contentTop + (line * entryHeight), contentWidth * 0.9f, 20), "Connect", OrXGUISkin.button))
                 {
-                    GUI.Label(new Rect(0, 1, WindowWidth, 20), "OrX Kontinuum", titleStyleLarge);
-                    line++;
-
-                    if (getNextCoord)
-                    {
-                        if (dakarRacing)
-                        {
-                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "ADD NEXT STAGE", OrXGUISkin.button))
-                            {
-                                Debug.Log("[OrX Place Gate] ===== ADDING STAGE " + (OrXCoordsList.Count + 1) + " =====");
-                                getNextCoord = false;
-                                addCoords = true;
-                                addingMission = false;
-                                movingCraft = false;
-                                showTargets = false;
-                                SaveConfig(HoloKronName);
-                            }
-                            line++;
-                            DrawSave(line);
-                        }
-                    }
-                    else
-                    {
-                        GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Please stand By .......", titleStyle);
-                    }
+                    connectToKontinuum = false;
+                    ScreenMsg("The Kontinuum is currently unavailable .....");
                 }
-                else
+                line++;
+            }
+            else
+            {
+                if (GuiEnabledOrXMissions)
                 {
-                    if (PlayOrXMission)
+                    GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
+
+                    if (movingCraft)
                     {
-                        if (showScores)
+                        GUI.Label(new Rect(0, 1, WindowWidth, 20), "OrX Kontinuum", titleStyleLarge);
+                        line++;
+
+                        if (getNextCoord)
                         {
-                            if (updatingScores)
+                            if (spawningStartGate)
                             {
-                                DrawScoreboard(line);
-                                line++;
-                                DrawCloseScoreboard(line);
+                                if (GUI.Button(new Rect(LeftIndent * 1.5f, contentTop + (line * entryHeight), contentWidth * 0.9f, 20), "PLACE FINISH GATE", OrXGUISkin.button))
+                                {
+                                    Debug.Log("[OrX Place Gate] ===== PLACING GATE FOR " + HoloKronName + " STAGE " + hkCount + " =====");
+                                    spawningStartGate = false;
+                                    getNextCoord = false;
+                                    OrXVesselMove.Instance.placingFinishGate = true;
+                                    OrXVesselMove.Instance.EndMove(true, false, true);
+                                }
                             }
                             else
                             {
-                                DrawScoreboard(line);
-                                line++;
-                                line++;
-                                DrawScoreboard0(line);
-                                line++;
-                                DrawScoreboard1(line);
-                                line++;
-                                DrawScoreboard2(line);
-                                line++;
-                                DrawScoreboard3(line);
-                                line++;
-                                DrawScoreboard4(line);
-                                line++;
-                                DrawScoreboard5(line);
-                                line++;
-                                DrawScoreboard6(line);
-                                line++;
-                                DrawScoreboard7(line);
-                                line++;
-                                DrawScoreboard8(line);
-                                line++;
-                                DrawScoreboard9(line);
-                                line++;
-                                line++;
-                                DrawUpdateScoreboard(line);
-                                line++;
-                                DrawCloseScoreboard(line);
+                                if (dakarRacing)
+                                {
+                                    if (GUI.Button(new Rect(LeftIndent * 1.5f, contentTop + (line * entryHeight), contentWidth * 0.9f, 20), "ADD NEXT STAGE", OrXGUISkin.button))
+                                    {
+                                        Debug.Log("[OrX Place Gate] ===== ADDING STAGE " + (hkCount + 1) + " =====");
+                                        CoordDatabase = new List<string>();
+                                        addCoords = true;
+                                        getNextCoord = false;
+                                        startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
+
+                                        if (dakarRacing)
+                                        {
+                                            addingMission = false;
+                                            SaveConfig(HoloKronName);
+                                        }
+                                        else
+                                        {
+                                            if (shortTrackRacing)
+                                            {
+                                                addingMission = true;
+                                                SaveConfig(HoloKronName);
+                                            }
+                                        }
+                                    }
+                                    line++;
+                                    DrawSave(line);
+                                }
                             }
                         }
                         else
                         {
-                            DrawPlayHoloKronName(line);
+
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Scanning the Kontinuum .....", titleStyle);
                             line++;
-                            DrawPlayMissionType(line);
-                            line++;
-
-                            if (!geoCache)
-                            {
-                                DrawPlayRaceType(line);
-                                line++;
-                                DrawChallengerName(line);
-                                line++;
-                            }
-                            if (blueprintsAdded)
-                            {
-                                DrawPlayBlueprintsAdded(line);
-                                line++;
-                            }
-
-                            DrawDescription0(line);
-                            line++;
-                            if (missionDescription1 != "" && missionDescription1 != string.Empty)
-                            {
-                                DrawDescription1(line);
-                                line++;
-
-                                if (missionDescription2 != "" && missionDescription2 != string.Empty)
-                                {
-                                    DrawDescription2(line);
-                                    line++;
-
-                                    if (missionDescription3 != "" && missionDescription3 != string.Empty)
-                                    {
-                                        DrawDescription3(line);
-                                        line++;
-
-                                        if (missionDescription4 != "" && missionDescription4 != string.Empty)
-                                        {
-                                            DrawDescription4(line);
-                                            line++;
-
-                                            if (missionDescription5 != "" && missionDescription5 != string.Empty)
-                                            {
-                                                DrawDescription5(line);
-                                                line++;
-
-                                                if (missionDescription6 != "" && missionDescription6 != string.Empty)
-                                                {
-                                                    DrawDescription6(line);
-                                                    line++;
-
-                                                    if (missionDescription7 != "" && missionDescription7 != string.Empty)
-                                                    {
-                                                        DrawDescription7(line);
-                                                        line++;
-
-                                                        if (missionDescription8 != "" && missionDescription8 != string.Empty)
-                                                        {
-                                                            DrawDescription8(line);
-                                                            line++;
-
-                                                            if (missionDescription9 != "" && missionDescription9 != string.Empty)
-                                                            {
-                                                                DrawDescription9(line);
-                                                                line++;
-
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            DrawStart(line);
-
-                            if (!geoCache)
-                            {
-                                line++;
-                                DrawShowScoreboard(line);
-                                line++;
-                                DrawCancel(line);
-                            }
+                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "....... Please stand By", titleStyle);
                         }
-
-                        _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
-                        _windowRect.height = _windowHeight;
                     }
                     else
                     {
-                        DrawTitle(line);
-                        line++;
-
-                        if (!addCoords)
+                        if (PlayOrXMission)
                         {
-                            DrawMissionType(line);
-                            line++;
-                            if (!geoCache)
+                            if (showScores)
                             {
-                                DrawRaceType(line);
-                                line++;
+                                if (updatingScores)
+                                {
+                                    DrawScoreboard(line);
+                                    line++;
+                                    DrawCloseScoreboard(line);
+                                }
+                                else
+                                {
+                                    DrawScoreboard(line);
+                                    line++;
+                                    line++;
+                                    DrawScoreboard0(line);
+                                    line++;
+                                    DrawScoreboard1(line);
+                                    line++;
+                                    DrawScoreboard2(line);
+                                    line++;
+                                    DrawScoreboard3(line);
+                                    line++;
+                                    DrawScoreboard4(line);
+                                    line++;
+                                    DrawScoreboard5(line);
+                                    line++;
+                                    DrawScoreboard6(line);
+                                    line++;
+                                    DrawScoreboard7(line);
+                                    line++;
+                                    DrawScoreboard8(line);
+                                    line++;
+                                    DrawScoreboard9(line);
+                                    line++;
+                                    line++;
+                                    DrawUpdateScoreboard(line);
+                                    line++;
+                                    DrawCloseScoreboard(line);
+                                }
                             }
-
-                            DrawHoloKronName(line);
-                            line++;
-                            DrawHoloKronName2(line);
-                            line++;
-                            DrawPassword(line);
-                            line++;
-                            DrawEditDescription(line);
-                            line++;
-                            DrawEditDescription2(line);
-                            line++;
-                            DrawDescription0(line);
-                            line++;
-                            if (missionDescription0 != "" && missionDescription0 != string.Empty)
+                            else
                             {
-                                DrawDescription1(line);
+                                DrawPlayHoloKronName(line);
+                                line++;
+                                DrawPlayMissionType(line);
                                 line++;
 
+                                if (!geoCache)
+                                {
+                                    DrawPlayRaceType(line);
+                                    line++;
+                                    DrawChallengerName(line);
+                                    line++;
+                                    if (bdaChallenge)
+                                    {
+                                        DrawBDAcOptions1(line);
+                                        line++;
+                                    }
+                                }
+                                if (blueprintsAdded)
+                                {
+                                    DrawPlayBlueprintsAdded(line);
+                                    line++;
+                                }
+
+                                DrawDescription0(line);
+                                line++;
                                 if (missionDescription1 != "" && missionDescription1 != string.Empty)
                                 {
-                                    DrawDescription2(line);
+                                    DrawDescription1(line);
                                     line++;
 
                                     if (missionDescription2 != "" && missionDescription2 != string.Empty)
                                     {
-                                        DrawDescription3(line);
+                                        DrawDescription2(line);
                                         line++;
 
                                         if (missionDescription3 != "" && missionDescription3 != string.Empty)
                                         {
-                                            DrawDescription4(line);
+                                            DrawDescription3(line);
                                             line++;
 
                                             if (missionDescription4 != "" && missionDescription4 != string.Empty)
                                             {
-                                                DrawDescription5(line);
+                                                DrawDescription4(line);
                                                 line++;
 
                                                 if (missionDescription5 != "" && missionDescription5 != string.Empty)
                                                 {
-                                                    DrawDescription6(line);
+                                                    DrawDescription5(line);
                                                     line++;
 
                                                     if (missionDescription6 != "" && missionDescription6 != string.Empty)
                                                     {
-                                                        DrawDescription7(line);
+                                                        DrawDescription6(line);
                                                         line++;
 
                                                         if (missionDescription7 != "" && missionDescription7 != string.Empty)
                                                         {
-                                                            DrawDescription8(line);
+                                                            DrawDescription7(line);
                                                             line++;
 
                                                             if (missionDescription8 != "" && missionDescription8 != string.Empty)
                                                             {
-                                                                DrawDescription9(line);
+                                                                DrawDescription8(line);
                                                                 line++;
 
+                                                                if (missionDescription9 != "" && missionDescription9 != string.Empty)
+                                                                {
+                                                                    DrawDescription9(line);
+                                                                    line++;
+
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -4575,126 +5195,244 @@ namespace OrX
                                         }
                                     }
                                 }
-                            }
-                            if (missionDescription0 != "" && missionDescription0 != string.Empty)
-                            {
-                                DrawClearDescription(line);
-                                line++;
+                                DrawStart(line);
+
+                                if (!geoCache)
+                                {
+                                    line++;
+                                    DrawShowScoreboard(line);
+                                    line++;
+                                    DrawCancel(line);
+                                }
                             }
 
-                            line++;
-                            DrawVessel(line);
-                            line++;
-                            DrawAddBlueprints(line);
-                            line++;
-                            DrawSaveLocal(line);
-                            line++;
-                            line++;
-                            DrawSave(line);
-                            line++;
-                            DrawCancel(line);
+                            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+                            _windowRect.height = _windowHeight;
                         }
                         else
                         {
-                            DrawAddCoords(line);
+                            DrawTitle(line);
                             line++;
-                            if (locAdded && !dakarRacing)
+
+                            if (!addCoords)
                             {
-                                line += 0.5f;
-                                DrawCoordCount(line);
+                                DrawMissionType(line);
                                 line++;
-                                DrawClearLastCoord(line);
+                                if (!geoCache)
+                                {
+                                    DrawChallengeType(line);
+                                    line++;
+                                    if (outlawRacing)
+                                    {
+                                        DrawRaceType(line);
+                                        line++;
+                                    }
+
+                                    if (bdaChallenge)
+                                    {
+                                        DrawBDAcOptions1(line);
+                                        line++;
+                                    }
+                                }
+
+                                DrawHoloKronName(line);
                                 line++;
-                                DrawClearAllCoords(line);
+                                DrawHoloKronName2(line);
+                                line++;
+                                DrawPassword(line);
+                                line++;
+                                DrawEditDescription(line);
+                                line++;
+                                DrawEditDescription2(line);
+                                line++;
+                                DrawDescription0(line);
+                                line++;
+                                if (missionDescription0 != "" && missionDescription0 != string.Empty)
+                                {
+                                    DrawDescription1(line);
+                                    line++;
+
+                                    if (missionDescription1 != "" && missionDescription1 != string.Empty)
+                                    {
+                                        DrawDescription2(line);
+                                        line++;
+
+                                        if (missionDescription2 != "" && missionDescription2 != string.Empty)
+                                        {
+                                            DrawDescription3(line);
+                                            line++;
+
+                                            if (missionDescription3 != "" && missionDescription3 != string.Empty)
+                                            {
+                                                DrawDescription4(line);
+                                                line++;
+
+                                                if (missionDescription4 != "" && missionDescription4 != string.Empty)
+                                                {
+                                                    DrawDescription5(line);
+                                                    line++;
+
+                                                    if (missionDescription5 != "" && missionDescription5 != string.Empty)
+                                                    {
+                                                        DrawDescription6(line);
+                                                        line++;
+
+                                                        if (missionDescription6 != "" && missionDescription6 != string.Empty)
+                                                        {
+                                                            DrawDescription7(line);
+                                                            line++;
+
+                                                            if (missionDescription7 != "" && missionDescription7 != string.Empty)
+                                                            {
+                                                                DrawDescription8(line);
+                                                                line++;
+
+                                                                if (missionDescription8 != "" && missionDescription8 != string.Empty)
+                                                                {
+                                                                    DrawDescription9(line);
+                                                                    line++;
+
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (missionDescription0 != "" && missionDescription0 != string.Empty)
+                                {
+                                    DrawClearDescription(line);
+                                    line++;
+                                }
+
+                                line++;
+                                DrawVessel(line);
+                                line++;
+                                DrawAddBlueprints(line);
+                                line++;
+                                DrawSaveLocal(line);
                                 line++;
                                 line++;
                                 DrawSave(line);
                                 line++;
+                                DrawCancel(line);
                             }
-                            DrawCancel(line);
+                            else
+                            {
+                                DrawAddCoords(line);
+                                line++;
+                                if (locAdded)
+                                {
+                                    line += 0.5f;
+                                    DrawCoordCount(line);
+
+                                    if (!dakarRacing)
+                                    {
+                                        line++;
+                                        DrawClearLastCoord(line);
+                                        line++;
+                                        DrawClearAllCoords(line);
+                                        line++;
+                                        line++;
+                                        DrawSave(line);
+                                        line++;
+                                    }
+                                }
+                                DrawCancel(line);
+                            }
                         }
                     }
-                }
 
-                toolWindowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
-                WindowRectToolbar.height = toolWindowHeight;
-            }
-            else
-            {
-                GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
 
-                line += 0.6f;
-                GUI.Label(new Rect(0, 1, WindowWidth, 20), "OrX Kontinuum", titleStyleLarge);
-
-                if (!challengeRunning)
-                {
-                    if (checking)
-                    {
-                        scanDelay = OrXTargetDistance.instance.scanDelay;
-
-                        if (targetDistance <= 100000)
-                        {
-                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Closest HoloKron is " + Math.Round((targetDistance / 1000), 2) + " km away", titleStyle);
-                            line++;
-                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Altitude: " + Math.Round(_altitude, 1) + " meters", titleStyle);
-                            line++;
-                        }
-                        else
-                        {
-                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "No HoloKron in range ......", titleStyle);
-                            line++;
-                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Rescan in " + Math.Round(scanDelay, 0) + " seconds", titleStyle);
-                            line++;
-                        }
-                        line++;
-
-                        if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Stop HoloKron Scan", OrXGUISkin.button))
-                        {
-                            StopScan(true);
-                        }
-                    }
-                    else
-                    {
-                        if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Start HoloKron Scan", OrXGUISkin.button))
-                        {
-                            challengeRunning = false;
-                            checking = true;
-                            OrXTargetDistance.instance.TargetDistance(true, false, false, true, new Vector3());
-                        }
-                    }
-                    line++;
+                    toolWindowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+                    WindowRectToolbar.height = toolWindowHeight;
                 }
                 else
                 {
-                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Coordinates are " + Math.Round((targetDistance / 1000), 2) + " km away", titleStyle);
-                    line++;
-                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Altitude: " + Math.Round(_altitude, 1) + " meters", titleStyle);
-                    line++;
-                    line++;
+                    GUI.DragWindow(new Rect(30, 0, toolWindowWidth - 90, 30));
 
-                    if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Cancel Challenge", OrXGUISkin.button))
+                    line += 0.6f;
+                    GUI.Label(new Rect(0, 1, WindowWidth, 20), "OrX Kontinuum", titleStyleLarge);
+
+                    if (!challengeRunning)
                     {
-                        challengeRunning = false;
-                        ScreenMsg("Cancelling " + HoloKronName + " " + hkCount + " Challenge .....");
-                        locCount = 0;
-                        locAdded = false;
-                        building = false;
-                        buildingMission = false;
-                        addCoords = false;
-                        GuiEnabledOrXMissions = false;
-                        OrXHCGUIEnabled = false;
-                        PlayOrXMission = false;
-                        checking = false;
-                        OrXTargetDistance.instance.StopAllCoroutines();
-                        ResetData();
+                        if (checking)
+                        {
+                            scanDelay = OrXTargetDistance.instance.scanDelay;
+
+                            if (targetDistance <= 100000)
+                            {
+                                GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Closest HoloKron is " + Math.Round((targetDistance / 1000), 2) + " km away", titleStyle);
+                                line++;
+                                GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Altitude: " + Math.Round(_altitude, 1) + " meters", titleStyle);
+                                line++;
+                            }
+                            else
+                            {
+                                GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "No HoloKron in range ......", titleStyle);
+                                line++;
+                                GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Rescan in " + Math.Round(scanDelay, 0) + " seconds", titleStyle);
+                                line++;
+                            }
+                            line++;
+
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Stop HoloKron Scan", OrXGUISkin.button))
+                            {
+                                StopScan(true);
+                            }
+                        }
+                        else
+                        {
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Start HoloKron Scan", OrXGUISkin.button))
+                            {
+                                challengeRunning = false;
+                                checking = true;
+                                OrXTargetDistance.instance.TargetDistance(true, false, false, true, new Vector3());
+                            }
+                            line++;
+                            if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Connect to Kontinuum", OrXGUISkin.button))
+                            {
+                                connectToKontinuum = true;
+                            }
+                        }
+                        line++;
                     }
-                    line++;
+                    else
+                    {
+                        GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Coordinates are " + Math.Round((targetDistance / 1000), 2) + " km away", titleStyle);
+                        line++;
+                        GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Altitude: " + Math.Round(_altitude, 1) + " meters", titleStyle);
+                        line++;
+                        line++;
+
+                        if (GUI.Button(new Rect(5, contentTop + (line * entryHeight), toolWindowWidth - 5, 20), "Cancel Challenge", OrXGUISkin.button))
+                        {
+                            challengeRunning = false;
+                            ScreenMsg("Cancelling " + HoloKronName + " " + hkCount + " Challenge .....");
+                            locCount = 0;
+                            locAdded = false;
+                            building = false;
+                            buildingMission = false;
+                            addCoords = false;
+                            GuiEnabledOrXMissions = false;
+                            OrXHCGUIEnabled = false;
+                            PlayOrXMission = false;
+                            checking = false;
+                            OrXTargetDistance.instance.StopAllCoroutines();
+                            ResetData();
+                        }
+                        line++;
+                    }
+
+                    toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
+                    WindowRectToolbar.height = toolWindowHeight;
+
                 }
 
-                toolWindowHeight = Mathf.Lerp(toolWindowHeight, contentTop + (line * entryHeight) + 5, 1);
-                WindowRectToolbar.height = toolWindowHeight;
-
             }
+
         }
 
         #endregion
@@ -4707,12 +5445,14 @@ namespace OrX
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
             if (GUI.Button(saveRect, "ADD LOCATION", HighLogic.Skin.button))
             {
+                ScreenMsg("Adding Current Location ..... ");
+
                 if (!locAdded)
                 {
                     locAdded = true;
                 }
 
-                if (dakarRacing)
+                if (dakarRacing || shortTrackRacing)
                 {
                     movingCraft = true;
                     locCount += 1;
@@ -4729,8 +5469,6 @@ namespace OrX
                     CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
                         + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
                     OrXVesselMove.Instance.EndMove(true, false, true);
-                    ScreenMsg("Adding Current Location .....");
-
                 }
                 else
                 {
@@ -4829,7 +5567,7 @@ namespace OrX
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Coord Count = " + locCount, titleStyle);
         }
 
-        bool getNextCoord = false;
+        public bool getNextCoord = false;
 
         #endregion
 
@@ -5679,6 +6417,7 @@ namespace OrX
             var fwdFieldRect = new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
             HoloKronName = GUI.TextField(fwdFieldRect, HoloKronName);
         }
+
         public void DrawMissionType(float line)
         {
             var leftLabel = new GUIStyle();
@@ -5687,7 +6426,7 @@ namespace OrX
 
             GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "HoloKron Type: ",
                 leftLabel);
-            var bfRect = new Rect(LeftIndent + contentWidth - 130, ContentTop + line * entryHeight, 120, entryHeight);
+            var bfRect = new Rect(LeftIndent + contentWidth - 130, ContentTop + line * entryHeight, 130, entryHeight);
 
             if (geoCache)
             {
@@ -5698,13 +6437,15 @@ namespace OrX
                     {
                         ScreenMsg("HOLOKRON TYPE CHANGED TO CHALLENGE");
                         Debug.Log("[OrX Mission] === HOLOKRON TYPE - CHALLENGE ===");
-                        challengeType = "DAKAR RACING";
+                        challengeType = "OUTLAW RACING";
+                        outlawRacing = true;
                         dakarRacing = true;
                         geoCache = false;
                         windRacing = false;
                         Scuba = false;
                         bdaChallenge = false;
                         missionType = "CHALLENGE";
+                        raceType = "DAKAR RACING";
                     }
                     else
                     {
@@ -5718,29 +6459,30 @@ namespace OrX
             {
                 if (GUI.Button(bfRect, missionType, HighLogic.Skin.button))
                 {
-                    //locAdded = false;
+                    locAdded = false;
                     if (!locAdded)
                     {
                         ScreenMsg("HOLOKRON TYPE CHANGED TO GEO-CACHE");
                         Debug.Log("[OrX Mission] === HOLOKRON TYPE - GEO-CACHE ===");
                         missionType = "GEO-CACHE";
                         challengeType = missionType;
-                        //dakarRacing = false;
+                        dakarRacing = false;
                         windRacing = false;
                         Scuba = false;
                         bdaChallenge = false;
                         geoCache = true;
+                        raceType = "";
+                        outlawRacing = false;
                     }
                     else
                     {
                         Debug.Log("[OrX Mission] === HOLOKRON LOCKED AS CHALLENGE ===");
                         ScreenMsg("HOLOKRON TYPE LOCKED AS CHALLENGE");
-
                     }
                 }
             }
         }
-        public void DrawRaceType(float line)
+        public void DrawChallengeType(float line)
         {
             var leftLabel = new GUIStyle();
             leftLabel.alignment = TextAnchor.UpperLeft;
@@ -5758,8 +6500,7 @@ namespace OrX
                     {
                         //Debug.Log("[OrX Mission] === CHALLENGE TYPE - SCUBA KERB ===");
                         challengeType = "SCUBA KERB";
-                        ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                        dakarRacing = true;
+                        ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                         bdaChallenge = false;
                         windRacing = false;
                         Scuba = true;
@@ -5768,8 +6509,8 @@ namespace OrX
                     }
                     else
                     {
-                        ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
+                        ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
+                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
 
                         //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS W[ind/S] ===");
 
@@ -5786,10 +6527,9 @@ namespace OrX
                         {
                             //Debug.Log("[OrX Mission] === CHALLENGE TYPE - BD ARMORY ===");
                             challengeType = "BD ARMORY";
-                            ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
+                            ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
+                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
                             bdaChallenge = true;
-                            dakarRacing = true;
                             windRacing = false;
                             Scuba = false;
                             outlawRacing = false;
@@ -5797,11 +6537,10 @@ namespace OrX
                         else
                         {
                             //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS SCUBA ===");
-                            ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
+                            ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
+                            Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
 
                         }
-
                     }
                 }
                 else
@@ -5813,22 +6552,21 @@ namespace OrX
                             if (!locAdded)
                             {
                                 //Debug.Log("[OrX Mission] === CHALLENGE TYPE - DAKAR RACING ===");
-                                challengeType = "DAKAR RACING";
-                                Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-
+                                challengeType = "OUTLAW RACING";
+                                Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                raceType = "DAKAR RACING";
                                 ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
                                 bdaChallenge = false;
                                 windRacing = false;
                                 Scuba = false;
                                 dakarRacing = true;
-                                outlawRacing = false;
-
+                                outlawRacing = true;
                             }
                             else
                             {
                                 //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS BD ARMORY ===");
-                                Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
+                                Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                             }
                         }
 
@@ -5842,58 +6580,149 @@ namespace OrX
                                 if (!locAdded)
                                 {
                                     //Debug.Log("[OrX Mission] === CHALLENGE TYPE - W[ind/S] ===");
-                                    challengeType = "DAKAR RACING";
-                                    Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                    ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
+                                    challengeType = "W[ind/S]";
+                                    Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                    ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                                     bdaChallenge = false;
-                                    dakarRacing = true;
-                                    windRacing = false;
+                                    windRacing = true;
                                     Scuba = false;
                                     outlawRacing = false;
                                 }
                                 else
                                 {
-                                    //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                    Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                    ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
+                                    //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                    Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                    ScreenMsg("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                                 }
                             }
 
                         }
                         else
                         {
-                            if (dakarRacing)
-                            {
-                                if (GUI.Button(bfRect, challengeType, HighLogic.Skin.button))
-                                {
-                                    if (!locAdded)
-                                    {
-                                        //Debug.Log("[OrX Mission] === CHALLENGE TYPE - W[ind/S] ===");
-                                        challengeType = "OUTLAW RACING";
-                                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                        ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                                        bdaChallenge = false;
-                                        dakarRacing = true;
-                                        windRacing = true;
-                                        Scuba = false;
-                                        outlawRacing = true;
-
-                                    }
-                                    else
-                                    {
-                                        //Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                        Debug.Log("[OrX Mission] === CHALLENGE TYPE LOCKED AS DAKAR RACING ===");
-                                        ScreenMsg("CHALLENGE TYPE LOCKED AS DAKAR RACING");
-                                    }
-                                }
-
-                            }
                         }
 
                     }
                 }
             }
         }
+        public void DrawRaceType(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Race Type: ",
+                leftLabel);
+            var bfRect = new Rect(LeftIndent + contentWidth - 130, ContentTop + line * entryHeight, 120, entryHeight);
+
+            if (dakarRacing)
+            {
+                if (GUI.Button(bfRect, raceType, HighLogic.Skin.button))
+                {
+                    if (!locAdded)
+                    {
+                        raceType = "SHORT TRACK";
+                        Debug.Log("[OrX Mission] === RACE TYPE CHANGED TO SHORT TRACK ===");
+                        ScreenMsg("RACE TYPE CHANGED TO SHORT TRACK");
+                        dakarRacing = false;
+                        shortTrackRacing = true;
+                    }
+                    else
+                    {
+                        raceType = "DAKAR RACING";
+                        Debug.Log("[OrX Mission] === RACE TYPE LOCKED AS DAKAR RACING ===");
+                        ScreenMsg("RACE TYPE LOCKED AS DAKAR RACING");
+                    }
+                }
+            }
+            else
+            {
+                if (GUI.Button(bfRect, raceType, HighLogic.Skin.button))
+                {
+                    if (!locAdded)
+                    {
+                        raceType = "DAKAR RACING";
+                        dakarRacing = true;
+                        Debug.Log("[OrX Mission] === RACE TYPE CHANGED TO DAKAR RACING ===");
+                        ScreenMsg("RACE TYPE CHANGED TO DAKAR RACING");
+                        shortTrackRacing = false;
+
+                    }
+                    else
+                    {
+                        raceType = "SHORT TRACK";
+                        dakarRacing = true;
+                        Debug.Log("[OrX Mission] === RACE TYPE LOCKED AS SHORT TRACK ===");
+                        ScreenMsg("RACE TYPE LOCKED AS SHORT TRACK");
+                    }
+                }
+
+            }
+        }
+
+        public void DrawBDAcOptions1(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), _labelConnect, leftLabel);
+            var bfRect = new Rect(WindowWidth - LeftIndent - 10, ContentTop + line * entryHeight, 10, entryHeight);
+
+            if (!connectToKontinuum)
+            {
+                if (GUI.Button(bfRect, "", HighLogic.Skin.button))
+                {
+                    connectToKontinuum = true;
+                    _labelConnect = "Kontinuum Connect";
+                }
+            }
+            else
+            {
+                if (GUI.Button(bfRect, "X", HighLogic.Skin.box))
+                {
+                    connectToKontinuum = false;
+                    _labelConnect = "Connect to Kontinuum";
+                }
+            }
+        }
+        public void DrawBDAcOptions2(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Login Name:",
+                leftLabel);
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+            var fwdFieldRect = new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            loginName = GUI.TextField(fwdFieldRect, loginName);
+        }
+        public void DrawBDAcOptions3(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Password: ",
+                leftLabel);
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+            var fwdFieldRect = new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            pasKontinumm = GUI.TextField(fwdFieldRect, pasKontinumm);
+        }
+        public void DrawBDAcOptions4(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperLeft;
+            leftLabel.normal.textColor = Color.white;
+
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "URL: ",
+                leftLabel);
+            float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+            var fwdFieldRect = new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight);
+            urlKontinumm = GUI.TextField(fwdFieldRect, urlKontinumm);
+        }
+
         public void DrawVessel(float line)
         {
             var centerLabel = new GUIStyle
@@ -6085,6 +6914,7 @@ namespace OrX
                         Debug.Log("[OrX Mission] === SAVING HOLOKRON ===");
                         addCoords = false;
                         addingMission = true;
+                        saveLocalVessels = true;
                         getNextCoord = false;
                         SaveConfig("");
                     }
@@ -6102,6 +6932,7 @@ namespace OrX
                                     CoordDatabase = new List<string>();
                                     addCoords = true;
                                     addingMission = false;
+                                    startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
                                     _file = ConfigNode.Load("GameData/OrX/HoloKron/" + HoloKronName + ".orx");
                                     if (_file == null)
                                     {
@@ -6206,7 +7037,6 @@ namespace OrX
                 }
             }
         }
-
 
         #endregion
 

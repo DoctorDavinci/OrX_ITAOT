@@ -35,11 +35,11 @@ namespace OrX
             instance = this;
         }
 
-        public void TargetDistance(bool primary, bool b, bool boid, bool checking, Vector3d missionCoords)
+        public void TargetDistance(bool primary, bool b, bool Goal, bool checking, Vector3d missionCoords)
         {
-            StartCoroutine(CheckTargetDistance(primary, b, boid, checking, "", missionCoords));
+            StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, "", missionCoords));
         }
-        IEnumerator CheckTargetDistance(bool primary, bool b, bool boid, bool checking, string HoloKronName, Vector3d missionCoords)
+        IEnumerator CheckTargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
@@ -334,17 +334,17 @@ namespace OrX
                     {
                         Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
 
-                        Debug.Log("[OrX Target Distance - Boid] === TARGET Name: " + HoloKronName);
-                        Debug.Log("[OrX Target Distance - Boid] === TARGET Distance in Meters: " + _targetDistance);
+                        Debug.Log("[OrX Target Distance - Goal] === TARGET Name: " + HoloKronName);
+                        Debug.Log("[OrX Target Distance - Goal] === TARGET Distance in Meters: " + _targetDistance);
                         OrXHoloKron.instance.OrXHCGUIEnabled = false;
                         OrXHoloKron.instance.checking = false;
-                        CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, boid);
+                        CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
 
                     }
                     else
                     {
                         OrXHoloKron.instance.OrXHCGUIEnabled = true;
-                        //OrXHoloKron.instance.challengeRunning = boid;
+                        //OrXHoloKron.instance.challengeRunning = Goal;
                     }
                 }
 
@@ -377,14 +377,14 @@ namespace OrX
                             scanDelay -= 1;
                             OrXHoloKron.instance.scanDelay = scanDelay;
                         }
-                        StartCoroutine(CheckTargetDistance(primary, b, boid, checking, HoloKronName, missionCoords));
+                        StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
 
                     }
                     else
                     {
                         missionCoords = new Vector3d(_latMission, _lonMission, _altMission);
                         yield return new WaitForFixedUpdate();
-                        StartCoroutine(CheckTargetDistance(primary, b, boid, checking, HoloKronName, missionCoords));
+                        StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
                     }
                 }
                 else
@@ -393,7 +393,7 @@ namespace OrX
                 }
             }
         }
-        public void CheckIfHoloSpawned(string HoloKronName, Vector3d stageStartCoords, Vector3d vect, bool primary, bool boid)
+        public void CheckIfHoloSpawned(string HoloKronName, Vector3d stageStartCoords, Vector3d vect, bool primary, bool Goal)
         {
             bool s = false;
             bool rescan = false;
@@ -512,12 +512,12 @@ namespace OrX
                 Debug.Log("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
                 if (primary)
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, boid, false, primary, HoloKronName, "");
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, "");
                 }
                 else
                 {
                     OrXHoloKron.instance.OrXHCGUIEnabled = false;
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, boid, false, primary, HoloKronName, "");
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, "");
                 }
             }
             else
@@ -525,7 +525,7 @@ namespace OrX
                 if (rescan)
                 {
                     Debug.Log("[OrX Holo Spawn Check] ERROR - RETRYING SPAWN CHECK ...... ");
-                    CheckIfHoloSpawned(HoloKronName, stageStartCoords, vect, primary, boid);
+                    CheckIfHoloSpawned(HoloKronName, stageStartCoords, vect, primary, Goal);
                 }
                 else
                 {

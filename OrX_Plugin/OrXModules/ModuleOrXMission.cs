@@ -32,7 +32,7 @@ namespace OrX
         public string tech = string.Empty;
 
         [KSPField(isPersistant = true)]
-        public int mCount = 0;
+        public int hkCount = 0;
 
         [KSPField(isPersistant = true)]
         public bool spawned = false;
@@ -57,7 +57,7 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public double longitude = 0;
 
-        public bool hideBoid = false;
+        public bool hideGoal = false;
         public bool setup = false;
         private static float maxfade = 0f;
         private static float maxVis = 1f;
@@ -71,9 +71,9 @@ namespace OrX
         public Vector3d _pos;
 
         public Vector3 UpVect;
-        public bool boid = false;
+        public bool Goal = false;
         public int triggerRange = 10;
-        private bool checking = false;
+        private bool checking = true;
         public bool isLoaded = false;
 
         #endregion
@@ -86,7 +86,7 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight && isLoaded)
             {
-                if (!hideBoid && !this.vessel.isActiveVessel)
+                if (checking && !OrXLog.instance.building && !this.vessel.isActiveVessel)
                 {
                     OrXLog.DrawTextureOnWorldPos(pos, OrXLog.instance.HoloTargetTexture, new Vector2(8, 8));
                 }
@@ -117,13 +117,13 @@ namespace OrX
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            if (isLoaded)
+            if (isLoaded && !OrXHoloKron.instance.buildingMission)
             {
                 if (!this.vessel.isActiveVessel)
                 {
-                    if (boid)
+                    if (Goal)
                     {
-                        if (!hideBoid)
+                        if (!hideGoal)
                         {
                             OrXHoloKron.instance.showTargets = false;
                             double targetDistance = double.MaxValue;
@@ -206,13 +206,17 @@ namespace OrX
                             double _altDiffDeg = _altDiff * OrXTargetDistance.instance.degPerMeter;
                             double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
                             double _targetDistance = Math.Sqrt(altAdded) * OrXTargetDistance.instance.mPerDegree;
-                            Debug.Log("[Module OrX Mission] ==== TARGET DISTANCE: " + targetDistance);
 
                             if (_targetDistance <= 10)
                             {
-                                Debug.Log("[OrX Target Distance - Mission] ==== TARGET DISTANCE: " + targetDistance);
-                                hideBoid = true;
-                                OrXHoloKron.instance.GetNextCoord();
+                                Debug.Log("[OrX Target Distance - " + HoloKronName +  "] ==== DISTANCE: " + targetDistance);
+                                checking = false;
+
+                                if (OrXHoloKron.instance.challengeRunning)
+                                {
+                                    hideGoal = true;
+                                    OrXHoloKron.instance.GetNextCoord();
+                                }
                             }
                         }
                     }
@@ -225,7 +229,7 @@ namespace OrX
                                 if (deploy)
                                 {
                                     deploy = false;
-                                    hideBoid = true;
+                                    hideGoal = true;
                                     Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
                                     OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
                                 }
@@ -251,7 +255,7 @@ namespace OrX
                         }
                     }
 
-                    if (hideBoid && (tLevel == maxfade) && boid)
+                    if (hideGoal && (tLevel == maxfade) && Goal)
                     {
                         this.part.explode();
                     }
@@ -265,34 +269,45 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                this.vessel.IgnoreGForces(240);
-                this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+                if (!Goal)
+                {
+                    this.vessel.IgnoreGForces(240);
+                    this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+                }
+
                 if (isLoaded)
                 {
-                    if (this.vessel != OrXVesselMove.Instance.MovingVessel)
+                    if (!Goal)
                     {
-                        if (hasMoved)
+                        if (this.vessel != OrXVesselMove.Instance.MovingVessel)
                         {
-                            pos = new Vector3d(latitude, longitude, altitude);
-                            hasMoved = false;
+                            if (hasMoved)
+                            {
+                                pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
+                                hasMoved = false;
+                            }
+                            this.vessel.SetPosition(pos, true);
                         }
-                        this.vessel.SetPosition(pos, true);
+                        else
+                        {
+                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
+                            {
+                                hasMoved = true;
+                                latitude = this.vessel.latitude;
+                                longitude = this.vessel.longitude;
+                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 4;
+                            }
+                        }
                     }
                     else
                     {
-                        if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
-                        {
-                            hasMoved = true;
-                            latitude = this.vessel.latitude;
-                            longitude = this.vessel.longitude;
-                            altitude = this.vessel.altitude - this.vessel.radarAltitude + 4;
-                        }
+
                     }
 
-                    if (hideBoid && (tLevel > maxfade) || !hideBoid && (tLevel < maxVis) || triggerHide)
+                    if (hideGoal && (tLevel > maxfade) || !hideGoal && (tLevel < maxVis) || triggerHide)
                     {
                         float delta = Time.deltaTime * rateOfFade;
-                        if (hideBoid && (tLevel > maxfade))
+                        if (hideGoal && (tLevel > maxfade))
                             delta = -delta;
 
                         tLevel += delta;
