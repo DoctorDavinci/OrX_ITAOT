@@ -418,14 +418,14 @@ namespace OrX
 
             if (building || buildingMission)
             {
-                //ResetData();
+                ResetData();
             }
             else
             {
                 if (challengeRunning)
                 {
-                   // challengeRunning = false;
-                   // StopScan(true);
+                   challengeRunning = false;
+                   StopScan(true);
                 }
             }
         }
@@ -619,7 +619,7 @@ namespace OrX
             }
         }
 
-        private Vector3d GetCenterShortTrack()
+        private void GetCenterShortTrack()
         {
             double lat1 = 0;
             double lat2 = double.MaxValue;
@@ -627,7 +627,8 @@ namespace OrX
             double lon2 = double.MaxValue;
             double centerLat = 0;
             double centerLon = 0;
-
+            double latDiff = 0;
+            double lonDiff = 0;
             List<string>.Enumerator _centerCheck = CoordDatabase.GetEnumerator();
             while (_centerCheck.MoveNext())
             {
@@ -658,22 +659,20 @@ namespace OrX
             {
                 if (lat2 <= lat1)
                 {
-                    double latDiff = (lat2 - lat1) / 2;
+                    latDiff = (lat2 - lat1) / 2;
 
                     centerLat = lat1 + latDiff;
                 }
                 else
                 {
+                    latDiff = (lat1 - lat2) / 2;
+
                     if (lat2 >= 0)
                     {
-                        double latDiff = (lat1 - lat2) / 2;
-
                         centerLat = lat2 + latDiff;
                     }
                     else
                     {
-                        double latDiff = (lat1 - lat2) / 2;
-
                         centerLat = lat2 + latDiff;
                     }
                 }
@@ -682,22 +681,20 @@ namespace OrX
             {
                 if (lat2 <= lat1)
                 {
+                    latDiff = (lat1 - lat2) / 2;
+
                     if (lat2 >= 0)
                     {
-                        double latDiff = (lat1 - lat2) / 2;
-
                         centerLat = lat1 - latDiff;
                     }
                     else
                     {
-                        double latDiff = (lat1 - lat2) / 2;
-
                         centerLat = lat2 + latDiff;
                     }
                 }
                 else
                 {
-                    double latDiff = (lat2 - lat1) / 2;
+                    latDiff = (lat2 - lat1) / 2;
 
                     centerLat = lat1 + latDiff;
                 }
@@ -707,22 +704,20 @@ namespace OrX
             {
                 if (lon2 <= lon1)
                 {
-                    double lonDiff = (lon2 - lon1) / 2;
+                    lonDiff = (lon2 - lon1) / 2;
 
                     centerLon = lon1 + lonDiff;
                 }
                 else
                 {
+                    lonDiff = (lon1 - lon2) / 2;
+
                     if (lon2 >= 0)
                     {
-                        double lonDiff = (lon1 - lon2) / 2;
-
                         centerLon = lon2 + lonDiff;
                     }
                     else
                     {
-                        double lonDiff = (lon1 - lon2) / 2;
-
                         centerLon = lon2 + lonDiff;
                     }
                 }
@@ -731,29 +726,35 @@ namespace OrX
             {
                 if (lon2 <= lon1)
                 {
+                    lonDiff = (lon1 - lon2) / 2;
+
                     if (lon2 >= 0)
                     {
-                        double lonDiff = (lon1 - lon2) / 2;
-
                         centerLon = lon1 - lonDiff;
                     }
                     else
                     {
-                        double lonDiff = (lon1 - lon2) / 2;
-
                         centerLon = lon2 + lonDiff;
                     }
                 }
                 else
                 {
-                    double lonDiff = (lon2 - lon1) / 2;
+                    lonDiff = (lon2 - lon1) / 2;
 
                     centerLon = lon1 + lonDiff;
                 }
             }
 
-            Vector3d _center = new Vector3d(centerLat, centerLon, FlightGlobals.ActiveVessel.altitude +10);
-            return _center;
+            boidPos = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
+            Vector3d _center = new Vector3d(centerLat, centerLon, FlightGlobals.ActiveVessel.altitude + 50);
+            FlightGlobals.ActiveVessel.SetPosition(_center, true);
+            OrXSpawnHoloKron.instance.SpawnGates(true, HoloKronName, _center);
+        }
+        Vector3d boidPos;
+        public void GateSpawnComplete()
+        {
+            FlightGlobals.ActiveVessel.SetPosition(boidPos, true);
+            StartCoroutine(ChallengeStartDelay());
         }
         public void HijackAsteroidSpawnTimer(bool hijack)
         {
@@ -834,6 +835,8 @@ namespace OrX
                 _file.AddNode("OrX");
                 _file.Save(hConfigLoc);
             }
+
+            ScreenMsg("Saving " + HoloKronName + " " + hkCount + " ....");
 
             if (addingMission)
             {
@@ -996,20 +999,26 @@ namespace OrX
                                 bool _saveVessel = true;
                                 Debug.Log("[OrX Add Mission] === CHECKING FOR EVA KERBAL ===");
 
-                                List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
-                                while (part.MoveNext())
+                                if (v.Current.rootPart.Modules.Contains<KerbalEVA>())
                                 {
-                                    if (part.Current.Modules.Contains<KerbalEVA>())
-                                    {
-                                        Debug.Log("[OrX Add Mission] === FOUND KERBAL ... SKIPPING ===");
+                                    Debug.Log("[OrX Add Mission] === FOUND KERBAL ... SKIPPING ===");
 
-                                        _saveVessel = false;
-                                        break;
+                                    _saveVessel = false;
+                                    break;
+                                }
+
+                                if (!bdaChallenge)
+                                {
+                                    if (v.Current.vesselName.Contains(HoloKronName + " " + hkCount))
+                                    {
+                                        if (!_saveVessel)
+                                        {
+                                            _saveVessel = true;
+                                        }
                                     }
                                 }
-                                part.Dispose();
 
-                                if (_saveVessel && v.Current.vesselName.Contains(HoloKronName + " " + hkCount))
+                                if (_saveVessel)
                                 {
                                     Debug.Log("[OrX Add Mission] === RANGE CHECK ===");
 
@@ -1096,14 +1105,14 @@ namespace OrX
 
                                     if (v.Current.LandedOrSplashed)
                                     {
-                                        if (_targetDistance <= 8000)
+                                        if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.landed.load)
                                         {
                                             _inRange = true;
                                         }
                                     }
                                     else
                                     {
-                                        if (_targetDistance <= 20000)
+                                        if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.flying.load)
                                         {
                                             _inRange = true;
                                         }
@@ -1570,23 +1579,9 @@ namespace OrX
                         {
                             if (v.Current == null) continue;
                             if (v.Current.packed || !v.Current.loaded) continue;
-                            bool _saveVessel = true;
                             Debug.Log("[OrX Save Config] === CHECKING FOR EVA KERBAL ===");
 
-                            List<Part>.Enumerator part = v.Current.parts.GetEnumerator();
-                            while (part.MoveNext())
-                            {
-                                if (part.Current.Modules.Contains<KerbalEVA>())
-                                {
-                                    Debug.Log("[OrX Save Config] === FOUND KERBAL ... SKIPPING ===");
-
-                                    _saveVessel = false;
-                                    break;
-                                }
-                            }
-                            part.Dispose();
-
-                            if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && !v.Current.rootPart.Modules.Contains<KerbalEVA>() && _saveVessel)
+                            if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && !v.Current.rootPart.Modules.Contains<KerbalEVA>())
                             {
                                 Debug.Log("[OrX Save Config] === RANGE CHECK ===");
 
@@ -1673,14 +1668,14 @@ namespace OrX
 
                                 if (v.Current.LandedOrSplashed)
                                 {
-                                    if (_targetDistance <= 10000)
+                                    if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.landed.load)
                                     {
                                         _inRange = true;
                                     }
                                 }
                                 else
                                 {
-                                    if (_targetDistance <= 20000)
+                                    if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.flying.load)
                                     {
                                         _inRange = true;
                                     }
@@ -2312,7 +2307,7 @@ namespace OrX
                     }
 
                     Debug.Log("[OrX Open HoloKron] === FOUND " + coordCount + " COORDS IN MISSION " + hkCount + " ===");
-
+                    
                     if (CoordDatabase.Count >= 0)
                     {
                         List<string>.Enumerator firstCoords = CoordDatabase.GetEnumerator();
@@ -2328,10 +2323,6 @@ namespace OrX
                                     latMission = double.Parse(data[2]);
                                     altMission = double.Parse(data[3]);
                                     nextLocation = new Vector3d(latMission, latMission, altMission);
-
-
-
-
                                 }
                             }
                             catch (IndexOutOfRangeException e)
@@ -2664,18 +2655,21 @@ namespace OrX
 
         IEnumerator ChallengeStartDelay()
         {
+            yield return new WaitForFixedUpdate();
+            FlightGlobals.ForceSetActiveVessel(triggerVessel);
+            OrXLog.instance.ResetFocusKeys();
             Debug.Log("[OrX Start Mission Delay] === Starting Delay ===");
             GuiEnabledOrXMissions = false;
             challengeRunning = true;
             OrXHCGUIEnabled = false;
             stageStart = true;
             holoOpen = false;
-            while (FlightGlobals.ActiveVessel.srfSpeed <= 0.5f)
+            while (FlightGlobals.ActiveVessel.srfSpeed <= 0.1f)
             {
                 yield return null;
             }
             Debug.Log("[OrX Start Mission Delay] === Player Vessel Speed = " + FlightGlobals.ActiveVessel.srfSpeed + " ===");
-
+            Debug.Log("[OrX Start Mission Delay] === MISSION TIME START: " + TimeSet((float)FlightGlobals.ActiveVessel.missionTime) + " ===");
             Debug.Log("[OrX Start Mission Delay] === Starting Challenge ===");
             StartChallenge();
         }
@@ -2786,6 +2780,10 @@ namespace OrX
                                 // INCLUDE BILL'S BIG BAD BEAVER ETC ??????
 
                                 //GetNextCoord();
+                            }
+                            else
+                            {
+
                             }
                         }
                     }
@@ -6482,9 +6480,16 @@ namespace OrX
                         Debug.Log("[OrX Mission] === NAME ENTERED - STARTING ===");
                         if (!challengeRunning)
                         {
-                            FlightGlobals.ForceSetActiveVessel(triggerVessel);
-                            OrXLog.instance.ResetFocusKeys();
-                            StartCoroutine(ChallengeStartDelay());
+                            if (shortTrackRacing)
+                            {
+                                GetCenterShortTrack();
+                            }
+                            else
+                            {
+                                FlightGlobals.ForceSetActiveVessel(triggerVessel);
+                                OrXLog.instance.ResetFocusKeys();
+                                StartCoroutine(ChallengeStartDelay());
+                            }
                         }
                     }
                     else

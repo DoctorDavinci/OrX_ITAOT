@@ -1,0 +1,214 @@
+ship = Goal
+version = 1.7.3
+description = 
+type = SPH
+size = 19.496315,9.37371635,3.75000262
+steamPublishedFileId = 0
+persistentId = 3647040396
+rot = 0,0,0,0
+missionFlag = Squad/Flags/default
+vesselType = Debris
+OverrideDefault = False,False,False,False
+OverrideActionControl = 0,0,0,0
+OverrideAxisControl = 0,0,0,0
+OverrideGroupNames = ,,,
+PART
+{
+	part = MassiveBooster_4294628994
+	partName = Part
+	persistentId = 3053157622
+	pos = 0.112517133,13.3704834,-0.00669971481
+	attPos = 0,0,0
+	attPos0 = 0.112517133,13.3704834,-0.00669971481
+	rot = 0.5,-0.5,0.5,0.5
+	attRot = 0,0,0.707106769,0.707106769
+	attRot0 = 0.707106769,0,0,0.707106769
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = 0
+	sqor = 0
+	sepI = -1
+	attm = 0
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	link = solidBooster1-1_4294624818
+	link = solidBooster1-1_4294622790
+	attN = top,Null_0_0|7.42915916|0_0|1|0_0|7.42915916|0_0|1|0
+	attN = bottom,Null_0_0|-7.43561602|0_0|-1|0_0|-7.43561602|0_0|-1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = solidBooster1-1_4294624818
+	partName = Part
+	persistentId = 3261450131
+	pos = -8.02025032,8.97048283,-0.00669971481
+	attPos = 7.56979261E-08,1.64674473,3.81389523
+	attPos0 = -7.56979261E-08,6.48602295,0.586105347
+	rot = -2.98023224E-08,-0.707106829,1.49011612E-08,0.707106829
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = -0.707106769,0,5.96046448E-08,0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = 1
+	sqor = 0
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	link = adapterMk3-Size2_4294587478
+	srfN = srfAttach,MassiveBooster_4294628994,MassiveSRBCollider
+	attN = bottom,adapterMk3-Size2_4294587478_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
+	attN = top,Null_0_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+
+}
+PART
+{
+	part = solidBooster1-1_4294622790
+	partName = Part
+	persistentId = 4169776882
+	pos = 8.22846317,8.82657814,-0.00669971481
+	attPos = -3.78488494E-08,-2.38323879,3.95050478
+	attPos0 = 3.78488494E-08,-5.73270702,0.593400002
+	rot = 5.96046448E-08,-0.707106769,0,0.707106829
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = -0.707106769,0,-5.96046448E-08,0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = 2
+	sqor = 0
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	link = adapterMk3-Size2_4294589972
+	srfN = srfAttach,MassiveBooster_4294628994,MassiveSRBCollider
+	attN = bottom,adapterMk3-Size2_4294589972_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
+	attN = top,Null_0_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+
+}
+PART
+{
+	part = adapterMk3-Size2_4294589972
+	partName = Part
+	persistentId = 3577419624
+	pos = 8.22846222,6.62657833,-0.00669971481
+	attPos = -3.02582009E-07,3.58961535,7.15256192E-07
+	attPos0 = 4.88028036E-07,-5.78961515,4.76836703E-07
+	rot = 0,0,0,1
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = -5.96046448E-08,0.707106769,0,0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 0
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	attN = top,solidBooster1-1_4294622790_0|1.875|0_0|1|0_0|1.875|0_0|1|0
+	attN = bottom,Null_0_0|-1.875|0_0|-1|0_0|-1.875|0_0|-1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+
+}
+PART
+{
+	part = adapterMk3-Size2_4294587478
+	partName = Part
+	persistentId = 3334438649
+	pos = -8.02025032,6.77048206,-0.00669971481
+	attPos = 3.02581952E-07,3.58961439,-7.15255169E-07
+	attPos0 = -4.88028036E-07,-5.78961468,4.76836703E-07
+	rot = 0,0,0,1.00000012
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = 0,0.707106829,-5.96046448E-08,0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 0
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	attN = top,solidBooster1-1_4294624818_0|1.875|0_0|1|0_0|1.875|0_0|1|0
+	attN = bottom,Null_0_0|-1.875|0_0|-1|0_0|-1.875|0_0|-1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+
+}

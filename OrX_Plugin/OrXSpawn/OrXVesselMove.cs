@@ -78,6 +78,20 @@ namespace OrX.spawn
         {
             if (_moving && MovingVessel == OrXHoloKron.instance._HoloKron)
             {
+                int circleRes = 24;
+
+                Vector3[] positions = new Vector3[circleRes + 3];
+                for (int i = 0; i < circleRes; i++)
+                {
+                    positions[i] = GetBoundPoint(i, circleRes, 1);
+                }
+                positions[circleRes] = GetBoundPoint(0, circleRes, 1);
+                positions[circleRes + 1] = MovingVessel.CoM;
+                positions[circleRes + 2] = MovingVessel.CoM + (MoveHeight * -_up);
+
+                _debugLr.positionCount = circleRes + 3;
+                _debugLr.SetPositions(positions);
+
                 if (Input.GetKeyDown(KeyCode.Tab))
                 {
                     if (MoveHeight <= 11)
@@ -341,20 +355,6 @@ namespace OrX.spawn
                     _startingUp = _up;
                 }
             }
-
-            int circleRes = 24;
-
-            Vector3[] positions = new Vector3[circleRes + 3];
-            for (int i = 0; i < circleRes; i++)
-            {
-                positions[i] = GetBoundPoint(i, circleRes, 1);
-            }
-            positions[circleRes] = GetBoundPoint(0, circleRes, 1);
-            positions[circleRes + 1] = MovingVessel.CoM;
-            positions[circleRes + 2] = MovingVessel.CoM + (MoveHeight * -_up);
-
-            _debugLr.positionCount = circleRes + 3;
-            _debugLr.SetPositions(positions);
             MovingVessel.SetWorldVelocity(Vector3d.zero);
         }
 

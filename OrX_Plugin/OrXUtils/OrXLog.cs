@@ -242,13 +242,13 @@ namespace OrX
 
         public void AddWaypoint(bool challenge, string HoloKronName, Vector3 nextLocation)
         {
-            System.Random r = new System.Random();
             waypointColor = new System.Random().Next(1,int.MaxValue) * _rColors.Count();
             currentWaypoint = new Waypoint();
             currentWaypoint.id = "marker";
             currentWaypoint.seed = _rColors[waypointColor];
             currentWaypoint.name = HoloKronName;
             currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
+            currentWaypoint.longitude = nextLocation.y;
             currentWaypoint.longitude = nextLocation.y;
             currentWaypoint.latitude = nextLocation.x;
             currentWaypoint.altitude = nextLocation.z;

@@ -124,34 +124,24 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (!Goal)
-                {
-                    this.vessel.IgnoreGForces(240);
-                    this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-                }
+                this.vessel.IgnoreGForces(240);
+                this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
 
                 if (isLoaded)
                 {
-                    if (!Goal)
+                    if (this.vessel != OrXVesselMove.Instance.MovingVessel)
                     {
-                        if (this.vessel != OrXVesselMove.Instance.MovingVessel)
-                        {
-                            this.vessel.SetPosition(pos, true);
-                        }
-                        else
-                        {
-                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
-                            {
-                                latitude = this.vessel.latitude;
-                                longitude = this.vessel.longitude;
-                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
-                                pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
-                            }
-                        }
+                        this.vessel.SetPosition(pos, true);
                     }
                     else
                     {
-
+                        if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
+                        {
+                            latitude = this.vessel.latitude;
+                            longitude = this.vessel.longitude;
+                            altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                            pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
+                        }
                     }
 
                     if (hideGoal && (tLevel > maxfade) || !hideGoal && (tLevel < maxVis) || triggerHide)

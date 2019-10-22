@@ -64,7 +64,7 @@ namespace OrXWind
         private void Start()
         {
             _windowRect = new Rect(Screen.width - (WindowWidth * 1.5f), 100, WindowWidth, _windowHeight);
-            GameEvents.onHideUI.Add(DisableGui);
+            //GameEvents.onHideUI.Add(DisableGui);
             AddToolbarButton();
             _wi = windIntensity;
             teaseDelay = 20;
@@ -85,31 +85,33 @@ namespace OrXWind
 
         private void ToggleWind()
         {
-            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is experimental .....");
-            
-            if (enableWind)
-            {
-                blowing = false;
-                enableWind = false;
-                WindDirectionIndicator.instance.GuiEnabledWindDI = false;
-            }
-            else
-            {
-                Debug.Log("[OrX W[ind/S]] ... Setting up weather");
-                enableWind = true;
+            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable .....");
+            OrX.OrXHoloKron.instance.ScreenMsg("Please check back next update .....");
 
-                if (random360)
-                {
-                    windDirection = UnityEngine.Random.onUnitSphere; 
-                    originalWindDirection = windDirection;
-                }
-                else
-                {
-                    manual = false;
-                }
+            /*
+                        if (enableWind)
+                        {
+                            blowing = false;
+                            enableWind = false;
+                            WindDirectionIndicator.instance.GuiEnabledWindDI = false;
+                        }
+                        else
+                        {
+                            Debug.Log("[OrX W[ind/S]] ... Setting up weather");
+                            enableWind = true;
 
-                AddModule();
-            }
+                            if (random360)
+                            {
+                                windDirection = UnityEngine.Random.onUnitSphere; 
+                                originalWindDirection = windDirection;
+                            }
+                            else
+                            {
+                                manual = false;
+                            }
+
+                            AddModule();
+                        }*/
         }
 
         private void AddModule()
