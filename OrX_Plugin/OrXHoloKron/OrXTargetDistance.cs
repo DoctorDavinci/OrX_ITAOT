@@ -37,7 +37,10 @@ namespace OrX
 
         public void TargetDistance(bool primary, bool b, bool Goal, bool checking, Vector3d missionCoords)
         {
-            StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, "", missionCoords));
+            if (!OrXHoloKron.instance.buildingMission)
+            {
+                StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, "", missionCoords));
+            }
         }
         IEnumerator CheckTargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
         {
@@ -330,7 +333,7 @@ namespace OrX
 
                     targetDistance = _targetDistance;
 
-                    if (_targetDistance <= 2000)
+                    if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.landed.load * 0.9)
                     {
                         Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
 
@@ -339,7 +342,6 @@ namespace OrX
                         OrXHoloKron.instance.OrXHCGUIEnabled = false;
                         OrXHoloKron.instance.checking = false;
                         CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
-
                     }
                     else
                     {
@@ -512,12 +514,12 @@ namespace OrX
                 Debug.Log("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
                 if (primary)
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, "");
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, OrXHoloKron.instance.missionType);
                 }
                 else
                 {
-                    OrXHoloKron.instance.OrXHCGUIEnabled = false;
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, "");
+                    //OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.missionType);
                 }
             }
             else

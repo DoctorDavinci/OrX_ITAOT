@@ -389,41 +389,16 @@ namespace OrX
                     spawnHoloKron = false;
                     if (this.part != this.vessel.rootPart)
                     {
-                        double height = 0;
-                        bool craftFound = false;
-                        List<string> craftFiles = new List<string>(Directory.GetFiles(UrlDir.ApplicationRootPath + "saves/" + HighLogic.SaveFolder + "/Ships/", "*.craft", SearchOption.AllDirectories));
-                        if (craftFiles != null)
-                        {
-                            List<string>.Enumerator craft = craftFiles.GetEnumerator();
-                            while (craft.MoveNext())
-                            {
-                                ConfigNode craftFile = ConfigNode.Load(craft.Current);
-                                if (craftFile.GetValue("ship") == this.vessel.vesselName)
-                                {
-                                    string size = craftFile.GetValue("size");
-                                    string[] measurements = size.Split(new char[] { ',' });
-                                    height = double.Parse(measurements[1]);
-                                    craftFound = true;
-                                    break;
-                                }
-                            }
-                            craft.Dispose();
-
-                            if (craftFound)
-                            {
-                                OrXHoloKron.instance.SpawnByOrX(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude)
-                                    + FlightGlobals.ActiveVessel.transform.up * (((float)height / 2) + 1));
-                            }
-                            else
-                            {
-                                ScreenMsg("Unable to spawn HoloKron ... Please get out of your chair");
-                                Debug.Log("[Module OrX] === ACTIVE CRAFT FILE NOT FOUND IN SAVE FOLDER ... UNABLE TO SPAWN HOLOKRON ===");
-                            }
-                        }
+                        ScreenMsg("Unable to spawn HoloKron ... Please get out of your chair");
                     }
                     else
                     {
                         OrXHoloKron.instance.SpawnByOrX(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
+                        if (this.vessel.Splashed)
+                        {
+                            holdingDepth = false;
+                            holdDepth = true;
+                        }
                     }
                 }
             }

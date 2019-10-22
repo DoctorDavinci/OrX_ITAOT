@@ -72,9 +72,16 @@ namespace OrX
 
         public Vector3 UpVect;
         public bool Goal = false;
+        public bool opened = false;
         public int triggerRange = 10;
-        private bool checking = true;
         public bool isLoaded = false;
+        public int stage = 0;
+
+        public bool triggered = false;
+        double _latDiff = 0;
+        double _lonDiff = 0;
+        double _altDiff = 0;
+
 
         #endregion
 
@@ -86,9 +93,9 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight && isLoaded)
             {
-                if (checking && !OrXLog.instance.building && !this.vessel.isActiveVessel)
+                if (!opened && !OrXHoloKron.instance.buildingMission && !this.vessel.isActiveVessel)
                 {
-                    OrXLog.DrawTextureOnWorldPos(pos, OrXLog.instance.HoloTargetTexture, new Vector2(8, 8));
+                    OrXLog.DrawRecticle(pos, OrXLog.instance.HoloTargetTexture, new Vector2(32, 32));
                 }
             }
         }
@@ -113,7 +120,85 @@ namespace OrX
                 }
             }
         }
+        public void Update()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (!Goal)
+                {
+                    this.vessel.IgnoreGForces(240);
+                    this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+                }
 
+                if (isLoaded)
+                {
+                    if (!Goal)
+                    {
+                        if (this.vessel != OrXVesselMove.Instance.MovingVessel)
+                        {
+                            this.vessel.SetPosition(pos, true);
+                        }
+                        else
+                        {
+                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
+                            {
+                                latitude = this.vessel.latitude;
+                                longitude = this.vessel.longitude;
+                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                                pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
+                            }
+                        }
+                    }
+                    else
+                    {
+
+                    }
+
+                    if (hideGoal && (tLevel > maxfade) || !hideGoal && (tLevel < maxVis) || triggerHide)
+                    {
+                        float delta = Time.deltaTime * rateOfFade;
+                        if (hideGoal && (tLevel > maxfade))
+                            delta = -delta;
+
+                        tLevel += delta;
+                        tLevel = Mathf.Clamp(tLevel, maxfade, maxVis);
+                        this.part.SetOpacity(tLevel);
+                        int i;
+
+                        MeshRenderer[] MRs = this.part.GetComponentsInChildren<MeshRenderer>();
+                        for (i = 0; i < MRs.GetLength(0); i++)
+                            MRs[i].enabled = tLevel > rLevel;
+
+                        SkinnedMeshRenderer[] SMRs = this.part.GetComponentsInChildren<SkinnedMeshRenderer>();
+                        for (i = 0; i < SMRs.GetLength(0); i++)
+                            SMRs[i].enabled = tLevel > rLevel;
+
+                        if (tLevel > shadowCutoff != currentShadowState)
+                        {
+                            for (i = 0; i < MRs.GetLength(0); i++)
+                            {
+                                if (tLevel > shadowCutoff)
+                                    MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                                else
+                                    MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                            }
+                            for (i = 0; i < SMRs.GetLength(0); i++)
+                            {
+                                if (tLevel > shadowCutoff)
+                                    SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                                else
+                                    SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                            }
+                            currentShadowState = tLevel > shadowCutoff;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
+            }
+        }
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
@@ -209,14 +294,9 @@ namespace OrX
 
                             if (_targetDistance <= 10)
                             {
-                                Debug.Log("[OrX Target Distance - " + HoloKronName +  "] ==== DISTANCE: " + targetDistance);
-                                checking = false;
-
-                                if (OrXHoloKron.instance.challengeRunning)
-                                {
-                                    hideGoal = true;
-                                    OrXHoloKron.instance.GetNextCoord();
-                                }
+                                hideGoal = true;
+                                Debug.Log("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
+                                OrXHoloKron.instance.GetNextCoord();
                             }
                         }
                     }
@@ -224,19 +304,28 @@ namespace OrX
                     {
                         if (FlightGlobals.ActiveVessel.isEVA)
                         {
-                            if (OrXHoloKron.instance.Scuba)
+                            if (challengeType == "SCUBA KERB")
                             {
-                                if (deploy)
+                                if (deploy && !OrXSpawnHoloKron.instance.spawning)
                                 {
-                                    deploy = false;
-                                    hideGoal = true;
-                                    Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
-                                    OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
+                                    if (FlightGlobals.ActiveVessel.Splashed)
+                                    {
+                                        deploy = false;
+                                        opened = true;
+                                        hideGoal = true;
+                                        Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
+                                        OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
+                                    }
+                                    else
+                                    {
+                                        ScreenMessages.PostScreenMessage(new ScreenMessage("Get into the water to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
+
+                                    }
                                 }
                             }
                             else
                             {
-                                if (deploy)
+                                if (deploy && !OrXSpawnHoloKron.instance.spawning)
                                 {
                                     deploy = false;
                                     ScreenMessages.PostScreenMessage(new ScreenMessage("Get into a vehicle to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
@@ -245,8 +334,9 @@ namespace OrX
                         }
                         else
                         {
-                            if (deploy)
+                            if (deploy && !OrXSpawnHoloKron.instance.spawning)
                             {
+                                opened = true;
                                 deploy = false;
                                 Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
                                 OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
@@ -262,93 +352,5 @@ namespace OrX
                 }
             }
         }
-
-        bool hasMoved = false;
-
-        public void Update()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                if (!Goal)
-                {
-                    this.vessel.IgnoreGForces(240);
-                    this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-                }
-
-                if (isLoaded)
-                {
-                    if (!Goal)
-                    {
-                        if (this.vessel != OrXVesselMove.Instance.MovingVessel)
-                        {
-                            if (hasMoved)
-                            {
-                                pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
-                                hasMoved = false;
-                            }
-                            this.vessel.SetPosition(pos, true);
-                        }
-                        else
-                        {
-                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
-                            {
-                                hasMoved = true;
-                                latitude = this.vessel.latitude;
-                                longitude = this.vessel.longitude;
-                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 4;
-                            }
-                        }
-                    }
-                    else
-                    {
-
-                    }
-
-                    if (hideGoal && (tLevel > maxfade) || !hideGoal && (tLevel < maxVis) || triggerHide)
-                    {
-                        float delta = Time.deltaTime * rateOfFade;
-                        if (hideGoal && (tLevel > maxfade))
-                            delta = -delta;
-
-                        tLevel += delta;
-                        tLevel = Mathf.Clamp(tLevel, maxfade, maxVis);
-                        this.part.SetOpacity(tLevel);
-                        int i;
-
-                        MeshRenderer[] MRs = this.part.GetComponentsInChildren<MeshRenderer>();
-                        for (i = 0; i < MRs.GetLength(0); i++)
-                            MRs[i].enabled = tLevel > rLevel;
-
-                        SkinnedMeshRenderer[] SMRs = this.part.GetComponentsInChildren<SkinnedMeshRenderer>();
-                        for (i = 0; i < SMRs.GetLength(0); i++)
-                            SMRs[i].enabled = tLevel > rLevel;
-
-                        if (tLevel > shadowCutoff != currentShadowState)
-                        {
-                            for (i = 0; i < MRs.GetLength(0); i++)
-                            {
-                                if (tLevel > shadowCutoff)
-                                    MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                                else
-                                    MRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                            }
-                            for (i = 0; i < SMRs.GetLength(0); i++)
-                            {
-                                if (tLevel > shadowCutoff)
-                                    SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                                else
-                                    SMRs[i].shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                            }
-                            currentShadowState = tLevel > shadowCutoff;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                this.part.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-            }
-        }
-
     }
 }

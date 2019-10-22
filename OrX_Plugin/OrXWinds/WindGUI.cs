@@ -39,7 +39,7 @@ namespace OrXWind
         public string _heading = "";
         public int variationCount = 0;
         public float teaseDelay = 0;
-
+        private float _headingSlider = 0;
         public float heading = 0;
         private bool setDirection = false;
         private bool manual = false;
@@ -110,7 +110,6 @@ namespace OrXWind
 
                 AddModule();
             }
-            
         }
 
         private void AddModule()
@@ -219,12 +218,11 @@ namespace OrXWind
                 if (setDirection)
                 {
                     setDirection = false;
-                    heading = float.Parse(_heading);
+                    heading = _headingSlider;
 
                     if (heading >= 359 || heading <= 0)
                     {
                         heading = 0;
-                        _heading = "0";
                         windDirection = NorthVect;
                         originalWindDirection = windDirection;
                     }
@@ -245,18 +243,18 @@ namespace OrXWind
                 Debug.Log("[OrX W[ind/S]] ... Tease Delay = " + teaseDelay);
 
                 // get the current vessel position ... create clean new vector
-                currentPos = new Vector3d(v.latitude, v.longitude, v.altitude);
+                currentPos = new Vector3((float)v.latitude, (float)v.longitude, (float)v.altitude);
 
                 // declare a virtual position to rotate around the active vessel based off of coords
-                Vector3d virtualPos = new Vector3d();
-
+                Vector3 virtualPos = new Vector3();
+                
                 // get how many heading in latitude difference active vessel is in relation to equator
                 // 0.0055555556f is approx 1 degree
-                degOffset = v.latitude * 0.0055555556f;
+                degOffset = (float)v.latitude * 0.0055555556f;
 
-                if (currentPos.x >= 0) // if in the northern hemisphere
+                if (1 / currentPos.x >= 0) // if in the northern hemisphere
                 {
-                    if (currentPos.x <= 0.6)
+                    if (1 / currentPos.x <= 0.6)
                     {
                         Debug.Log("[OrX W[ind/S]] ... TropoSphere = NorthWesterlies");
 
@@ -269,23 +267,21 @@ namespace OrXWind
                         TropoSphere = NorthTrades;
                     }
 
-                    if (currentPos.x <= 1 - (0.0055555556f * 3)) // if more than 3 degree from the north pole
+                    if (1 / currentPos.x <= 1 - (0.0055555556f * 3)) // if more than 3 degree from the north pole
                     {
-                        if (currentPos.y >= 0) // if in eastern quadrant
+                        if (1 / currentPos.y >= 0) // if in eastern quadrant
                         {
-                            if (currentPos.y <= 1 - (0.0055555556f / 2)) // if not more than half a degree from the eastern most point in coords
+                            if (1 / currentPos.y <= 1 - (0.0055555556f / 2)) // if not more than half a degree from the eastern most point in coords
                             {
-                                virtualPos = new Vector3d(v.latitude + 0.01111111111,
-                   v.longitude + 0.02222222222 - (0.0002469136 * degOffset), v.altitude);
+                                virtualPos = new Vector3((float)v.latitude + 0.01111111111f,(float)v.longitude + 0.02222222222f - (0.0002469136f * degOffset), (float)v.altitude);
 
                             }
                         }
                         else
                         {
-                            if (currentPos.y >= -1 + (0.0055555556f / 2)) // if more than half a degree from the western most point in coords
+                            if (1 / currentPos.y >= -1 + (0.0055555556f / 2)) // if more than half a degree from the western most point in coords
                             {
-                                virtualPos = new Vector3d(v.latitude + 0.01111111111,
-                   v.longitude - 0.02222222222 + (0.0002469136 * degOffset), v.altitude);
+                                virtualPos = new Vector3((float)v.latitude + 0.01111111111f, (float)v.longitude - 0.02222222222f + (0.0002469136f * degOffset), (float)v.altitude);
 
                             }
                         }
@@ -300,7 +296,7 @@ namespace OrXWind
                 }
                 else // if in southern hemisphere
                 {
-                    if (currentPos.x >= -0.6)
+                    if (1 / currentPos.x >= -0.6)
                     {
                         Debug.Log("[OrX W[ind/S]] ... TropoSphere = SouthWesterlies");
 
@@ -313,14 +309,13 @@ namespace OrXWind
                         TropoSphere = SouthTrades;
                     }
 
-                    if (currentPos.x >= -1 + (0.0055555556f * 3)) // if more than 3 degree from the south pole
+                    if (1 / currentPos.x >= -1 + (0.0055555556f * 3)) // if more than 3 degree from the south pole
                     {
-                        if (currentPos.y >= 0) // if in eastern quadrant
+                        if (1 / currentPos.y >= 0) // if in eastern quadrant
                         {
-                            if (currentPos.y <= 1 - (0.0055555556f / 2)) // if not more than half a degree from the eastern most point in coords
+                            if (1 / currentPos.y <= 1 - (0.0055555556f / 2)) // if not more than half a degree from the eastern most point in coords
                             {
-                                virtualPos = new Vector3d(v.latitude - 0.01111111111,
-                   v.longitude + 0.02222222222 - (0.0002469136 * degOffset), v.altitude);
+                                virtualPos = new Vector3((float)v.latitude - 0.01111111111f, (float)v.longitude + 0.02222222222f - (0.0002469136f * degOffset), (float)v.altitude);
 
                             }
                         }
@@ -328,8 +323,7 @@ namespace OrXWind
                         {
                             if (currentPos.y >= -1 + (0.0055555556f / 2)) // if more than half a degree from the western most point in coords
                             {
-                                virtualPos = new Vector3d(v.latitude - 0.01111111111,
-                   v.longitude - 0.02222222222 + (0.0002469136 * degOffset),  v.altitude);
+                                virtualPos = new Vector3((float)v.latitude - 0.01111111111f, (float)v.longitude - 0.02222222222f + (0.0002469136f * degOffset), (float)v.altitude);
 
                             }
                         }
@@ -597,16 +591,16 @@ namespace OrXWind
         // IF WIND BLOWING EAST ACROSS HILLY TERRAIN CREATE UPDRAFTS
 
 
-        Vector3d NorthWesterlies;
-        Vector3d SouthWesterlies;
-        Vector3d NorthTrades;
-        Vector3d SouthTrades;
-        Vector3d GeneralWindDirection;
-        Vector3d currentPos;
-        Vector3d MesoSphere;
-        Vector3d TropoSphere;
+        Vector3 NorthWesterlies;
+        Vector3 SouthWesterlies;
+        Vector3 NorthTrades;
+        Vector3 SouthTrades;
+        Vector3 GeneralWindDirection;
+        Vector3 currentPos;
+        Vector3 MesoSphere;
+        Vector3 TropoSphere;
 
-        double degOffset = 0;
+        float degOffset = 0;
 
         /// /////////////////////////////////////////////////////////////////////////////
 
@@ -668,9 +662,9 @@ namespace OrXWind
         }
         public void EnableGui()
         {
-            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
+            //OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
 
-            /*
+            
             UpVect = (FlightGlobals.ActiveVessel.transform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized;
             EastVect = FlightGlobals.ActiveVessel.mainBody.getRFrmVel(FlightGlobals.ActiveVessel.CoM).normalized;
             NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
@@ -682,16 +676,16 @@ namespace OrXWind
             GuiEnabled = true;
             guiOpen = true;
             Debug.Log("[Wind]: Showing GUI");
-            */
+            
         }
         public void DisableGui()
         {
-            OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
-            /*
+            //OrX.OrXHoloKron.instance.ScreenMsg("W[ind/S] is currently unavailable ..... Please check back next update");
+           
             guiOpen = false;
             GuiEnabled = false;
             Debug.Log("[Wind]: Hiding GUI");
-            */
+            
         }
         private void DrawTitle(float line)
         {
@@ -892,7 +886,7 @@ namespace OrXWind
             GUI.Label(new Rect(8, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "0", Style);
             GUI.Label(new Rect(105, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "|", Style);
             GUI.Label(new Rect(176, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "359", Style);
-            heading = GUI.HorizontalSlider(saveRect, heading, 0, 359);
+            _headingSlider = GUI.HorizontalSlider(saveRect, _headingSlider, 0, 359);
         }
         private void DrawWindSetDirection(float line)
         {

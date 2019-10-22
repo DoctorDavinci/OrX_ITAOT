@@ -40,7 +40,6 @@ namespace OrXWind
                             Debug.Log("[OrX Wind] SAIL ... " + this.part.name + " - Deflection Lift Coefficient: " + dlc);
                             float speed = WindGUI.instance._wi * ((1 / Vector3.Angle(WindGUI.instance.windDirection, this.part.transform.forward) * dlc));
                             Debug.Log("[OrX Wind] SAIL ... speed: " + speed);
-
                         }
                         setup = true;
                     }
@@ -53,7 +52,8 @@ namespace OrXWind
                         }
                         else 
                         {
-                            float speed = WindGUI.instance._wi * ((1 / Vector3.Angle(WindGUI.instance.windDirection, this.part.transform.forward))); //* dlc)); 
+                            float speed = WindGUI.instance._wi; //* ((1 / Vector3.Angle(WindGUI.instance.windDirection, this.part.transform.forward))); //* dlc)); 
+
                             rigidBody = this.part.GetComponent<Rigidbody>();
                             rigidBody.AddForce((WindGUI.instance.windDirection - this.part.transform.forward).normalized * speed);
                         }

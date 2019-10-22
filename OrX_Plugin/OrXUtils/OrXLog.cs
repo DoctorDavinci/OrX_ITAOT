@@ -25,7 +25,6 @@ namespace OrX
             ownedCraft,
             None
         }
-
         public enum AddedTech
         {
             addedTech,
@@ -75,7 +74,14 @@ namespace OrX
         public bool pyramids = false;
         public bool runway = false;
         public bool beach = false;
-
+        private string _version = "1.7.3";
+        Waypoint currentWaypoint;
+        public static int[] _rColors = new int[] { 669, 212, 1212, 359, 5, 1287 };
+        int waypointColor = 0;
+        private static VesselRanges _vesselRanges;
+        private static VesselRanges.Situation _vesselLanded;
+        private static VesselRanges.Situation _vesselFlying;
+        private static VesselRanges.Situation _vesselOther;
 
         private void Awake()
         {
@@ -84,122 +90,62 @@ namespace OrX
         }
         private void Start()
         {
-            owned = new List<string>();
-            waypoints = new List<Waypoint>();
-            TechDatabase = new Dictionary<AddedTech, List<string>>();
-            TechDatabase.Add(AddedTech.addedTech, new List<string>());
-
-            if (TechDatabase != null)
+            _version = Application.version;
+            Debug.Log("[OrX Log] === Application Version : " + Application.version + " ===");
+            if (_version == Application.version)
             {
-                UnlockedTech = new Dictionary<AddedTech, List<string>>();
-                UnlockedTech.Add(AddedTech.addedTech, new List<string>());
-            }
+                owned = new List<string>();
+                waypoints = new List<Waypoint>();
+                TechDatabase = new Dictionary<AddedTech, List<string>>();
+                TechDatabase.Add(AddedTech.addedTech, new List<string>());
 
-            CraftDatabase = new Dictionary<AddedVessels, List<Guid>>();
-            CraftDatabase.Add(AddedVessels.ownedCraft, new List<Guid>());
+                if (TechDatabase != null)
+                {
+                    UnlockedTech = new Dictionary<AddedTech, List<string>>();
+                    UnlockedTech.Add(AddedTech.addedTech, new List<string>());
+                }
 
-            if (CraftDatabase != null)
-            {
                 CraftDatabase = new Dictionary<AddedVessels, List<Guid>>();
                 CraftDatabase.Add(AddedVessels.ownedCraft, new List<Guid>());
+
+                if (CraftDatabase != null)
+                {
+                    CraftDatabase = new Dictionary<AddedVessels, List<Guid>>();
+                    CraftDatabase.Add(AddedVessels.ownedCraft, new List<Guid>());
+                }
+
+                GameEvents.OnFlightGlobalsReady.Add(onFlightGlobalsReady);
+                GameEvents.onVesselChange.Add(onVesselChange);
+                GameEvents.onCrewOnEva.Add(onEVA);
+                GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
+                GameEvents.onVesselLoaded.Add(onVesselLoaded);
+
+                CheckUpgrades();
             }
-
-            GameEvents.OnFlightGlobalsReady.Add(onFlightGlobalsReady);
-            GameEvents.onVesselChange.Add(onVesselChange);
-            GameEvents.onCrewOnEva.Add(onEVA);
-            GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
-            CheckUpgrades();
+            else
+            {
+                Debug.Log("[OrX Log] === WRONG KSP VERSION ===");
+            }
         }
-        
 
+        private void onVesselLoaded(Vessel data)
+        {
+            SetRange(data, 8000);
+        }
         private void onCrewBoarding(GameEvents.FromToAction<Part, Part> data)
         {
             AddToVesselList(data.to.vessel);
         }
-
         private void onFlightGlobalsReady(bool data)
         {
             ImportVesselList();
+            SetRange(FlightGlobals.ActiveVessel, 8000);
+
         }
-
-        Waypoint currentWaypoint;
-        public static int[] _rColors = new int[]{669, 212, 1212, 359, 5, 1287};
-        int waypointColor = 0;
-
-        private Texture2D redDot;
-        public Texture2D HoloTargetTexture
-        {
-            get { return redDot ? redDot : redDot = GameDatabase.Instance.GetTexture("OrX/Plugin/HoloTarget", false); }
-        }
-        public static Camera GetMainCamera()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                return FlightCamera.fetch.mainCamera;
-            }
-            else
-            {
-                return Camera.main;
-            }
-        }
-        public static void DrawTextureOnWorldPos(Vector3 loc, Texture texture, Vector2 size)
-        {
-            Vector3 screenPos = GetMainCamera().WorldToViewportPoint(loc);
-            if (screenPos.z < 0) return; //dont draw if point is behind camera
-            if (screenPos.x != Mathf.Clamp01(screenPos.x)) return; //dont draw if off screen
-            if (screenPos.y != Mathf.Clamp01(screenPos.y)) return;
-            float xPos = screenPos.x * Screen.width - (0.5f * size.x);
-            float yPos = (1 - screenPos.y) * Screen.height - (0.5f * size.y);
-            Rect iconRect = new Rect(xPos, yPos, size.x, size.y);
-            GUI.DrawTexture(iconRect, texture);
-        }
-
-        public void AddWaypoint(bool challenge, string HoloKronName, Vector3 nextLocation)
-        {
-            System.Random r = new System.Random();
-            waypointColor = (int)(r.NextDouble() * _rColors.Count());
-            currentWaypoint = new Waypoint();
-            currentWaypoint.id = "marker";
-            currentWaypoint.seed = _rColors[waypointColor];
-            currentWaypoint.name = HoloKronName;
-            currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
-            currentWaypoint.longitude = nextLocation.y;
-            currentWaypoint.latitude = nextLocation.x;
-            currentWaypoint.altitude = nextLocation.z;
-            currentWaypoint.height = nextLocation.z + 1;
-
-            //currentWaypoint.iconSize = 1;
-            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + HoloKronName + " ===");
-            waypoints.Add(currentWaypoint);
-            ScenarioCustomWaypoints.AddWaypoint(currentWaypoint);
-        }
-
-        public void RemoveWaypoint(string HoloKronName, Vector3 nextLocation)
-        {
-            List<Waypoint>.Enumerator w = waypoints.GetEnumerator();
-            while (w.MoveNext())
-            {
-                if (w.Current != null)
-                {
-                    if (w.Current.name == HoloKronName || w.Current.FullName == HoloKronName)
-                    {
-                        Debug.Log("[OrX Target Manager] === REMOVING WAYPOINT FOR " + w.Current.name + ", " + w.Current.FullName + " ===");
-
-                        waypoints.Remove(w.Current);
-                        ScenarioCustomWaypoints.RemoveWaypoint(w.Current);
-                    }
-                    else
-                    {
-                        Debug.Log("[OrX Target Manager] === " + w.Current.name + " NOT FOUND ===");
-                    }
-                }
-            }
-        }
-
-        #region Checks
-
         public void onVesselChange(Vessel data)
         {
+            SetRange(data, 8000);
+
             if (OrXHoloKron.instance.buildingMission)
             {
 
@@ -225,7 +171,6 @@ namespace OrX
                 }
             }
         }
-
         private void onEVA(GameEvents.FromToAction<Part, Part> data)
         {
             if (!FlightGlobals.ActiveVessel.packed && !FlightGlobals.ActiveVessel.HoldPhysics)
@@ -242,6 +187,101 @@ namespace OrX
             {
             }
         }
+
+        public void SetRange(Vessel v, float _range)
+        {
+            _vesselLanded = new VesselRanges.Situation(_range, _range, _range, _range);
+            _vesselFlying = new VesselRanges.Situation(_range * 4, _range * 4, _range * 4, _range * 4);
+            _vesselOther = new VesselRanges.Situation(_range * 8, _range * 8, _range * 8, _range * 8);
+
+            _vesselRanges = new VesselRanges
+            {
+                escaping = _vesselOther,
+                flying = _vesselFlying,
+                landed = _vesselLanded,
+                orbit = _vesselOther,
+                prelaunch = _vesselLanded,
+                splashed = _vesselLanded,
+                subOrbital = _vesselOther
+            };
+
+            if (v.vesselRanges.landed.load <= _range)
+            {
+                Debug.Log("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
+                v.vesselRanges = new VesselRanges(_vesselRanges);
+            }
+        }
+
+        private Texture2D redDot;
+        public Texture2D HoloTargetTexture
+        {
+            get { return redDot ? redDot : redDot = GameDatabase.Instance.GetTexture("OrX/Plugin/HoloTarget", false); }
+        }
+        public static Camera GetMainCamera()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                return FlightCamera.fetch.mainCamera;
+            }
+            else
+            {
+                return Camera.main;
+            }
+        }
+        public static void DrawRecticle(Vector3 loc, Texture texture, Vector2 size)
+        {
+            Vector3 sPos = GetMainCamera().WorldToViewportPoint(loc);
+            if (sPos.z < 0) return; //dont draw if point is behind camera
+            if (sPos.x != Mathf.Clamp01(sPos.x)) return; //dont draw if off screen
+            if (sPos.y != Mathf.Clamp01(sPos.y)) return;
+            float xPos = sPos.x * Screen.width - (0.5f * size.x);
+            float yPos = (1 - sPos.y) * Screen.height - (0.5f * size.y);
+            Rect iconRect = new Rect(xPos, yPos, size.x, size.y);
+            GUI.DrawTexture(iconRect, texture);
+        }
+
+        public void AddWaypoint(bool challenge, string HoloKronName, Vector3 nextLocation)
+        {
+            System.Random r = new System.Random();
+            waypointColor = new System.Random().Next(1,int.MaxValue) * _rColors.Count();
+            currentWaypoint = new Waypoint();
+            currentWaypoint.id = "marker";
+            currentWaypoint.seed = _rColors[waypointColor];
+            currentWaypoint.name = HoloKronName;
+            currentWaypoint.celestialName = FlightGlobals.currentMainBody.name;
+            currentWaypoint.longitude = nextLocation.y;
+            currentWaypoint.latitude = nextLocation.x;
+            currentWaypoint.altitude = nextLocation.z;
+            currentWaypoint.height = nextLocation.z + 1;
+
+            //currentWaypoint.iconSize = 1;
+            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + HoloKronName + " ===");
+            waypoints.Add(currentWaypoint);
+            ScenarioCustomWaypoints.AddWaypoint(currentWaypoint);
+        }
+        public void RemoveWaypoint(string waypointName, Vector3 nextLocation)
+        {
+            List<Waypoint>.Enumerator w = waypoints.GetEnumerator();
+            while (w.MoveNext())
+            {
+                if (w.Current != null)
+                {
+                    if (w.Current.name == waypointName || w.Current.FullName == waypointName)
+                    {
+                        Debug.Log("[OrX Target Manager] === REMOVING WAYPOINT FOR " + w.Current.name + ", " + w.Current.FullName + " ===");
+                        ScenarioCustomWaypoints.RemoveWaypoint(w.Current);
+                        waypoints.Remove(w.Current);
+                    }
+                    else
+                    {
+                        Debug.Log("[OrX Target Manager] === " + w.Current.name + " NOT FOUND ===");
+                    }
+                }
+            }
+            w.Dispose();
+        }
+
+        #region Checks
 
         private void CheckUpgrades()
         {
@@ -416,7 +456,6 @@ namespace OrX
                 ExportVesselList();
             }
         }
-
         public void CheckVesselList(Vessel data)
         {
             if (owned != null)
@@ -517,16 +556,17 @@ namespace OrX
             {
                 file = new ConfigNode();
             }
-            else
+
+            ConfigNode ul = file.GetNode(HighLogic.CurrentGame.Title);
+            if (ul == null)
             {
-                file.ClearData();
+                ul = file.AddNode(HighLogic.CurrentGame.Title);
             }
 
-            ConfigNode ul = file.AddNode(HighLogic.CurrentGame.Title);
             List<string>.Enumerator craft = owned.GetEnumerator();
             while (craft.MoveNext())
             {
-                ul.AddValue("guid", craft.Current);
+                ul.SetValue("guid", craft.Current, true);
             }
             craft.Dispose();
             file.Save("GameData/OrX/Plugin/PluginData/OrXVesselList.data");
@@ -561,7 +601,6 @@ namespace OrX
                 TechDatabase[AddedTech.addedTech].Add(t);
             }
         }
-
         public bool CheckTechList(string t)
         {
             bool added = false;
@@ -574,7 +613,7 @@ namespace OrX
                     added = true;
                 }
             }
-
+            technologies.Dispose();
             return added;
         }
 
@@ -609,7 +648,6 @@ namespace OrX
                 sk.unlockedScuba = true;
             }
         }
-
         public void UnlockWind()
         {
             ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
@@ -630,7 +668,6 @@ namespace OrX
                 }
             }
         }
-
         public void UnlockTractorBeam()
         {
             ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
@@ -651,7 +688,6 @@ namespace OrX
                 }
             }
         }
-
         public void UnlockCloak()
         {
             ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
@@ -672,7 +708,6 @@ namespace OrX
                 }
             }
         }
-
         public void UnlockGrapple()
         {
             ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
@@ -693,7 +728,6 @@ namespace OrX
                 }
             }
         }
-
         public void UnlockBit()
         {
             ConfigNode file = ConfigNode.Load("GameData/OrX/Plugin/PluginData/OrX.data");
@@ -774,9 +808,9 @@ namespace OrX
 
                 next2 = GameSettings.FOCUS_NEXT_VESSEL.secondary.code;
                 prev2 = GameSettings.FOCUS_PREV_VESSEL.secondary.code;
-                Debug.Log("[OrX LOG]: Setting Vessel Focus Hotkeys");
-                Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
+                Debug.Log("[OrX Log]: Setting Vessel Focus Hotkeys");
+                Debug.Log("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
+                Debug.Log("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
 
                 GameSettings.FOCUS_NEXT_VESSEL.primary.code = KeyCode.None;
                 GameSettings.FOCUS_PREV_VESSEL.primary.code = KeyCode.None;
@@ -790,13 +824,13 @@ namespace OrX
             {
                 keysSet = false;
 
-                Debug.Log("[OrX LOG]: Resetting Vessel Focus Hotkeys");
+                Debug.Log("[OrX Log]: Resetting Vessel Focus Hotkeys");
                 GameSettings.FOCUS_NEXT_VESSEL.primary.code = next;
                 GameSettings.FOCUS_PREV_VESSEL.primary.code = prev;
                 GameSettings.FOCUS_NEXT_VESSEL.secondary.code = next2;
                 GameSettings.FOCUS_PREV_VESSEL.secondary.code = prev2;
-                Debug.Log("[OrX LOG]: " + next2 + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + next + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + next2 + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + next + " re-enabled ............................");
             }
         }
 
@@ -822,11 +856,11 @@ namespace OrX
                 w2 = GameSettings.EVA_forward.secondary.code;
                 s2 = GameSettings.EVA_back.secondary.code;
 
-                Debug.Log("[OrX LOG]: Setting EVA Control Lock");
-                Debug.Log("[OrX LOG]: " + w + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + s + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + w2 + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + s2 + " changing to NONE");
+                Debug.Log("[OrX Log]: Setting EVA Control Lock");
+                Debug.Log("[OrX Log]: " + w + " changing to NONE");
+                Debug.Log("[OrX Log]: " + s + " changing to NONE");
+                Debug.Log("[OrX Log]: " + w2 + " changing to NONE");
+                Debug.Log("[OrX Log]: " + s2 + " changing to NONE");
 
                 GameSettings.EVA_forward.primary.code = KeyCode.None;
                 GameSettings.EVA_back.primary.code = KeyCode.None;
@@ -845,11 +879,11 @@ namespace OrX
                 a2 = GameSettings.EVA_left.secondary.code;
                 d2 = GameSettings.EVA_right.secondary.code;
 
-                Debug.Log("[OrX LOG]: Setting EVA Control Lock");
-                Debug.Log("[OrX LOG]: " + a + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + d + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + a2 + " changing to NONE");
-                Debug.Log("[OrX LOG]: " + d2 + " changing to NONE");
+                Debug.Log("[OrX Log]: Setting EVA Control Lock");
+                Debug.Log("[OrX Log]: " + a + " changing to NONE");
+                Debug.Log("[OrX Log]: " + d + " changing to NONE");
+                Debug.Log("[OrX Log]: " + a2 + " changing to NONE");
+                Debug.Log("[OrX Log]: " + d2 + " changing to NONE");
 
                 GameSettings.EVA_left.primary.code = KeyCode.None;
                 GameSettings.EVA_right.primary.code = KeyCode.None;
@@ -863,11 +897,11 @@ namespace OrX
             {
                 _EVALockWS = false;
 
-                Debug.Log("[OrX LOG]: Resetting EVA Control Lock");
-                Debug.Log("[OrX LOG]: " + w + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + s + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + w2 + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + s2 + " re-enabled ............................");
+                Debug.Log("[OrX Log]: Resetting EVA Control Lock");
+                Debug.Log("[OrX Log]: " + w + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + s + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + w2 + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + s2 + " re-enabled ............................");
 
                 GameSettings.EVA_forward.primary.code = w;
                 GameSettings.EVA_back.primary.code = s;
@@ -882,11 +916,11 @@ namespace OrX
             {
                 _EVALockAD = false;
 
-                Debug.Log("[OrX LOG]: Resetting EVA Control Lock");
-                Debug.Log("[OrX LOG]: " + a + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + d + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + a2 + " re-enabled ............................");
-                Debug.Log("[OrX LOG]: " + d2 + " re-enabled ............................");
+                Debug.Log("[OrX Log]: Resetting EVA Control Lock");
+                Debug.Log("[OrX Log]: " + a + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + d + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + a2 + " re-enabled ............................");
+                Debug.Log("[OrX Log]: " + d2 + " re-enabled ............................");
 
                 GameSettings.EVA_left.primary.code = a;
                 GameSettings.EVA_right.primary.code = d;
@@ -895,20 +929,16 @@ namespace OrX
             }
         }
 
-
         public void LockKeyboard()
         {
-            Debug.Log("[OrX LOG]: Locking Keyboard");
+            Debug.Log("[OrX Log]: Locking Keyboard");
             InputLockManager.SetControlLock(ControlTypes.ACTIONS_ALL, lockID);
         }
-
         public void UnlockKeyboard()
         {
-            Debug.Log("[OrX LOG]: Unlocking Keyboard");
+            Debug.Log("[OrX Log]: Unlocking Keyboard");
             InputLockManager.RemoveControlLock(lockID);
         }
-
-
 
         #endregion
 

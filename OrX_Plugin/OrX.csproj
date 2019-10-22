@@ -53,7 +53,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OrXModules\ModuleOrXTimer.cs" />
     <Compile Include="OrXModules\ModuleHideVessel.cs" />
     <Compile Include="OrXModules\ModuleOrXMission.cs" />
     <Compile Include="OrXHoloKron\OrXTargetDistance.cs" />
