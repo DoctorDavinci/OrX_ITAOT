@@ -297,33 +297,33 @@ namespace OrX.parts
 
         private void LogKerbalStats()
         {
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] Getting Kerbal Stats ............................");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] isRagdoll ................... |" + isRagdoll + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] canRecover ................... |" + canRecover + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] recoverThreshold ................... |" + recoverThreshold + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] splatEnabled ................... |" + splatEnabled + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] splatSpeed ................... |" + splatEnabled + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] splatThreshold ................... |" + splatThreshold + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] ......................................................... |");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] JetpackDeployed ................... |" + JetpackDeployed + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] JetpackIsThrusting ................... |" + JetpackIsThrusting + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] PropellantConsumption ................... |" + PropellantConsumption + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] ......................................................... |");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundFallThreshold ................... |" + boundFallThreshold + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundForce ................... |" + boundForce + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundFrequency ................... |" + boundFrequency + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundRelease ................... |" + boundRelease + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundSharpness ................... |" + boundSharpness + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundSpeed ................... |" + boundSpeed + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundThreshold ................... |" + boundThreshold + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] ......................................................... |");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
-            UnityEngine.Debug.Log("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] Getting Kerbal Stats ............................");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] isRagdoll ................... |" + isRagdoll + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] canRecover ................... |" + canRecover + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] recoverThreshold ................... |" + recoverThreshold + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] splatEnabled ................... |" + splatEnabled + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] splatSpeed ................... |" + splatEnabled + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] splatThreshold ................... |" + splatThreshold + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] ......................................................... |");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] JetpackDeployed ................... |" + JetpackDeployed + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] JetpackIsThrusting ................... |" + JetpackIsThrusting + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] PropellantConsumption ................... |" + PropellantConsumption + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] ......................................................... |");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundFallThreshold ................... |" + boundFallThreshold + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundForce ................... |" + boundForce + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundFrequency ................... |" + boundFrequency + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundRelease ................... |" + boundRelease + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundSharpness ................... |" + boundSharpness + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundSpeed ................... |" + boundSpeed + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundThreshold ................... |" + boundThreshold + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] ......................................................... |");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
+            OrXLog.instance.DebugLog("[MODULEHACKKERBAL] boundAttack ................... |" + boundAttack + "|");
 
         }
 

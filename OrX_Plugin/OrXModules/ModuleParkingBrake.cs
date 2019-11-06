@@ -19,7 +19,7 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
             {
-                this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
             }
         }
 
@@ -29,14 +29,15 @@ namespace OrX
 
             if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
             {
-                if (this.vessel.isActiveVessel && kill)
+                if (this.vessel.isActiveVessel)
                 {
                     List<Part>.Enumerator p = this.vessel.parts.GetEnumerator();
                     while (p.MoveNext())
                     {
                         //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, false);
-                        Destroy(this);
                     }
+                    p.Dispose();
+                    Destroy(this);
                 }
             }
         }

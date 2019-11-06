@@ -28,6 +28,7 @@ namespace OrX
         double _latMission = 0;
         double _lonMission = 0;
         double _altMission = 0;
+        bool _checking = true;
 
         private void Awake()
         {
@@ -35,11 +36,45 @@ namespace OrX
             instance = this;
         }
 
-        public void TargetDistance(bool primary, bool b, bool Goal, bool checking, Vector3d missionCoords)
+        public void TargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
         {
             if (!OrXHoloKron.instance.buildingMission)
             {
-                StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, "", missionCoords));
+                bool _enable = true;
+                ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
+                if (PREsettings != null)
+                {
+                    ConfigNode PREnode = PREsettings.GetNode("PreSettings");
+                    if (PREnode.GetValue("ModEnabled") != "False")
+                    {
+                        ScreenMessages.PostScreenMessage(new ScreenMessage("Physics Range Extender must be disabled", 4, ScreenMessageStyle.UPPER_CENTER));
+                        ScreenMessages.PostScreenMessage(new ScreenMessage("for OrX Kontinuum to work properly", 4, ScreenMessageStyle.UPPER_CENTER));
+                        ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Kontinuum shutting down .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                        _enable = false;
+                        OrXHoloKron.instance.MainMenu();
+                        OrXHoloKron.instance.ResetData();
+                    }
+                }
+
+                if (_enable)
+                {
+                    _checking = checking;
+                    OrXHoloKron.instance.airTime = 0;
+
+                    if (b)
+                    {
+                        OrXHoloKron.instance.showTargets = true;
+
+                        _latMission = missionCoords.x;
+                        _lonMission = missionCoords.y;
+                        _altMission = missionCoords.z;
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.showTargets = false;
+                    }
+                    StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
+                }
             }
         }
         IEnumerator CheckTargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
@@ -50,29 +85,23 @@ namespace OrX
                 mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
                 degPerMeter = 1 / mPerDegree;
                 scanDelay = 5;
-
                 string hcn = "";
                 int coordCount = 0;
 
-                if (FlightGlobals.ActiveVessel.srfSpeed >= OrXHoloKron.instance.topSurfaceSpeed)
-                {
-                    OrXHoloKron.instance.topSurfaceSpeed = FlightGlobals.ActiveVessel.srfSpeed;
-                }
-
                 if (!b)
                 {
-                    Debug.Log("[OrX Holo Distance Check] Loading HoloKron Targets ..........");
+                    OrXLog.instance.DebugLog("[OrX Holo Distance Check] Loading HoloKron Targets ..........");
 
                     if (OrXHoloKron.instance.OrXCoordsList.Count >= 0)
                     {
-                        Debug.Log("[OrX Holo Distance Check] OrX Coords List Count = " + OrXHoloKron.instance.OrXCoordsList.Count + " ..........");
+                        OrXLog.instance.DebugLog("[OrX Holo Distance Check] OrX Coords List Count = " + OrXHoloKron.instance.OrXCoordsList.Count + " ..........");
 
                         List<string>.Enumerator coordinate = OrXHoloKron.instance.OrXCoordsList.GetEnumerator();
                         while (coordinate.MoveNext())
                         {
                             try
                             {
-                                Debug.Log("[OrX Holo Distance Check] Checking: " + coordinate.Current + " ..........");
+                                OrXLog.instance.DebugLog("[OrX Holo Distance Check] Checking: " + coordinate.Current + " ..........");
 
                                 string[] targetHoloKrons = coordinate.Current.Split(new char[] { ':' });
 
@@ -86,22 +115,25 @@ namespace OrX
                                         if (TargetCoords[i] != null && TargetCoords[i].Length > 0)
                                         {
                                             string[] data = TargetCoords[i].Split(new char[] { ',' });
-                                            HoloKronName = data[1];
-                                            _latMission = double.Parse(data[3]);
-                                            _lonMission = double.Parse(data[4]);
-                                            _altMission = double.Parse(data[5]);
+                                            if (data[7] != "CHALLENGE")
+                                            {
+                                                HoloKronName = data[1];
+                                                _latMission = double.Parse(data[3]);
+                                                _lonMission = double.Parse(data[4]);
+                                                _altMission = double.Parse(data[5]);
+                                            }
                                         }
                                     }
                                 }
                                 else
                                 {
-                                    Debug.Log("[OrX Holo Distance Check] " + coordinate.Current + " was empty ..........");
+                                    OrXLog.instance.DebugLog("[OrX Holo Distance Check] " + coordinate.Current + " was empty ..........");
 
                                 }
                             }
                             catch
                             {
-                                Debug.Log("[OrX Load HoloKron Targets] HoloKron data processed ...... ");
+                                OrXLog.instance.DebugLog("[OrX Load HoloKron Targets] HoloKron data processed ...... ");
                             }
 
                             yield return new WaitForFixedUpdate();
@@ -190,7 +222,7 @@ namespace OrX
                         }
                         coordinate.Dispose();
 
-                        Debug.Log("[OrX Target Distance] === HOLOKRONS FOUND: " + coordCount);
+                        OrXLog.instance.DebugLog("[OrX Target Distance] === HOLOKRONS FOUND: " + coordCount);
 
 
                         List<string>.Enumerator getClosestCoord = OrXHoloKron.instance.OrXCoordsList.GetEnumerator();
@@ -216,17 +248,17 @@ namespace OrX
 
                                                 if (targetDistance <= 100000)
                                                 {
-                                                    Debug.Log("[OrX Target Distance] === TARGET Name: " + HoloKronName);
-                                                    Debug.Log("[OrX Target Distance] === _latMission: " + _latMission);
-                                                    Debug.Log("[OrX Target Distance] === _lonMission: " + _lonMission);
-                                                    Debug.Log("[OrX Target Distance] === _altMission: " + _altMission);
-                                                    Debug.Log("[OrX Target Distance] === TARGET Distance in Meters: " + targetDistance);
+                                                    OrXLog.instance.DebugLog("[OrX Target Distance] === TARGET Name: " + HoloKronName);
+                                                    OrXLog.instance.DebugLog("[OrX Target Distance] === _latMission: " + _latMission);
+                                                    OrXLog.instance.DebugLog("[OrX Target Distance] === _lonMission: " + _lonMission);
+                                                    OrXLog.instance.DebugLog("[OrX Target Distance] === _altMission: " + _altMission);
+                                                    OrXLog.instance.DebugLog("[OrX Target Distance] === TARGET Distance in Meters: " + targetDistance);
                                                     b = true;
                                                 }
                                                 else
                                                 {
-                                                    Debug.Log("[OrX Holo Distance Check] === NO HOLOKRONS IN RANGE ===");
-                                                    OrXHoloKron.instance.targetDistance = 113800;
+                                                    OrXLog.instance.DebugLog("[OrX Holo Distance Check] === NO HOLOKRONS IN RANGE ===");
+                                                    OrXHoloKron.instance.targetDistance = 1138.8311;
                                                     scanDelay = 5;
                                                     b = false;
                                                 }
@@ -237,7 +269,7 @@ namespace OrX
                             }
                             catch
                             {
-                                Debug.Log("[OrX Load HoloKron Targets] HoloKron data processed ...... ");
+                                OrXLog.instance.DebugLog("[OrX Load HoloKron Targets] HoloKron data processed ...... ");
                             }
 
                             yield return new WaitForFixedUpdate();
@@ -246,9 +278,12 @@ namespace OrX
                     }
                     else
                     {
-                        Debug.Log("[OrX Holo Distance Check] === NO HOLOKRON FOUND ===");
-                        OrXHoloKron.instance.targetDistance = 11381138;
+                        OrXLog.instance.DebugLog("[OrX Holo Distance Check] === NO HOLOKRON FOUND ===");
+                        OrXHoloKron.instance.targetDistance = 1138.1138;
                         checking = false;
+                        OrXHoloKron.instance.checking = false;
+                        OrXHoloKron.instance.MainMenu();
+                        ScreenMessages.PostScreenMessage(new ScreenMessage("There are no HoloKrons within " + FlightGlobals.currentMainBody.name + "'s SOI", 4, ScreenMessageStyle.UPPER_CENTER));
                     }
                 }
                 else
@@ -333,35 +368,60 @@ namespace OrX
 
                     targetDistance = _targetDistance;
 
-                    if (_targetDistance <= FlightGlobals.ActiveVessel.vesselRanges.landed.load * 0.9)
+                    if (OrXHoloKron.instance.challengeRunning)
                     {
-                        Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
+                        if (FlightGlobals.ActiveVessel.srfSpeed >= OrXHoloKron.instance.topSurfaceSpeed)
+                        {
+                            OrXHoloKron.instance.topSurfaceSpeed = FlightGlobals.ActiveVessel.srfSpeed;
+                        }
 
-                        Debug.Log("[OrX Target Distance - Goal] === TARGET Name: " + HoloKronName);
-                        Debug.Log("[OrX Target Distance - Goal] === TARGET Distance in Meters: " + _targetDistance);
-                        OrXHoloKron.instance.OrXHCGUIEnabled = false;
-                        OrXHoloKron.instance.checking = false;
-                        CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
+                        if (!FlightGlobals.ActiveVessel.LandedOrSplashed)
+                        {
+                            OrXHoloKron.instance.airTime += Time.fixedDeltaTime;
+                        }
+                    }
+
+                    if (_targetDistance <= 3000)
+                    {
+                        if (checking)
+                        {
+                            Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
+
+                            OrXLog.instance.DebugLog("[OrX Target Distance - Goal] === TARGET Name: " + HoloKronName);
+                            OrXLog.instance.DebugLog("[OrX Target Distance - Goal] === TARGET Distance in Meters: " + _targetDistance);
+                            checking = false;
+                            CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
+                        }
+                        else
+                        {
+                            if (_targetDistance <= 50)
+                            {
+                                //OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                                //OrXHoloKron.instance.checking = false;
+                            }
+                        }
                     }
                     else
                     {
-                        OrXHoloKron.instance.OrXHCGUIEnabled = true;
+                        //OrXHoloKron.instance.OrXHCGUIEnabled = true;
                         //OrXHoloKron.instance.challengeRunning = Goal;
                     }
                 }
 
                 if (coordCount == 0)
                 {
-                    Debug.Log("[OrX Holo Distance Check] === NO HOLOKRON IN RANGE ===");
-                    OrXHoloKron.instance.targetDistance = 113800;
+                    OrXLog.instance.DebugLog("[OrX Holo Distance Check] === NO HOLOKRON IN RANGE ===");
+                    OrXHoloKron.instance.targetDistance = 1138.1138;
                     //checking = false;
                     OrXHoloKron.instance.ScreenMsg("No HoloKrons in range ......");
                     scanDelay = 5;
+                    OrXHoloKron.instance.checking = false;
+                    OrXHoloKron.instance.MainMenu();
                 }
 
                 if (OrXHoloKron.instance.checking)
                 {
-                    OrXHoloKron.instance.movingCraft = false;
+                    //OrXHoloKron.instance.movingCraft = false;
                     OrXHoloKron.instance.targetDistance = targetDistance;
                     OrXHoloKron.instance._altitude = _altMission;
 
@@ -380,7 +440,6 @@ namespace OrX
                             OrXHoloKron.instance.scanDelay = scanDelay;
                         }
                         StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
-
                     }
                     else
                     {
@@ -402,7 +461,7 @@ namespace OrX
             double _latDiff = 0;
             double _lonDiff = 0;
             double _altDiff = 0;
-            Debug.Log("[OrX Target Distance - Spawn Check] === Checking if spawned ===");
+            OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Check] === Checking if spawned ===");
 
             List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
             while (v.MoveNext())
@@ -504,21 +563,21 @@ namespace OrX
                 catch (Exception e)
                 {
                     rescan = true;
-                    Debug.Log("[OrX Holo Spawn Check] ERROR -" + e + " ...... ");
+                    OrXLog.instance.DebugLog("[OrX Holo Spawn Check] ERROR -" + e + " ...... ");
                 }
             }
             v.Dispose();
 
             if (!s)
             {
-                Debug.Log("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
+                OrXHoloKron.instance.showTargets = false;
+                OrXLog.instance.DebugLog("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
                 if (primary)
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, Goal, false, primary, HoloKronName, OrXHoloKron.instance.missionType);
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, false, false, primary, HoloKronName, OrXHoloKron.instance.missionType);
                 }
                 else
                 {
-                    //OrXHoloKron.instance.OrXHCGUIEnabled = false;
                     OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.missionType);
                 }
             }
@@ -526,12 +585,12 @@ namespace OrX
             {
                 if (rescan)
                 {
-                    Debug.Log("[OrX Holo Spawn Check] ERROR - RETRYING SPAWN CHECK ...... ");
+                    OrXLog.instance.DebugLog("[OrX Holo Spawn Check] ERROR - RETRYING SPAWN CHECK ...... ");
                     CheckIfHoloSpawned(HoloKronName, stageStartCoords, vect, primary, Goal);
                 }
                 else
                 {
-                    Debug.Log("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has already been spawned ...... ");
+                    OrXLog.instance.DebugLog("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has already been spawned ...... ");
                 }
             }
         }

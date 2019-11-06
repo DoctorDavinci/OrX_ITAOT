@@ -113,7 +113,7 @@ namespace OrX.spawn
                 }
             }
 
-            Debug.Log("[OrX Spawn] SpawnInfected ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnInfected ................. ");
             loadingCraft = true;
             modAlt = 2;
             infected = false;
@@ -137,7 +137,7 @@ namespace OrX.spawn
             _lat_ = randomizeLoc * 0.00001f;
             _lon_ = randomizeLoc * 0.00001f;
 
-            Debug.Log("[OrX Spawn] SpawnOrX ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnOrX ................. ");
             loadingCraft = true;
             modAlt = 2;
             waldo = false;
@@ -156,7 +156,7 @@ namespace OrX.spawn
 
         public void SpawnWaldo()
         {
-            Debug.Log("[OrX Spawn] SpawnWaldo ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnWaldo ................. ");
             loadingCraft = true;
             modAlt = 5;
             waldo = true;
@@ -220,7 +220,7 @@ namespace OrX.spawn
             _lat += _lat_;
             _lon += _lon_;
 
-            Debug.Log("[OrX Spawn] SpawnBrute ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnBrute ................. ");
             StartCoroutine(SpawnCraftRoutine(craftToSpawn));
             ////KerbinMissions.instance.saltTotal += bruteSalt;
         }
@@ -273,7 +273,7 @@ namespace OrX.spawn
             _lat += _lat_;
             _lon += _lon_;
 
-            Debug.Log("[OrX Spawn] SpawnStayPunkd ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnStayPunkd ................. ");
             StartCoroutine(SpawnCraftRoutine(craftToSpawn));
             ////KerbinMissions.instance.saltTotal += stayPunkdSalt;
         }
@@ -344,7 +344,7 @@ namespace OrX.spawn
                 }
             }
 
-            Debug.Log("[OrX Spawn] SpawnOrX ................. ");
+            OrXLog.instance.DebugLog("[OrX Spawn] SpawnOrX ................. ");
 
             _lat = FlightGlobals.ActiveVessel.latitude + _lat_;
             _lon = FlightGlobals.ActiveVessel.longitude + _lon_;
@@ -414,7 +414,7 @@ namespace OrX.spawn
 
         private void SpawnVessel(VesselData vesselData, List<ProtoCrewMember> crewData = null)
         {
-            Debug.Log("[OrX Spawn] Spawning a vessel named '" + Spawnedname + "'");
+            OrXLog.instance.DebugLog("[OrX Spawn] Spawning a vessel named '" + Spawnedname + "'");
 
             // Set additional info for landed vessels
             bool landed = false;
@@ -452,7 +452,7 @@ namespace OrX.spawn
                 shipConstruct = ShipConstruction.LoadShip(vesselData.craftURL);
                 if (shipConstruct == null)
                 {
-                    Debug.Log("ShipConstruct was null when tried to load '" + vesselData.craftURL +
+                    OrXLog.instance.DebugLog("ShipConstruct was null when tried to load '" + vesselData.craftURL +
                       "' (usually this means the file could not be found).");
                     return;//continue;
                 }
@@ -673,7 +673,7 @@ namespace OrX.spawn
                 protoVesselNode.SetValue("prst", false.ToString(), true);
             }
 
-            Debug.Log("[OrX Spawn] // Add vessel to the game");
+            OrXLog.instance.DebugLog("[OrX Spawn] // Add vessel to the game");
 
             // Add vessel to the game
             ProtoVessel protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
@@ -702,7 +702,7 @@ namespace OrX.spawn
 
         private IEnumerator PlaceSpawnedVessel(Vessel v, bool moveVessel)
         {
-            Debug.Log("[SPAWN OrX] PLACING SPAWNED OrX ...................");
+            OrXLog.instance.DebugLog("[SPAWN OrX] PLACING SPAWNED OrX ...................");
             
             loadingCraft = true;
             v.isPersistent = true;

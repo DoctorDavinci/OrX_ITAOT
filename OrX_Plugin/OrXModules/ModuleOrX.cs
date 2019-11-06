@@ -68,6 +68,18 @@ namespace OrX
         float localScale = 0;
 
         #endregion
+        [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
+     UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
+        public bool _chase = false;
+
+        public enum AnimationState
+        {
+            None,
+            Idle,
+            Walk,
+            Run,
+            Swim
+        }
 
         private KerbalEVA kerbal;
         private KerbalEVA kerbalControl()
@@ -107,6 +119,11 @@ namespace OrX
                 {
                     if (!orx)
                     {
+                        if (_chase)
+                        {
+                            orx = true;
+                        }
+
                         if (FlightGlobals.currentMainBody.atmosphereContainsOxygen)
                         {
                             if (this.vessel.Splashed)
@@ -184,38 +201,55 @@ namespace OrX
                     }
                     else
                     {
-                        if (this.vessel.isActiveVessel)
+                        if (_chase)
                         {
-                            OrXLog.instance.CheckVesselList(this.vessel);
+                            Vector3d _currLoc = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude);
+                            _currLoc = -_currLoc;
+
+                            Vector3d target = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
+                            _currLoc += target;
+
+                            float _vel = TimeWarp.deltaTime;
+
+                            UpdateAnims(ref _vel);
+                            _currLoc.Normalize();
+                            Move(target);
                         }
                         else
                         {
-                            if (infected)
+                            if (this.vessel.isActiveVessel)
                             {
-                                if (!orxSetup)
-                                {
-                                    orxSetup = true;
-                                    //SetupOrXStats();
-                                }
+                                OrXLog.instance.CheckVesselList(this.vessel);
                             }
                             else
                             {
-                                // SETUP DIALOGUE MENU ACCESS HERE
-                                if (pilot)
+                                if (infected)
                                 {
-                                    // ACCESS PILOT STORY
+                                    if (!orxSetup)
+                                    {
+                                        orxSetup = true;
+                                        //SetupOrXStats();
+                                    }
                                 }
-                                if (engineer)
+                                else
                                 {
-                                    // ACCESS ENGINEER STORY
-                                }
-                                if (scientist)
-                                {
-                                    // YADA
-                                }
-                                if (civilian)
-                                {
-                                    // YADA
+                                    // SETUP DIALOGUE MENU ACCESS HERE
+                                    if (pilot)
+                                    {
+                                        // ACCESS PILOT STORY
+                                    }
+                                    if (engineer)
+                                    {
+                                        // ACCESS ENGINEER STORY
+                                    }
+                                    if (scientist)
+                                    {
+                                        // YADA
+                                    }
+                                    if (civilian)
+                                    {
+                                        // YADA
+                                    }
                                 }
                             }
                         }
@@ -659,9 +693,9 @@ namespace OrX
 
         private void SetupOrXStats()
         {
-            Debug.Log("[Module OrX] SETUP ORX STATS ========================================");
+            OrXLog.instance.DebugLog("[Module OrX] SETUP ORX STATS ========================================");
 
-            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+            //var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
             kerbal.maxJumpForce = _maxJumpForce * 0.5f;
             kerbal.walkSpeed = _walkSpeed * 0.7f;
             kerbal.runSpeed = _runSpeed * 0.7f;
@@ -673,14 +707,83 @@ namespace OrX
 
         public void ResetOrXStats()
         {
-            Debug.Log("[Module OrX] RESET ORX STATS ========================================");
+            OrXLog.instance.DebugLog("[Module OrX] RESET ORX STATS ========================================");
 
-            var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
+            //var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
             kerbal.maxJumpForce = _maxJumpForce;
             kerbal.walkSpeed = _walkSpeed;
             kerbal.runSpeed = _runSpeed;
             kerbal.strafeSpeed = _strafeSpeed;
             kerbal.swimSpeed = _swimSpeed;
+        }
+
+        public void AnimState(AnimationState state)
+        {
+            string _animState = "idle";
+
+            if (kerbal.part.WaterContact)
+            {
+                _animState = "swim_idle";
+            }
+            else if (kerbal.JetpackDeployed)
+            {
+                _animState = "jp_suspended";
+            }
+
+            switch (state)
+            {
+                case AnimationState.Swim: { _animState = "swim_forward"; } break;
+                case AnimationState.Run: { _animState = "wkC_run"; } break;
+                case AnimationState.Walk: { _animState = "wkC_forward"; } break;
+                case AnimationState.Idle: { _animState = "idle"; } break;
+            }
+
+            Animation _anim = null;
+            kerbal.GetComponentCached<Animation>(ref _anim);
+            if (_anim != null)
+            {
+                _anim.CrossFade(_animState);
+            }
+        }
+
+        public void UpdateAnims(ref float speed)
+        {
+            if (kerbal.part.WaterContact)
+            {
+                speed *= kerbal.swimSpeed;
+                AnimState(AnimationState.Swim);
+            }
+            else if (kerbal.JetpackDeployed)
+            {
+                speed *= 1f;
+                AnimState(AnimationState.Idle);
+            }
+            else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minRunningGee)
+            {
+                speed *= kerbal.runSpeed;
+                AnimState(AnimationState.Run);
+            }
+            else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minWalkingGee)
+            {
+                speed *= kerbal.walkSpeed;
+                AnimState(AnimationState.Walk);
+            }
+        }
+
+        public void Move(Vector3d vect)
+        {
+            Quaternion _currentRot = kerbal.part.vessel.transform.rotation;
+            Quaternion _lookRot = Quaternion.LookRotation((vect * TimeWarp.deltaTime), kerbal.fUp);
+            Quaternion _rotTo = Quaternion.RotateTowards(_currentRot, _lookRot, kerbal.turnRate);
+            kerbal.part.vessel.SetRotation(_rotTo);
+
+            Rigidbody rigidbody = null;
+            kerbal.GetComponentCached<Rigidbody>(ref rigidbody);
+            //kerbal.GetComponent<Rigidbody>();
+            if (rigidbody != null)
+            {
+                rigidbody.MovePosition(rigidbody.position + (vect * TimeWarp.deltaTime));
+            }
         }
 
         //////////////////////////////////////////////////////////////////////////////
@@ -696,7 +799,7 @@ namespace OrX
 
         private void RemoveHelmet()
         {
-            Debug.Log("[Module OrX] REMOVING HELMET ========================================");
+            OrXLog.instance.DebugLog("[Module OrX] REMOVING HELMET ========================================");
             var kerbal = this.part.FindModuleImplementing<KerbalEVA>();
             kerbal.lampOn = false;
             helmetRemoved = true;

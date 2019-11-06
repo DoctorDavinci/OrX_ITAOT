@@ -29,7 +29,7 @@ namespace OrX
         public bool append = false;
         public bool save = false;
         public bool cancel = false;
-
+        public int hkCount = 0;
         private void Awake()
         {
             if (instance) Destroy(instance);
@@ -86,12 +86,13 @@ namespace OrX
 
         public void EnableGui(int _hkCount, string holoName)
         {
+            hkCount = _hkCount;
             _HoloKronName = holoName;
             OrXHoloKron.instance.OrXHCGUIEnabled = false;
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = true;
-            Debug.Log("[OrX]: Showing OrXAppendCfg GUI");
+            OrXLog.instance.DebugLog("[OrX]: Showing OrXAppendCfg GUI");
         }
 
         public void DisableGui()
@@ -102,7 +103,7 @@ namespace OrX
             save = false;
             append = false;
             GuiEnabledOrXAppendCfg = false;
-            Debug.Log("[OrX]: Hiding OrXAppendCfg GUI");
+            OrXLog.instance.DebugLog("[OrX]: Hiding OrXAppendCfg GUI");
         }
 
         private void DrawTitle(float line)
@@ -119,7 +120,7 @@ namespace OrX
             };
 
             GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                _HoloKronName + " contains " + OrXHoloKron.instance.hkCount + " HoloKrons",
+                _HoloKronName + " contains " + hkCount + " HoloKrons",
                 titleStyle);
         }
 
@@ -169,13 +170,17 @@ namespace OrX
                 {
                     if (OrXHoloKron.instance.spawningStartGate)
                     {
+                        OrXHoloKron.instance.hkCount = hkCount;
                         spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
                     }
                     else
                     {
-                        OrXHoloKron.instance.SaveConfig(_HoloKronName);
+                        OrXHoloKron.instance.hkCount = hkCount;
+                        OrXHoloKron.instance.SaveConfig(_HoloKronName, true);
                         DisableGui();
                     }
+
+                    OrXHoloKron.instance.hkCount = hkCount;
                 }
                 else
                 {
@@ -205,13 +210,16 @@ namespace OrX
                     }
                     else
                     {
+
                         if (OrXHoloKron.instance.spawningStartGate)
                         {
+                            OrXHoloKron.instance.hkCount = 0;
                             spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
                         }
                         else
                         {
-                            OrXHoloKron.instance.SaveConfig(HoloKronName);
+                            OrXHoloKron.instance.hkCount = 0;
+                            OrXHoloKron.instance.SaveConfig(HoloKronName, false);
                             DisableGui();
                         }
                     }

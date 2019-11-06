@@ -1,5 +1,4 @@
 ﻿using OrX.spawn;
-using OrXWind;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,6 +26,9 @@ namespace OrX
 
         [KSPField(isPersistant = true)]
         public string challengeType = string.Empty;
+        [KSPField(isPersistant = true)]
+        public string raceType = string.Empty;
+
 
         [KSPField(isPersistant = true)]
         public string tech = string.Empty;
@@ -36,6 +38,9 @@ namespace OrX
 
         [KSPField(isPersistant = true)]
         public bool spawned = false;
+
+        [KSPField(isPersistant = true)]
+        public string creator = string.Empty;
 
         [KSPField(isPersistant = true)]
         public string Gold = string.Empty;
@@ -76,16 +81,16 @@ namespace OrX
         public int triggerRange = 10;
         public bool isLoaded = false;
         public int stage = 0;
-
         public bool triggered = false;
         double _latDiff = 0;
         double _lonDiff = 0;
         double _altDiff = 0;
 
+        bool geoCache = true;
 
         #endregion
 
-        [KSPField(unfocusedRange = 10, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOLOKRON"),
+        [KSPField(unfocusedRange = 15, guiActiveUnfocused = true, isPersistant = true, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOLOKRON"),
          UI_Toggle(controlEnabled = true, scene = UI_Scene.All, disabledText = "", enabledText = "")]
         public bool deploy = false;
 
@@ -107,6 +112,7 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
+                //pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
                 tLevel = 0;
                 part.SetOpacity(tLevel);
                 HoloKronName = OrXHoloKron.instance.HoloKronName;
@@ -131,16 +137,19 @@ namespace OrX
                 {
                     if (this.vessel != OrXVesselMove.Instance.MovingVessel)
                     {
-                        this.vessel.SetPosition(pos, true);
+                        this.vessel.SetPosition(FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude));
                     }
                     else
                     {
-                        if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
+                        if (OrXHoloKron.instance.buildingMission)
                         {
-                            latitude = this.vessel.latitude;
-                            longitude = this.vessel.longitude;
-                            altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
-                            pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
+                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
+                            {
+                                latitude = this.vessel.latitude;
+                                longitude = this.vessel.longitude;
+                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                                //pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
+                            }
                         }
                     }
 
@@ -198,146 +207,208 @@ namespace OrX
                 {
                     if (Goal)
                     {
-                        if (!hideGoal)
+                        if (!FlightGlobals.ActiveVessel.rootPart.Modules.Contains<ModuleOrXStage>())
                         {
-                            OrXHoloKron.instance.showTargets = false;
-                            double targetDistance = double.MaxValue;
-                            double _latDiff = 0;
-                            double _lonDiff = 0;
-                            double _altDiff = 0;
+                            if (!hideGoal)
+                            {
+                                OrXHoloKron.instance.showTargets = false;
+                                double _latDiff = 0;
+                                double _lonDiff = 0;
+                                double _altDiff = 0;
 
-                            if (FlightGlobals.ActiveVessel.altitude <= this.vessel.altitude)
-                            {
-                                _altDiff = this.vessel.altitude - FlightGlobals.ActiveVessel.altitude;
-                            }
-                            else
-                            {
-                                _altDiff = FlightGlobals.ActiveVessel.altitude - this.vessel.altitude;
-                            }
-
-                            if (this.vessel.latitude >= 0)
-                            {
-                                if (FlightGlobals.ActiveVessel.latitude >= this.vessel.latitude)
+                                if (FlightGlobals.ActiveVessel.altitude <= this.vessel.altitude)
                                 {
-                                    _latDiff = FlightGlobals.ActiveVessel.latitude - this.vessel.latitude;
+                                    _altDiff = this.vessel.altitude - FlightGlobals.ActiveVessel.altitude;
                                 }
                                 else
                                 {
-                                    _latDiff = this.vessel.latitude - FlightGlobals.ActiveVessel.latitude;
+                                    _altDiff = FlightGlobals.ActiveVessel.altitude - this.vessel.altitude;
                                 }
-                            }
-                            else
-                            {
-                                if (FlightGlobals.ActiveVessel.latitude >= 0)
+
+                                if (this.vessel.latitude >= 0)
                                 {
-                                    _latDiff = FlightGlobals.ActiveVessel.latitude - this.vessel.latitude;
-                                }
-                                else
-                                {
-                                    if (FlightGlobals.ActiveVessel.latitude <= this.vessel.latitude)
+                                    if (FlightGlobals.ActiveVessel.latitude >= this.vessel.latitude)
                                     {
                                         _latDiff = FlightGlobals.ActiveVessel.latitude - this.vessel.latitude;
                                     }
                                     else
                                     {
-
                                         _latDiff = this.vessel.latitude - FlightGlobals.ActiveVessel.latitude;
                                     }
                                 }
-                            }
+                                else
+                                {
+                                    if (FlightGlobals.ActiveVessel.latitude >= 0)
+                                    {
+                                        _latDiff = FlightGlobals.ActiveVessel.latitude - this.vessel.latitude;
+                                    }
+                                    else
+                                    {
+                                        if (FlightGlobals.ActiveVessel.latitude <= this.vessel.latitude)
+                                        {
+                                            _latDiff = FlightGlobals.ActiveVessel.latitude - this.vessel.latitude;
+                                        }
+                                        else
+                                        {
 
-                            if (this.vessel.longitude >= 0)
-                            {
-                                if (FlightGlobals.ActiveVessel.longitude >= this.vessel.longitude)
-                                {
-                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - this.vessel.longitude;
+                                            _latDiff = this.vessel.latitude - FlightGlobals.ActiveVessel.latitude;
+                                        }
+                                    }
                                 }
-                                else
+
+                                if (this.vessel.longitude >= 0)
                                 {
-                                    _lonDiff = this.vessel.longitude - FlightGlobals.ActiveVessel.longitude;
-                                }
-                            }
-                            else
-                            {
-                                if (FlightGlobals.ActiveVessel.longitude >= 0)
-                                {
-                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - this.vessel.longitude;
-                                }
-                                else
-                                {
-                                    if (FlightGlobals.ActiveVessel.longitude <= this.vessel.longitude)
+                                    if (FlightGlobals.ActiveVessel.longitude >= this.vessel.longitude)
                                     {
                                         _lonDiff = FlightGlobals.ActiveVessel.longitude - this.vessel.longitude;
                                     }
                                     else
                                     {
-
                                         _lonDiff = this.vessel.longitude - FlightGlobals.ActiveVessel.longitude;
                                     }
                                 }
+                                else
+                                {
+                                    if (FlightGlobals.ActiveVessel.longitude >= 0)
+                                    {
+                                        _lonDiff = FlightGlobals.ActiveVessel.longitude - this.vessel.longitude;
+                                    }
+                                    else
+                                    {
+                                        if (FlightGlobals.ActiveVessel.longitude <= this.vessel.longitude)
+                                        {
+                                            _lonDiff = FlightGlobals.ActiveVessel.longitude - this.vessel.longitude;
+                                        }
+                                        else
+                                        {
+
+                                            _lonDiff = this.vessel.longitude - FlightGlobals.ActiveVessel.longitude;
+                                        }
+                                    }
+                                }
+
+                                double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                                double _altDiffDeg = _altDiff * OrXTargetDistance.instance.degPerMeter;
+                                double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                                double _targetDistance = Math.Sqrt(altAdded) * OrXTargetDistance.instance.mPerDegree;
+
+                                if (_targetDistance <= 10)
+                                {
+                                    hideGoal = true;
+                                    OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
+                                    OrXHoloKron.instance.GetNextCoord();
+                                }
                             }
+                        }
+                    }
+                }
 
-                            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                            double _altDiffDeg = _altDiff * OrXTargetDistance.instance.degPerMeter;
-                            double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                            double _targetDistance = Math.Sqrt(altAdded) * OrXTargetDistance.instance.mPerDegree;
-
-                            if (_targetDistance <= 10)
+                if (FlightGlobals.ActiveVessel.isEVA)
+                {
+                    if (challengeType == "SCUBA KERB")
+                    {
+                        if (deploy)
+                        {
+                            if (FlightGlobals.ActiveVessel.Splashed)
                             {
-                                hideGoal = true;
-                                Debug.Log("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
-                                OrXHoloKron.instance.GetNextCoord();
+                                if (!OrXSpawnHoloKron.instance.spawning)
+                                {
+                                    deploy = false;
+                                    opened = true;
+                                    //hideGoal = true;
+                                    if (missionType == "CHALLENGE")
+                                    {
+                                        geoCache = false;
+                                    }
+                                    OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                    //OrXHoloKron.instance.RefreshPaw(part);
+                                    OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                }
+                                else
+                                {
+                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
+                                    deploy = false;
+                                    opened = false;
+
+                                }
+                            }
+                            else
+                            {
+                                if (!OrXSpawnHoloKron.instance.spawning)
+                                {
+                                    deploy = false;
+                                    opened = true;
+                                    //hideGoal = true;
+                                    if (missionType == "CHALLENGE")
+                                    {
+                                        geoCache = false;
+                                    }
+                                    OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                    //OrXHoloKron.instance.RefreshPaw(part);
+                                    OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+
+                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Get into the water to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
+                                }
+                                else
+                                {
+                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
+                                    deploy = false;
+                                    opened = false;
+                                }
                             }
                         }
                     }
                     else
                     {
-                        if (FlightGlobals.ActiveVessel.isEVA)
+                        if (deploy)
                         {
-                            if (challengeType == "SCUBA KERB")
+                            if (!OrXSpawnHoloKron.instance.spawning)
                             {
-                                if (deploy && !OrXSpawnHoloKron.instance.spawning)
+                                deploy = false;
+                                opened = true;
+                                //hideGoal = true;
+                                if (missionType == "CHALLENGE")
                                 {
-                                    if (FlightGlobals.ActiveVessel.Splashed)
-                                    {
-                                        deploy = false;
-                                        opened = true;
-                                        hideGoal = true;
-                                        Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
-                                        OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
-                                    }
-                                    else
-                                    {
-                                        ScreenMessages.PostScreenMessage(new ScreenMessage("Get into the water to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
-
-                                    }
+                                    geoCache = false;
                                 }
+                                OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                //OrXHoloKron.instance.RefreshPaw(part);
+                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                ScreenMessages.PostScreenMessage(new ScreenMessage("Get into a vehicle to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
                             }
                             else
                             {
-                                if (deploy && !OrXSpawnHoloKron.instance.spawning)
-                                {
-                                    deploy = false;
-                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Get into a vehicle to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (deploy && !OrXSpawnHoloKron.instance.spawning)
-                            {
-                                opened = true;
+                                ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
                                 deploy = false;
-                                Debug.Log("[Module OrX Mission] === OPENING '" + HoloKronName + "' === "); ;
-                                OrXHoloKron.instance.OpenHoloKron(HoloKronName, this.vessel, FlightGlobals.ActiveVessel);
-                                triggerCraft = FlightGlobals.ActiveVessel;
+                                opened = false;
                             }
                         }
                     }
-
-                    if (hideGoal && (tLevel == maxfade) && Goal)
+                }
+                else
+                {
+                    if (deploy)
                     {
-                        this.part.explode();
+                        if (!OrXSpawnHoloKron.instance.spawning)
+                        {
+                            opened = true;
+                            deploy = false;
+                            OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                            //OrXHoloKron.instance.RefreshPaw(part);
+                            if (missionType == "CHALLENGE")
+                            {
+                                geoCache = false;
+                            }
+
+                            OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                            triggerCraft = FlightGlobals.ActiveVessel;
+                        }
+                        else
+                        {
+                            ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
+                            deploy = false;
+                            opened = false;
+                        }
                     }
                 }
             }

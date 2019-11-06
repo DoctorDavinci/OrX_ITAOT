@@ -53,19 +53,30 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OrXModules\ModuleHideVessel.cs" />
-    <Compile Include="OrXModules\ModuleOrXMission.cs" />
+    <Compile Include="OrXModules\ModuleOrXPlaceChallenger.cs" />
+    <Compile Include="OrXWinds\ModuleCannon.cs" />
+    <Compile Include="OrXWinds\ModuleCannonBall.cs" />
+    <Compile Include="OrXWinds\ModuleSail.cs" />
+    <Compile Include="OrXWinds\ModuleWind.cs" />
+    <Compile Include="OrXWinds\SpawnCannonBall.cs" />
+    <Compile Include="OrXWinds\WindDirectionIndicator.cs" />
+    <Compile Include="OrXWinds\WindGUI.cs" />
+    <Compile Include="OrXHoloKron\OrXMode.cs" />
+    <Compile Include="OrXUtils\OrXPRExtension.cs" />
+    <Compile Include="OrXUtils\OrXKontinuum.cs" />
     <Compile Include="OrXHoloKron\OrXTargetDistance.cs" />
+    <Compile Include="OrXModules\ModuleHideVessel.cs" />
+    <Compile Include="OrXModules\ModuleOrXDestroyVessel.cs" />
+    <Compile Include="OrXModules\ModuleOrXMission.cs" />
+    <Compile Include="OrXModules\ModuleOrXPlace.cs" />
+    <Compile Include="OrXModules\ModuleOrXStage.cs" />
     <Compile Include="OrXModules\ModuleParkingBrake.cs" />
     <Compile Include="OrXHoloKron\OrXAppendCfg.cs" />
-    <Compile Include="OrXModules\ModuleSail.cs" />
     <Compile Include="OrXSpawn\OrXSpawnHoloKron.cs" />
+    <Compile Include="OrXUtils\OrXExtension.cs" />
     <Compile Include="OrXUtils\OrXScubaKerbGUI.cs" />
-    <Compile Include="OrXWinds\WindDirectionIndicator.cs" />
-    <Compile Include="OrXWinds\WeatherFactory.cs" />
-    <Compile Include="OrXWinds\WindGUI.cs" />
+    <Compile Include="OrXHoloKron\OrXScoreboardStats.cs" />
     <Compile Include="OrXModules\ModuleHackKerbal.cs" />
-    <Compile Include="OrXUtils\OrXAddModules.cs" />
     <Compile Include="OrXUtils\OrXLog.cs" />
     <Compile Include="OrXHoloKron\OrXHoloKron.cs" />
     <Compile Include="OrXModules\ModuleOrX.cs" />

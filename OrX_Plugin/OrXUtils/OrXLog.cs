@@ -3,12 +3,11 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using OrXWind;
 using FinePrint;
 
 namespace OrX
 {
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
+    [KSPAddon(KSPAddon.Startup.MainMenu, true)]
     public class OrXLog : MonoBehaviour
     {
         public static OrXLog instance;
@@ -82,16 +81,43 @@ namespace OrX
         private static VesselRanges.Situation _vesselLanded;
         private static VesselRanges.Situation _vesselFlying;
         private static VesselRanges.Situation _vesselOther;
+        public bool _debugLog = false;
+        public bool _mode = false;
 
         private void Awake()
         {
             DontDestroyOnLoad(this);
             instance = this;
+
+            Debug.Log("[OrX Log - Awakening] === ADDING OrX MODULE ===");
+            ConfigNode EVA = new ConfigNode("MODULE");
+            EVA.AddValue("name", "ModuleOrX");
+
+            try
+            {
+                PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
+                DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVA ===");
+            }
+            catch
+            {
+                //OrXLog.instance.DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVA ===");
+            }
+
+            try
+            {
+                PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
+                DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVAfemale ===");
+
+            }
+            catch
+            {
+                // OrXLog.instance.DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVAfemale ===");
+            }
         }
         private void Start()
         {
             _version = Application.version;
-            Debug.Log("[OrX Log] === Application Version : " + Application.version + " ===");
+            OrXLog.instance.DebugLog("[OrX Log] === Application Version : " + Application.version + " ===");
             if (_version == Application.version)
             {
                 owned = new List<string>();
@@ -119,15 +145,13 @@ namespace OrX
                 GameEvents.onCrewOnEva.Add(onEVA);
                 GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
                 GameEvents.onVesselLoaded.Add(onVesselLoaded);
-
                 CheckUpgrades();
             }
             else
             {
-                Debug.Log("[OrX Log] === WRONG KSP VERSION ===");
+                DebugLog("[OrX Log] === WRONG KSP VERSION ===");
             }
         }
-
         private void onVesselLoaded(Vessel data)
         {
             SetRange(data, 8000);
@@ -139,16 +163,18 @@ namespace OrX
         private void onFlightGlobalsReady(bool data)
         {
             ImportVesselList();
-            SetRange(FlightGlobals.ActiveVessel, 8000);
-
+            UpdateRangesOnFGReady();
         }
         public void onVesselChange(Vessel data)
         {
             SetRange(data, 8000);
 
-            if (OrXHoloKron.instance.buildingMission)
+            if (spawn.OrXSpawnHoloKron.instance.spawning)
             {
-
+                if (data != OrXHoloKron.instance.triggerVessel)
+                {
+                    //FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
+                }
             }
             else
             {
@@ -190,6 +216,18 @@ namespace OrX
 
         public void SetRange(Vessel v, float _range)
         {
+            try
+            {
+                var pqs = FlightGlobals.currentMainBody.pqsController;
+                pqs.horizonDistance = _range * 8;
+                pqs.maxDetailDistance = _range * 8;
+                pqs.minDetailDistance = _range * 8;
+                pqs.visRadSeaLevelValue = 200;
+                pqs.collapseSeaLevelValue = 200;
+                
+            }
+            catch { }
+
             _vesselLanded = new VesselRanges.Situation(_range, _range, _range, _range);
             _vesselFlying = new VesselRanges.Situation(_range * 4, _range * 4, _range * 4, _range * 4);
             _vesselOther = new VesselRanges.Situation(_range * 8, _range * 8, _range * 8, _range * 8);
@@ -205,9 +243,9 @@ namespace OrX
                 subOrbital = _vesselOther
             };
 
-            if (v.vesselRanges.landed.load <= _range)
+            if (v.vesselRanges.landed.load <= _range* 0.95f)
             {
-                Debug.Log("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
+                //OrXLog.instance.DebugLog("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
                 v.vesselRanges = new VesselRanges(_vesselRanges);
             }
         }
@@ -255,7 +293,7 @@ namespace OrX
             currentWaypoint.height = nextLocation.z + 1;
 
             //currentWaypoint.iconSize = 1;
-            Debug.Log("[OrX Target Manager] === ADDING WAYPOINT FOR " + HoloKronName + " ===");
+            OrXLog.instance.DebugLog("[OrX Target Manager] === ADDING WAYPOINT FOR " + HoloKronName + " ===");
             waypoints.Add(currentWaypoint);
             ScenarioCustomWaypoints.AddWaypoint(currentWaypoint);
         }
@@ -268,17 +306,38 @@ namespace OrX
                 {
                     if (w.Current.name == waypointName || w.Current.FullName == waypointName)
                     {
-                        Debug.Log("[OrX Target Manager] === REMOVING WAYPOINT FOR " + w.Current.name + ", " + w.Current.FullName + " ===");
+                        OrXLog.instance.DebugLog("[OrX Target Manager] === REMOVING WAYPOINT FOR " + w.Current.name + ", " + w.Current.FullName + " ===");
                         ScenarioCustomWaypoints.RemoveWaypoint(w.Current);
                         waypoints.Remove(w.Current);
                     }
                     else
                     {
-                        Debug.Log("[OrX Target Manager] === " + w.Current.name + " NOT FOUND ===");
+                        OrXLog.instance.DebugLog("[OrX Target Manager] === " + w.Current.name + " NOT FOUND ===");
                     }
                 }
             }
             w.Dispose();
+        }
+
+        public void UpdateRangesOnFGReady()
+        {
+            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+            while(v.MoveNext())
+            {
+                if (v.Current != null)
+                {
+                    SetRange(v.Current, 8000);
+                }
+            }
+            v.Dispose();
+        }
+
+        public void DebugLog(string _string)
+        {
+            if (_debugLog)
+            {
+                Debug.Log(_string);
+            }
         }
 
         #region Checks
@@ -430,7 +489,7 @@ namespace OrX
 
             if (!added)
             {
-                Debug.Log("[OrX Log] === Adding OrX to owned vessel list ===");
+                OrXLog.instance.DebugLog("[OrX Log] === Adding OrX to owned vessel list ===");
 
                 owned.Add(data.id.ToString());
                 ExportVesselList();
@@ -477,7 +536,7 @@ namespace OrX
                         count += 1;
                         if (craft.Current == guid)
                         {
-                            Debug.Log("[OrX Log] === Vessel is in owned vessels list  ===");
+                            OrXLog.instance.DebugLog("[OrX Log] === Vessel is in owned vessels list  ===");
                             added = true;
                         }
                     }
@@ -511,7 +570,7 @@ namespace OrX
                                 if (!v.Current.loaded || v.Current.packed) continue;
                                 if (v.Current.id.ToString() == guid)
                                 {
-                                    Debug.Log("[OrX Log] === Vessel is not in owned vessels list ... Switching to " + v.Current.vesselName + " ===");
+                                    OrXLog.instance.DebugLog("[OrX Log] === Vessel is not in owned vessels list ... Switching to " + v.Current.vesselName + " ===");
 
                                     FlightGlobals.ForceSetActiveVessel(v.Current);
                                     forcedVesselSwitch = true;
@@ -616,6 +675,7 @@ namespace OrX
             technologies.Dispose();
             return added;
         }
+
 
         #endregion
 
@@ -788,7 +848,9 @@ namespace OrX
 
         #region Keyboard Locks
 
-        private string lockID = "";
+        private string lockID = "1";
+        private string lockID2 = "2";
+
         private bool setFocusKeys = true;
         private KeyCode next;
         private KeyCode prev;
@@ -808,9 +870,9 @@ namespace OrX
 
                 next2 = GameSettings.FOCUS_NEXT_VESSEL.secondary.code;
                 prev2 = GameSettings.FOCUS_PREV_VESSEL.secondary.code;
-                Debug.Log("[OrX Log]: Setting Vessel Focus Hotkeys");
-                Debug.Log("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
-                Debug.Log("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: Setting Vessel Focus Hotkeys");
+                OrXLog.instance.DebugLog("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.primary.code + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + GameSettings.FOCUS_PREV_VESSEL.secondary.code + " changing to NONE");
 
                 GameSettings.FOCUS_NEXT_VESSEL.primary.code = KeyCode.None;
                 GameSettings.FOCUS_PREV_VESSEL.primary.code = KeyCode.None;
@@ -824,13 +886,13 @@ namespace OrX
             {
                 keysSet = false;
 
-                Debug.Log("[OrX Log]: Resetting Vessel Focus Hotkeys");
+                OrXLog.instance.DebugLog("[OrX Log]: Resetting Vessel Focus Hotkeys");
                 GameSettings.FOCUS_NEXT_VESSEL.primary.code = next;
                 GameSettings.FOCUS_PREV_VESSEL.primary.code = prev;
                 GameSettings.FOCUS_NEXT_VESSEL.secondary.code = next2;
                 GameSettings.FOCUS_PREV_VESSEL.secondary.code = prev2;
-                Debug.Log("[OrX Log]: " + next2 + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + next + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + next2 + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + next + " re-enabled ............................");
             }
         }
 
@@ -848,6 +910,8 @@ namespace OrX
 
         public void EVALockWS()
         {
+            //InputLockManager.SetControlLock(ControlTypes.EVA_INPUT, lockID2);
+            /*
             if (!_EVALockWS)
             {
                 _EVALockWS = true;
@@ -856,18 +920,18 @@ namespace OrX
                 w2 = GameSettings.EVA_forward.secondary.code;
                 s2 = GameSettings.EVA_back.secondary.code;
 
-                Debug.Log("[OrX Log]: Setting EVA Control Lock");
-                Debug.Log("[OrX Log]: " + w + " changing to NONE");
-                Debug.Log("[OrX Log]: " + s + " changing to NONE");
-                Debug.Log("[OrX Log]: " + w2 + " changing to NONE");
-                Debug.Log("[OrX Log]: " + s2 + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: Setting EVA Control Lock");
+                OrXLog.instance.DebugLog("[OrX Log]: " + w + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + s + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + w2 + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + s2 + " changing to NONE");
 
                 GameSettings.EVA_forward.primary.code = KeyCode.None;
                 GameSettings.EVA_back.primary.code = KeyCode.None;
                 GameSettings.EVA_forward.secondary.code = KeyCode.None;
                 GameSettings.EVA_back.secondary.code = KeyCode.None;
             }
-            EVALockAD();
+            EVALockAD();*/
         }
         public void EVALockAD()
         {
@@ -879,11 +943,11 @@ namespace OrX
                 a2 = GameSettings.EVA_left.secondary.code;
                 d2 = GameSettings.EVA_right.secondary.code;
 
-                Debug.Log("[OrX Log]: Setting EVA Control Lock");
-                Debug.Log("[OrX Log]: " + a + " changing to NONE");
-                Debug.Log("[OrX Log]: " + d + " changing to NONE");
-                Debug.Log("[OrX Log]: " + a2 + " changing to NONE");
-                Debug.Log("[OrX Log]: " + d2 + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: Setting EVA Control Lock");
+                OrXLog.instance.DebugLog("[OrX Log]: " + a + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + d + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + a2 + " changing to NONE");
+                OrXLog.instance.DebugLog("[OrX Log]: " + d2 + " changing to NONE");
 
                 GameSettings.EVA_left.primary.code = KeyCode.None;
                 GameSettings.EVA_right.primary.code = KeyCode.None;
@@ -893,22 +957,25 @@ namespace OrX
         }
         public void EVAUnlockWS()
         {
+            //nputLockManager.RemoveControlLock(lockID2);
+
+            /*
             if (_EVALockWS)
             {
                 _EVALockWS = false;
 
-                Debug.Log("[OrX Log]: Resetting EVA Control Lock");
-                Debug.Log("[OrX Log]: " + w + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + s + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + w2 + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + s2 + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: Resetting EVA Control Lock");
+                OrXLog.instance.DebugLog("[OrX Log]: " + w + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + s + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + w2 + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + s2 + " re-enabled ............................");
 
                 GameSettings.EVA_forward.primary.code = w;
                 GameSettings.EVA_back.primary.code = s;
                 GameSettings.EVA_forward.secondary.code = w2;
                 GameSettings.EVA_back.secondary.code = s2;
             }
-            EVAUnlockAD();
+            EVAUnlockAD();*/
         }
         public void EVAUnlockAD()
         {
@@ -916,11 +983,11 @@ namespace OrX
             {
                 _EVALockAD = false;
 
-                Debug.Log("[OrX Log]: Resetting EVA Control Lock");
-                Debug.Log("[OrX Log]: " + a + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + d + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + a2 + " re-enabled ............................");
-                Debug.Log("[OrX Log]: " + d2 + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: Resetting EVA Control Lock");
+                OrXLog.instance.DebugLog("[OrX Log]: " + a + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + d + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + a2 + " re-enabled ............................");
+                OrXLog.instance.DebugLog("[OrX Log]: " + d2 + " re-enabled ............................");
 
                 GameSettings.EVA_left.primary.code = a;
                 GameSettings.EVA_right.primary.code = d;
@@ -931,12 +998,12 @@ namespace OrX
 
         public void LockKeyboard()
         {
-            Debug.Log("[OrX Log]: Locking Keyboard");
-            InputLockManager.SetControlLock(ControlTypes.ACTIONS_ALL, lockID);
+            OrXLog.instance.DebugLog("[OrX Log]: Locking Keyboard");
+            InputLockManager.SetControlLock(ControlTypes.KEYBOARDINPUT, lockID);
         }
         public void UnlockKeyboard()
         {
-            Debug.Log("[OrX Log]: Unlocking Keyboard");
+            OrXLog.instance.DebugLog("[OrX Log]: Unlocking Keyboard");
             InputLockManager.RemoveControlLock(lockID);
         }
 
