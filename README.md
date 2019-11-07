@@ -1,5 +1,7 @@
 OrX Kontinuum - Is There Anybody Out There
 
+FORUM DEVELOPMENT THREAD: https://forum.kerbalspaceprogram.com/index.php?/topic/188859-173-orx-kontinuum-development-thread-geo-caching-scuba-diving-winds-challenge-creation-and-more/&tab=comments#comment-3686281
+
 OrX Kontinuum brings Geo Caching, Scuba Diving, the joy of W[ind/S] and more to KSP ..... It's purpose is to give you more reasons and ways to explore
 
 
@@ -80,29 +82,28 @@ Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the 
 
 - The creator of the HoloKron can add a craft file that is unlocked and saved to the users save game directory when the HoloKron is opened
 
-- The .orx file created is saved inside of GameData/OrX/Export/ ... Players can share .orx files contained within the GameData/OrX/Export/ directory with other KSP players and the coordinates will be available if they have OrX installed (copy shared HoloKron files to GameData/OrX/HoloKron/)
+- The .orx file created is saved inside of GameData/OrX/Export/ ... Players can share .orx files contained within the GameData/OrX/Export/ directory with other KSP players and the coordinates will be available if they have OrX installed (copy shared HoloKron files to GameData/OrX/Import/)
 
 - Craft files contained in the .orx file have been put through encryption so as to make it difficult for anyone to 'hack' the HoloKron by config editing outside of the game ... If you want to hack the HoloKron you must use the OrX BlackHat (isn't a thing ... yet) or go through the trouble of decoding the .craft file manually (good luck ... lol)
 
-- To start scanning for HoloKrons, click on the green OrX button while in the flight scene ... any HoloKron (.orx file) contained within GameData/OrX/HoloKron/ will be checked to see if it is within the same SOI as the current active vessel and if it is then Pythagoras will check how far away it is
+- To start scanning for HoloKrons, click on the green OrX button while in the flight scene to open the OrX Kontinuum menu and click on Scan for HoloKrons 
 PLEASE NOTE: The distance, the altitude and heading to the closest HoloKron within the current SOI will be displayed in the OrX Kontinuum menu if it is within 100km
 
-- If you are within 2km of a HoloKron location then it will spawn and each of the vessels contained in the HoloKron will be spawned at their saved locations (save your mun base ????)
+- If you are within 3km of a Geo-Cache HoloKron location then it will spawn and each of the vessels contained in the HoloKron will be spawned at their saved locations (save your mun base ????)
 
 - To creat a HoloKron you must be EVA ... Go to the location where you want to create the HoloKron and right click on your Kerbal then click on 'HOLOKRONSPAWN' and the HoloKron Creation menu will appear as well as a HoloKron will spawn
 
 - Click on the HoloKron Type button to select from a Geo-Caching or a Challenge HoloKron (HoloKron type is currently locked as Geo-Cache)
 
 - In the 'Name:' text entry box enter a name for your HoloKron ... If a HoloKron of the same name is in the 'OrX/Export' directory the creator will be presented with options to add to the HoloKron of the same name or enter another name when saving
-PLEASE NOTE: You can add as many HoloKrons to a single .orx file as you wish, however each HoloKron contained in the .orx file is set up so that it will not be available to a player until the HoloKron that comes before it in the file has been opened (the first HoloKron in the .orx file is unlocked)
 
-- In the 'Password:' text entry box enter a password for your HoloKron ... The purpose of the password is to lock the HoloKron from being added to from an unauthorized HoloKron creator
+- In the 'Password:' text entry box enter a password for your HoloKron ... The purpose of the password is to lock the HoloKron from being added to from an unauthorized HoloKron creator (default password is 'OrX' ... change this to lock your HoloKron from tampering)
 
 - Add a description of your HoloKron in the description text entry section ... as you type in a text entry field a new text entry box will appear below it, press 'TAB' to jump to the new text entry field (maximum of 10 lines)
 
 - Click on the 'Add Blueprints' check box to open the Craft Browser ... Select a hangar in the Craft Browser (SPH or VAB from your current game save) then select a craft from the list and click on "Load" to add that craft file as a blueprint ... click cancel to return to the previous menu
 
-- Click on the 'Save Local Vessel' check box to have all landed vessels within a 1km radius and all flying vessel within an 8km radius of the HoloKron will be saved (.orx file) as well all information required for later spawning
+- Click on the 'Save Local Vessel' check box to have all landed vessels within a 1km radius and all flying vessel within an 8km radius of the HoloKron saved (.orx file) as well all information required for later spawning
 
 - If the HoloKron being created is a Geo-Cache, click on the save button to save the HoloKron
 
@@ -139,9 +140,9 @@ INSTALLATION INSTRUCTIONS
 SHARING ORX FILES
 ------------------------------------------------------------------
 
-All that is needed is for the person you are sharing your.orx files with is for them to have OrX Kontinuum installed
+All that is needed is for the person you are sharing your.orx and .scores files with is for them to have OrX Kontinuum installed
 
-Copy shared .orx files to GameData/OrX/HoloKron
+Copy shared files to GameData/OrX/Import
 
 
 ------------------------------------------------------------------
