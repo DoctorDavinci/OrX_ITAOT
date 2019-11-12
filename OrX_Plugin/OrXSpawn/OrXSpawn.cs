@@ -64,11 +64,13 @@ namespace OrX.spawn
         public bool survival = false;
         ConfigNode toLoad;
 
+        public bool spawning = false;
+
+
         private void Awake()
         {
-            var _OrXdir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            flagURL = _OrXdir + "\\OrX_icon";
-            orxCraft = _OrXdir + "\\PluginData" + "\\OrXKerbal.craft";
+            flagURL = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/OrX_icon";
+            orxCraft = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/OrX/FOrX.craft";
             if (instance) Destroy(instance);
             instance = this;
             toLoad = ConfigNode.Load(orxCraft);
@@ -81,33 +83,34 @@ namespace OrX.spawn
 
         public void SpawnInfected()
         {
+            spawning = true;
             randomizeLoc = new System.Random().Next(1, 100);
 
             if (randomizeLoc <= 26)
             {
-                _lat_ = 0.0002f;
-                _lon_ = 0.0002f;
+                _lat_ = 0.001f;
+                _lon_ = 0.001f;
             }
             else
             {
                 if (randomizeLoc <= 51)
                 {
-                    _lat_ = -0.0002f;
-                    _lon_ = 0.0002f;
+                    _lat_ = -0.001f;
+                    _lon_ = 0.001f;
                 }
                 else
                 {
                     if (randomizeLoc <= 76)
                     {
-                        _lat_ = 0.0002f;
-                        _lon_ = -0.0002f;
+                        _lat_ = 0.001f;
+                        _lon_ = -0.001f;
                     }
                     else
                     {
                         if (randomizeLoc <= 101)
                         {
-                            _lat_ = -0.0002f;
-                            _lon_ = -0.0002f;
+                            _lat_ = -0.001f;
+                            _lon_ = -0.001f;
                         }
                     }
                 }
@@ -126,7 +129,7 @@ namespace OrX.spawn
             Spawnedname = infectedName;
             detecting = false;
             timer = true;
-            //StartCoroutine(SpawnCraftRoutine(craftToSpawn));
+            StartCoroutine(SpawnCraftRoutine(craftToSpawn));
             ////KerbinMissions.instance.saltTotal += orxSalt;
         }
 
@@ -517,6 +520,9 @@ namespace OrX.spawn
 
                 foreach (Part p in shipConstruct.parts)
                 {
+                    dummyVessel.loaded = false;
+                    p.vessel = dummyVessel;
+
                     dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto));
                 }
                 foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
@@ -728,10 +734,11 @@ namespace OrX.spawn
             }
             orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
             orx.orx = true;
+            orx._chase = true;
 
             v.GoOffRails();
             StageManager.BeginFlight();
-
+            spawning = false;
             loadingCraft = false;
         }
 

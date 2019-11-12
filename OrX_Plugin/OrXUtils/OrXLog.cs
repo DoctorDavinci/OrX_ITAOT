@@ -83,6 +83,7 @@ namespace OrX
         private static VesselRanges.Situation _vesselOther;
         public bool _debugLog = false;
         public bool _mode = false;
+        float _preLoadRange = 10;
 
         private void Awake()
         {
@@ -154,15 +155,21 @@ namespace OrX
         }
         private void onVesselLoaded(Vessel data)
         {
-            SetRange(data, 8000);
+            if (!data.rootPart.Modules.Contains<ModuleOrXMission>() && !data.rootPart.Modules.Contains<ModuleOrXPlace>())
+            {
+                if (!spawn.OrXSpawnHoloKron.instance.spawning)
+                {
+                    data.rootPart.AddModule("ModuleOrXLoadedVesselPlace", true);
+                }
+            }
         }
         private void onCrewBoarding(GameEvents.FromToAction<Part, Part> data)
         {
-            AddToVesselList(data.to.vessel);
+            //AddToVesselList(data.to.vessel);
         }
         private void onFlightGlobalsReady(bool data)
         {
-            ImportVesselList();
+            //ImportVesselList();
             UpdateRangesOnFGReady();
         }
         public void onVesselChange(Vessel data)
@@ -187,7 +194,7 @@ namespace OrX
                 {
                     if (FlightGlobals.ActiveVessel.missionTime == 0)
                     {
-                        AddToVesselList(FlightGlobals.ActiveVessel);
+                        //AddToVesselList(FlightGlobals.ActiveVessel);
                     }
 
                     if (FlightGlobals.ActiveVessel.Splashed)
@@ -203,7 +210,7 @@ namespace OrX
             {
                 if (FlightGlobals.ActiveVessel.isEVA)
                 {
-                    AddToVesselList(FlightGlobals.ActiveVessel);
+                    //AddToVesselList(FlightGlobals.ActiveVessel);
                 }
                 else
                 {
@@ -214,23 +221,59 @@ namespace OrX
             }
         }
 
+        public void GetPRERanges()
+        {
+            ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
+            if (PREsettings != null)
+            {
+                OrXHoloKron.instance._preInstalled = true;
+                ConfigNode PREnode = PREsettings.GetNode("PreSettings");
+                _preLoadRange = float.Parse(PREnode.GetValue("GlobalRange")) * 1000;
+                DebugLog("[OrX Log] === PRE IS INSTALLED ... RANGES SET TO " + _preLoadRange + " meters ===");
+            }
+        }
+
+        bool cDamage = false;
+        bool uJoints = false;
+
+        public void NoDamage(bool _true)
+        {
+            if (_true)
+            {
+                cDamage = CheatOptions.NoCrashDamage;
+                uJoints = CheatOptions.UnbreakableJoints;
+                CheatOptions.NoCrashDamage = true;
+                CheatOptions.UnbreakableJoints = true;
+            }
+            else
+            {
+                CheatOptions.NoCrashDamage = cDamage;
+                CheatOptions.UnbreakableJoints = uJoints;
+            }
+        }
+
         public void SetRange(Vessel v, float _range)
         {
             try
             {
                 var pqs = FlightGlobals.currentMainBody.pqsController;
-                pqs.horizonDistance = _range * 8;
-                pqs.maxDetailDistance = _range * 8;
-                pqs.minDetailDistance = _range * 8;
-                pqs.visRadSeaLevelValue = 200;
-                pqs.collapseSeaLevelValue = 200;
-                
+                if (pqs != null)
+                {
+                    if (pqs.horizonDistance != _preLoadRange)
+                    {
+                        pqs.horizonDistance = _preLoadRange;
+                        pqs.maxDetailDistance = _preLoadRange;
+                        pqs.minDetailDistance = _preLoadRange;
+                        pqs.visRadSeaLevelValue = 200;
+                        pqs.collapseSeaLevelValue = 200;
+                    }
+                }
             }
             catch { }
 
-            _vesselLanded = new VesselRanges.Situation(_range, _range, _range, _range);
-            _vesselFlying = new VesselRanges.Situation(_range * 4, _range * 4, _range * 4, _range * 4);
-            _vesselOther = new VesselRanges.Situation(_range * 8, _range * 8, _range * 8, _range * 8);
+            _vesselLanded = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
+            _vesselFlying = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
+            _vesselOther = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
 
             _vesselRanges = new VesselRanges
             {
@@ -243,7 +286,7 @@ namespace OrX
                 subOrbital = _vesselOther
             };
 
-            if (v.vesselRanges.landed.load <= _range* 0.95f)
+            if (v.vesselRanges.landed.load <= _preLoadRange * 0.95f)
             {
                 //OrXLog.instance.DebugLog("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
                 v.vesselRanges = new VesselRanges(_vesselRanges);
@@ -492,7 +535,7 @@ namespace OrX
                 OrXLog.instance.DebugLog("[OrX Log] === Adding OrX to owned vessel list ===");
 
                 owned.Add(data.id.ToString());
-                ExportVesselList();
+                //ExportVesselList();
             }
         }
         public void RemoveFromVesselList(Vessel data)
@@ -512,7 +555,7 @@ namespace OrX
             if (added)
             {
                 owned.Remove(data.id.ToString());
-                ExportVesselList();
+                //ExportVesselList();
             }
         }
         public void CheckVesselList(Vessel data)
@@ -521,7 +564,7 @@ namespace OrX
             {
                 if (data.rootPart.Modules.Contains<ModuleOrXMission>())
                 {
-                    RemoveFromVesselList(data);
+                    //RemoveFromVesselList(data);
                 }
                 else
                 {
@@ -605,7 +648,7 @@ namespace OrX
                     owned.Add(cv.value);
                 }
 
-                CheckVesselList(data);
+                //CheckVesselList(data);
             }
         }
         private void ExportVesselList()
@@ -815,34 +858,48 @@ namespace OrX
 
         public string Crypt(string toCrypt)
         {
-            char[] chars = toCrypt.ToArray();
-            System.Random r = new System.Random(259);
-            for (int i = 0; i < chars.Length; i++)
+            if (toCrypt != "")
             {
-                int randomIndex = r.Next(0, chars.Length);
-                char temp = chars[randomIndex];
-                chars[randomIndex] = chars[i];
-                chars[i] = temp;
+                char[] chars = toCrypt.ToArray();
+                System.Random r = new System.Random(259);
+                for (int i = 0; i < chars.Length; i++)
+                {
+                    int randomIndex = r.Next(0, chars.Length);
+                    char temp = chars[randomIndex];
+                    chars[randomIndex] = chars[i];
+                    chars[i] = temp;
+                }
+                return new string(chars);
             }
-            return new string(chars);
+            else
+            {
+                return "";
+            }
         }
 
         public string Decrypt(string scrambled)
         {
-            char[] sc = scrambled.ToArray();
-            System.Random r = new System.Random(259);
-            List<int> swaps = new List<int>();
-            for (int i = 0; i < sc.Length; i++)
+            if (scrambled != "")
             {
-                swaps.Add(r.Next(0, sc.Length));
+                char[] sc = scrambled.ToArray();
+                System.Random r = new System.Random(259);
+                List<int> swaps = new List<int>();
+                for (int i = 0; i < sc.Length; i++)
+                {
+                    swaps.Add(r.Next(0, sc.Length));
+                }
+                for (int i = sc.Length - 1; i >= 0; i--)
+                {
+                    char temp = sc[swaps[i]];
+                    sc[swaps[i]] = sc[i];
+                    sc[i] = temp;
+                }
+                return new string(sc);
             }
-            for (int i = sc.Length - 1; i >= 0; i--)
+            else
             {
-                char temp = sc[swaps[i]];
-                sc[swaps[i]] = sc[i];
-                sc[i] = temp;
+                return "";
             }
-            return new string(sc);
         }
         #endregion
 
@@ -1008,6 +1065,6 @@ namespace OrX
         }
 
         #endregion
-
+         
     }
 }

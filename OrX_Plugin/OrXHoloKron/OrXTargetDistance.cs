@@ -44,15 +44,18 @@ namespace OrX
                 ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
                 if (PREsettings != null)
                 {
+                    OrXHoloKron.instance._preInstalled = true;
+
                     ConfigNode PREnode = PREsettings.GetNode("PreSettings");
                     if (PREnode.GetValue("ModEnabled") != "False")
                     {
-                        ScreenMessages.PostScreenMessage(new ScreenMessage("Physics Range Extender must be disabled", 4, ScreenMessageStyle.UPPER_CENTER));
-                        ScreenMessages.PostScreenMessage(new ScreenMessage("for OrX Kontinuum to work properly", 4, ScreenMessageStyle.UPPER_CENTER));
-                        ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Kontinuum shutting down .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                        OrXHoloKron.instance.ScreenMsg("Physics Range Extender must be disabled");
+                        OrXHoloKron.instance.ScreenMsg("for OrX Kontinuum to function properly");
+                        OrXHoloKron.instance.ScreenMsg("... Shutting down ...");
                         _enable = false;
-                        OrXHoloKron.instance.MainMenu();
                         OrXHoloKron.instance.ResetData();
+                        OrXHoloKron.instance.MainMenu();
+                        OrXHoloKron.instance.OrXHCGUIEnabled = false;
                     }
                 }
 
@@ -85,7 +88,7 @@ namespace OrX
                 mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
                 degPerMeter = 1 / mPerDegree;
                 scanDelay = 5;
-                string hcn = "";
+                //string hcn = "";
                 int coordCount = 0;
 
                 if (!b)
@@ -217,7 +220,7 @@ namespace OrX
                             if (targetDistance >= _targetDistance)
                             {
                                 targetDistance = _targetDistance;
-                                hcn = HoloKronName;
+                                //hcn = HoloKronName;
                             }
                         }
                         coordinate.Dispose();
@@ -239,9 +242,9 @@ namespace OrX
                                         if (TargetCoords[i] != null && TargetCoords[i].Length > 0)
                                         {
                                             string[] data = TargetCoords[i].Split(new char[] { ',' });
-                                            if (data[1] == hcn)
+                                            if (data[1] == HoloKronName)
                                             {
-                                                HoloKronName = data[1];
+                                                //HoloKronName = data[1];
                                                 _latMission = double.Parse(data[3]);
                                                 _lonMission = double.Parse(data[4]);
                                                 _altMission = double.Parse(data[5]);
@@ -394,10 +397,11 @@ namespace OrX
                         }
                         else
                         {
-                            if (_targetDistance <= 50)
+                            if (_targetDistance <= 20)
                             {
-                                //OrXHoloKron.instance.OrXHCGUIEnabled = false;
-                                //OrXHoloKron.instance.checking = false;
+                                OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                                OrXHoloKron.instance.checking = false;
+                                OrXHoloKron.instance.MainMenu();
                             }
                         }
                     }

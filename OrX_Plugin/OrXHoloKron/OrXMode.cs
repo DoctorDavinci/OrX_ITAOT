@@ -14,7 +14,9 @@ namespace OrX
         private const float LeftIndent = 12;
         private const float ContentTop = 20;
         public static OrXMode instance;
-        public bool _modeEnabled = false;
+        private bool _modeEnabled = false;
+        public bool _guiEnabled = false;
+
         public static bool HasAddedButton;
         private readonly float _incrButtonWidth = 26;
         private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
@@ -23,6 +25,8 @@ namespace OrX
         private float _windowHeight = 250;
         private Rect _windowRect;
         public static GUISkin OrXGUISkin = HighLogic.Skin;
+        string _pKarma = "";
+        public bool _Karma = false;
 
         private void Awake()
         {
@@ -39,9 +43,9 @@ namespace OrX
         }
         private void OnGUI()
         {
-            if (_modeEnabled)
+            if (_guiEnabled)
             {
-                _windowRect = GUI.Window(225164275, _windowRect, OrXChallengeScoreboardStats, "");
+                _windowRect = GUI.Window(225311375, _windowRect, OrXModeGUI, "");
             }
         }
 
@@ -60,49 +64,119 @@ namespace OrX
         public void SetMode()
         {
             _modeEnabled = true;
+            _guiEnabled = true;
         }
 
-        private void OrXChallengeScoreboardStats(int Scoreboard)
+        private void OrXModeGUI(int ModeGUI)
         {
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
             float line = 0;
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum Modes", titleStyleL);
-            line++;
-            line += 0.2f;
-            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Balls of Steel", HighLogic.Skin.button))
+            if (_modeEnabled)
             {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Do you have the balls for this ???", 4, ScreenMessageStyle.UPPER_CENTER));
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum Modes", titleStyleL);
+                line++;
+                line += 0.2f;
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Balls of Steel", HighLogic.Skin.button))
+                {
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Do you have the balls for this ???", 4, ScreenMessageStyle.UPPER_CENTER));
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                }
+                line++;
+                line += 0.2f;
+
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Twisted Metal", HighLogic.Skin.button))
+                {
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Something Twisted like a Sister .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                }
+                line++;
+                line += 0.2f;
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Karmageddon", HighLogic.Skin.button))
+                {
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Does this really need clarifying ???", 4, ScreenMessageStyle.UPPER_CENTER));
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                    count = 0;
+                    FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleKarma", true);
+                    StartCoroutine(SpawnKarma());
+                    _modeEnabled = false;
+                    OrXHoloKron.instance.MainMenu();
+                    _Karma = true;
+                }
+
+                line++;
+                line++;
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Return To Previous Menu", OrXGUISkin.button))
+                {
+
+                    _modeEnabled = false;
+                    OrXHoloKron.instance.MainMenu();
+                }
+
+
+            }
+            else
+            {
+                var leftLabel = new GUIStyle();
+                leftLabel.alignment = TextAnchor.UpperLeft;
+                leftLabel.normal.textColor = Color.white;
+
+                GUI.Label(new Rect(10, ContentTop + line * entryHeight, 60, entryHeight), "Password:",
+                    leftLabel);
+                float textFieldWidth = ((WindowWidth / 3) * 2) - LeftIndent;
+                _pKarma = GUI.TextField(new Rect((WindowWidth / 3), ContentTop + line * entryHeight, textFieldWidth, entryHeight), _pKarma);
+                line++;
+                line += 0.2f;
+
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Enter the void", HighLogic.Skin.button))
+                {
+                    if (_pKarma == OrXHoloKron.instance.Karma)
+                    {
+                        OrXLog.instance.DebugLog("[OrX Karma] === UNLOCKING ===");
+                        _modeEnabled = true;
+                        OrXHoloKron.instance._pKarma = _pKarma;
+                    }
+                    else
+                    {
+                        OrXLog.instance.DebugLog("[OrX Karma] === WRONG PASSWORD ===");
+                        OrXHoloKron.instance.ScreenMsg("WRONG PASSWORD");
+                    }
+                }
             }
             line++;
             line += 0.2f;
 
-            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Twisted Metal", HighLogic.Skin.button))
+            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Close Window", HighLogic.Skin.button))
             {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Something Twisted like a Sister .....", 4, ScreenMessageStyle.UPPER_CENTER));
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
-            }
-            line++;
-            line += 0.2f;
-            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Karmageddon", HighLogic.Skin.button))
-            {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Does this really need clarifying ???", 4, ScreenMessageStyle.UPPER_CENTER));
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
-            }
-
-            line++;
-            line++;
-            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Return To Previous Menu", OrXGUISkin.button))
-            {
-
+                _guiEnabled = false;
                 _modeEnabled = false;
                 OrXHoloKron.instance.MainMenu();
+                OrXHoloKron.instance._showSettings = true;
             }
+
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
+        }
+
+        int count = 0;
+
+        IEnumerator SpawnKarma()
+        {
+            if (count <= 5)
+            {
+                ScreenMessages.PostScreenMessage(new ScreenMessage("Karmageddon victim #" + count + " spawning .....", 4, ScreenMessageStyle.UPPER_CENTER));
+
+                count += 1;
+                spawn.OrXSpawn.instance.SpawnInfected();
+                yield return new WaitForFixedUpdate();
+                while (spawn.OrXSpawn.instance.spawning)
+                {
+                    yield return null;
+                }
+                StartCoroutine(SpawnKarma());
+            }
         }
     }
 }

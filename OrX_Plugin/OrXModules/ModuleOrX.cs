@@ -67,6 +67,8 @@ namespace OrX
 
         float localScale = 0;
 
+        Rigidbody _rb;
+
         #endregion
         [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
      UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
@@ -93,10 +95,11 @@ namespace OrX
             this.part.force_activate();
             if (!orx)
             {
-                OrXLog.instance.AddToVesselList(this.vessel);
+                //OrXLog.instance.AddToVesselList(this.vessel);
             }
             kerbal = kerbalControl();
-
+            _rb = null;
+            kerbal.GetComponentCached<Rigidbody>(ref _rb);
             _maxJumpForce = kerbal.maxJumpForce;
             _walkSpeed = kerbal.walkSpeed;
             _runSpeed = kerbal.runSpeed;
@@ -106,8 +109,23 @@ namespace OrX
             trimModifier = _trimModifier;
             forward = this.part.transform.forward;
             localScale = this.part.transform.localScale.x;
+            //GameEvents.onCollision.Add(onCollision);
+            //this.part.collider.isTrigger = true;
+
             base.OnStart(state);
         }
+
+        private void onCollision(EventReport data)
+        {
+            if (OrXMode.instance._Karma)
+            {
+                part.explosionPotential *= 0.2f;
+                part.explode();
+                this.part.collider.isTrigger = true;
+                
+            }
+        }
+
         public void Update()
         {
             if (!FlightGlobals.ready || PauseMenu.isOpen || !vessel.loaded || vessel.HoldPhysics)
@@ -176,7 +194,7 @@ namespace OrX
                                     {
                                         if (!_wlFlash)
                                         {
-                                            this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                                            //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
                                         }
                                     }
                                 }
@@ -203,23 +221,28 @@ namespace OrX
                     {
                         if (_chase)
                         {
-                            Vector3d _currLoc = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude);
-                            _currLoc = -_currLoc;
+                            Vector3 _currLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)vessel.latitude, (double)vessel.longitude, (double)vessel.altitude);
+                            Vector3 _targetLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)FlightGlobals.ActiveVessel.latitude, (double)FlightGlobals.ActiveVessel.longitude, (double)vessel.altitude);
+                            Vector3 _rotty = (_currLoc - _targetLoc).normalized;
+                            Quaternion _lookTo = Quaternion.LookRotation((_rotty * TimeWarp.deltaTime), kerbal.fUp);
 
-                            Vector3d target = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
-                            _currLoc += target;
+                            //Quaternion _lookRot = Quaternion.LookRotation((vessel.transform.up * TimeWarp.deltaTime), kerbal.fUp);
+                            Quaternion _rotTo = Quaternion.RotateTowards(vessel.transform.rotation, _lookTo, kerbal.turnRate);
 
-                            float _vel = TimeWarp.deltaTime;
+                            float _vel = kerbal.walkSpeed * Time.deltaTime;
 
                             UpdateAnims(ref _vel);
-                            _currLoc.Normalize();
-                            Move(target);
+                            kerbal.part.vessel.SetRotation(_rotTo);
+                            if (_rb != null)
+                            {
+                                _rb.MovePosition(_currLoc - (_targetLoc * (kerbal.walkSpeed / 2)) * Time.deltaTime);
+                            }
                         }
                         else
                         {
                             if (this.vessel.isActiveVessel)
                             {
-                                OrXLog.instance.CheckVesselList(this.vessel);
+                                //OrXLog.instance.CheckVesselList(this.vessel);
                             }
                             else
                             {
@@ -423,11 +446,11 @@ namespace OrX
                     spawnHoloKron = false;
                     if (this.part != this.vessel.rootPart)
                     {
-                        ScreenMsg("Unable to spawn HoloKron ... Please get out of your chair");
+                        //ScreenMsg("Unable to spawn HoloKron ... Please get out of your chair");
                     }
                     else
                     {
-                        OrXHoloKron.instance.SpawnByOrX(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
+                        //OrXHoloKron.instance.SpawnByOrX(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
                         if (this.vessel.Splashed)
                         {
                             holdingDepth = false;
@@ -770,21 +793,6 @@ namespace OrX
             }
         }
 
-        public void Move(Vector3d vect)
-        {
-            Quaternion _currentRot = kerbal.part.vessel.transform.rotation;
-            Quaternion _lookRot = Quaternion.LookRotation((vect * TimeWarp.deltaTime), kerbal.fUp);
-            Quaternion _rotTo = Quaternion.RotateTowards(_currentRot, _lookRot, kerbal.turnRate);
-            kerbal.part.vessel.SetRotation(_rotTo);
-
-            Rigidbody rigidbody = null;
-            kerbal.GetComponentCached<Rigidbody>(ref rigidbody);
-            //kerbal.GetComponent<Rigidbody>();
-            if (rigidbody != null)
-            {
-                rigidbody.MovePosition(rigidbody.position + (vect * TimeWarp.deltaTime));
-            }
-        }
 
         //////////////////////////////////////////////////////////////////////////////
 

@@ -19,10 +19,10 @@ namespace OrX
                 DKI = AssemblyLoader.loadedAssemblies
                      .Where(a => a.name.Contains("OrX.DevKit")).SelectMany(a => a.assembly.GetExportedTypes())
                      .SingleOrDefault(t => t.FullName == "OrX.DevKit");
-                Debug.Log("[OrX Log] === OrX Dev Kit is installed ===");
 
                 if (DKI != null)
                 {
+                    Debug.Log("[OrX Log] === OrX Dev Kit is installed ===");
                     devKitInstalled = true;
                 }
             }

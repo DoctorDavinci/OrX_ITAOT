@@ -16,7 +16,7 @@ namespace OrX
 
         private static float UNCLOAKED = 1.0f;
         private static float RENDER_THRESHOLD = 0.0f;
-        private float fadePerTime = 0.1f;
+        private float fadePerTime = 0.2f;
         private bool currentShadowState = true;
         private float visiblilityLevel = 0;
         private float fadeTime = 10f;
@@ -40,13 +40,13 @@ namespace OrX
                         {
                             if (p.Current != part && p.Current.Modules.Contains<KerbalEVA>())
                             {
-                                parkingBrake = true;
+                                //parkingBrake = true;
                             }
 
                             if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
                             {
-                                var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                brakeTweakable = wheel.brakeTweakable;
+                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
+                                //brakeTweakable = wheel.brakeTweakable;
                             }
                         }
                     }
@@ -112,7 +112,7 @@ namespace OrX
 
             if (parkingBrake)
             {
-                this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
 
                 if (this.vessel.srfSpeed >= 1)
                 {
@@ -123,9 +123,9 @@ namespace OrX
                         {
                             if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
                             {
-                                var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                wheel.brakeTweakable = 1000;
-                                tweaked = true;
+                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
+                                //wheel.brakeTweakable = 1000;
+                                //tweaked = true;
                             }
                         }
                     }
@@ -145,9 +145,9 @@ namespace OrX
                         {
                             if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
                             {
-                                var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                wheel.brakeTweakable = brakeTweakable;
-                                tweaked = false;
+                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
+                                //wheel.brakeTweakable = brakeTweakable;
+                                //tweaked = false;
                             }
                         }
                     }
@@ -176,7 +176,7 @@ namespace OrX
             vessel.angularVelocity = Vector3.zero;
             vessel.angularMomentum = Vector3.zero;
             vessel.SetWorldVelocity(Vector3.zero);
-            vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+            //vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
 
             StartCoroutine(Place(_challengeStart, _altToSubtract, _left, _pitch));
         }
@@ -233,13 +233,8 @@ namespace OrX
             float localAlt = (float)vessel.radarAltitude - _altToSubtract;
             float mod = 2;
 
-            if (_altToSubtract * 2 >= (float)vessel.radarAltitude * 0.4f)
-            {
-                mod *= 1.5f;
-            }
-
             OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === PLACING " + vessel.vesselName + " ===");
-            float dropRate = Mathf.Clamp((localAlt / mod), 0.1f, 200);
+            float dropRate = Mathf.Clamp((localAlt * mod), 0.1f, 200);
 
             while (!vessel.LandedOrSplashed)
             {
@@ -247,7 +242,7 @@ namespace OrX
                 vessel.angularVelocity = Vector3.zero;
                 vessel.angularMomentum = Vector3.zero;
                 vessel.SetWorldVelocity(Vector3.zero);
-                dropRate = Mathf.Clamp((localAlt / mod), 0.1f, 200);
+                dropRate = Mathf.Clamp((localAlt * mod), 0.1f, 200);
 
                 if (dropRate > 3)
                 {
