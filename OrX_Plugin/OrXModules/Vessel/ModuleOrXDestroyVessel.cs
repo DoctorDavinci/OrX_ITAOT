@@ -16,7 +16,7 @@ namespace OrX
         private static float rLevel = 0.0f;
         private bool currentShadowState = true;
         private float tLevel = 1;
-        private float rateOfFade = 5f;
+        private float rateOfFade = 0.5f;
         private float shadowCutoff = 0.0f;
         private bool triggerHide = false;
         public Vector3d pos;
@@ -51,7 +51,7 @@ namespace OrX
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (HighLogic.LoadedSceneIsFlight && triggered)
             {
                 float delta = Time.deltaTime * rateOfFade;
                 if (tLevel > maxfade)

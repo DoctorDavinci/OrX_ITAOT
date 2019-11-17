@@ -15,7 +15,7 @@ namespace OrX
         private const float LeftIndent = 12;
         private const float ContentTop = 20;
         public bool GuiEnabledScuba;
-        public static bool HasAddedButton;
+        public static bool TBBadded;
         private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
         private readonly float entryHeight = 20;
         private float _contentWidth;
@@ -31,6 +31,37 @@ namespace OrX
 
         public bool drunk = false;
         public double martiniLevel = 0;
+
+        static GUIStyle rightLabel = new GUIStyle
+        {
+            fontSize = 11,
+            alignment = TextAnchor.UpperCenter,
+            fontStyle = FontStyle.Bold,
+            normal = { textColor = Color.white }
+        };
+
+        static GUIStyle centerLabel = new GUIStyle
+        {
+            alignment = TextAnchor.UpperCenter,
+            normal = { textColor = Color.white }
+        };
+        static GUIStyle centerLabelOrange = new GUIStyle
+        {
+            alignment = TextAnchor.UpperCenter,
+            normal = { textColor = XKCDColors.OrangeRed }
+        };
+
+        static GUIStyle titleStyle = new GUIStyle(centerLabel)
+        {
+            fontSize = 11,
+            alignment = TextAnchor.MiddleCenter
+        };
+        static GUIStyle titleStyleOrange = new GUIStyle(centerLabelOrange)
+        {
+            fontSize = 14,
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold
+        };
 
         public void Awake()
         {
@@ -66,6 +97,9 @@ namespace OrX
         private void OnGUI()
         {
             if (PauseMenu.isOpen) return;
+            GUI.backgroundColor = XKCDColors.DarkGrey;
+            GUI.contentColor = XKCDColors.DarkGrey;
+            GUI.color = XKCDColors.DarkGrey;
 
             if (GuiEnabledScuba)
             {
@@ -79,28 +113,15 @@ namespace OrX
             float line = 0;
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
-            DrawTitle();
-            DrawOxygenText(line);
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Scuba Kerb", titleStyleOrange);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "OXYGEN %", titleStyle);
             line++;
-            DrawOxygen(line);
+            GUI.Label(new Rect(8, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "0");
+            GUI.Label(new Rect(95, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "|");
+            GUI.Label(new Rect(175, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "100");
+            oxygen = GUI.HorizontalSlider(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), oxygen, 0, 100);
             line++;
-            DrawNarcosis(line);
-
-            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
-            _windowRect.height = _windowHeight;
-        }
-
-        private void DrawNarcosis(float line)
-        {
-            var leftLabel = new GUIStyle();
-            leftLabel.alignment = TextAnchor.UpperCenter;
-            leftLabel.normal.textColor = Color.white;
-            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Status: ",
-                leftLabel);
-
-            var rightLabel = new GUIStyle();
-            rightLabel.alignment = TextAnchor.UpperCenter;
-            rightLabel.fontStyle = FontStyle.Bold;
+            GUI.Label(new Rect(LeftIndent, ContentTop + line * entryHeight, 60, entryHeight), "Status: ", titleStyle);
 
             if (!drunk)
             {
@@ -134,56 +155,35 @@ namespace OrX
             else
             {
                 narcosisText = "You're Drunk";
-                rightLabel.normal.textColor = XKCDColors.PaleMagenta;
+                rightLabel.normal.textColor = XKCDColors.OrangeRed;
             }
 
-            GUI.Label(new Rect((WindowWidth / 2) - LeftIndent, ContentTop + line * entryHeight, 140, entryHeight),
-                narcosisText, rightLabel);
+            GUI.Label(new Rect((WindowWidth / 2) - LeftIndent, ContentTop + line * entryHeight, 140, entryHeight), narcosisText, rightLabel);
+
+            _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
+            _windowRect.height = _windowHeight;
+        }
+
+        private void DrawNarcosis(float line)
+        {
+            var leftLabel = new GUIStyle();
+            leftLabel.alignment = TextAnchor.UpperCenter;
+            leftLabel.normal.textColor = Color.white;
         }
 
         private void DrawOxygenText(float line)
         {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 10,
-                alignment = TextAnchor.MiddleCenter
-            };
-
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20),
-                "OXYGEN %",
-                titleStyle);
         }
 
         private void DrawOxygen(float line)
         {
-            var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
-            GUI.Label(new Rect(8, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "0");
-            GUI.Label(new Rect(95, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "|");
-            GUI.Label(new Rect(175, ContentTop + line * entryHeight, contentWidth * 0.9f, 20), "100");
-            oxygen = GUI.HorizontalSlider(saveRect, oxygen, 0, 100);
         }
 
         private void DrawTitle()
         {
-            var centerLabel = new GUIStyle
-            {
-                alignment = TextAnchor.UpperCenter,
-                normal = { textColor = Color.white }
-            };
-            var titleStyle = new GUIStyle(centerLabel)
-            {
-                fontSize = 14,
-                alignment = TextAnchor.MiddleCenter
-            };
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Scuba Kerb", titleStyle);
         }
 
-        private void Dummy()
+        private void Blank()
         {
         }
     }

@@ -316,9 +316,9 @@ namespace OrX
         {
             deploy = true;
             yield return new WaitForSeconds(2);
-            SpawnCannonBall.instance.SpawnCoords = fireTransform.position;
-            SpawnCannonBall.instance.dir = this.part.transform.forward;
-            SpawnCannonBall.instance.CheckSpawnTimer();
+            spawn.SpawnCannonBall.instance.SpawnCoords = fireTransform.position;
+            spawn.SpawnCannonBall.instance.dir = this.part.transform.forward;
+            spawn.SpawnCannonBall.instance.CheckSpawnTimer();
             part.RequestResource("CannonBalls", 1);
             GetAmmo();
         }

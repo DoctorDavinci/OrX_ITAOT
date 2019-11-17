@@ -13,7 +13,7 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                dir = SpawnCannonBall.instance.dir;
+                dir = spawn.SpawnCannonBall.instance.dir;
             }
             base.OnStart(state);
         }

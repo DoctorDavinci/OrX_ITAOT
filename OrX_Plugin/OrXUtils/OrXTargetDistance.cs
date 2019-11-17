@@ -40,26 +40,7 @@ namespace OrX
         {
             if (!OrXHoloKron.instance.buildingMission)
             {
-                bool _enable = true;
-                ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
-                if (PREsettings != null)
-                {
-                    OrXHoloKron.instance._preInstalled = true;
-
-                    ConfigNode PREnode = PREsettings.GetNode("PreSettings");
-                    if (PREnode.GetValue("ModEnabled") != "False")
-                    {
-                        OrXHoloKron.instance.ScreenMsg("Physics Range Extender must be disabled");
-                        OrXHoloKron.instance.ScreenMsg("for OrX Kontinuum to function properly");
-                        OrXHoloKron.instance.ScreenMsg("... Shutting down ...");
-                        _enable = false;
-                        OrXHoloKron.instance.ResetData();
-                        OrXHoloKron.instance.MainMenu();
-                        OrXHoloKron.instance.OrXHCGUIEnabled = false;
-                    }
-                }
-
-                if (_enable)
+                if (!OrXLog.instance.PREnabled())
                 {
                     _checking = checking;
                     OrXHoloKron.instance.airTime = 0;
@@ -399,9 +380,13 @@ namespace OrX
                         {
                             if (_targetDistance <= 20)
                             {
-                                OrXHoloKron.instance.OrXHCGUIEnabled = false;
                                 OrXHoloKron.instance.checking = false;
-                                OrXHoloKron.instance.MainMenu();
+
+                                if (!OrXHoloKron.instance._showTimer)
+                                {
+                                    OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                                    OrXHoloKron.instance.MainMenu();
+                                }
                             }
                         }
                     }
@@ -417,7 +402,7 @@ namespace OrX
                     OrXLog.instance.DebugLog("[OrX Holo Distance Check] === NO HOLOKRON IN RANGE ===");
                     OrXHoloKron.instance.targetDistance = 1138.1138;
                     //checking = false;
-                    OrXHoloKron.instance.ScreenMsg("No HoloKrons in range ......");
+                    OrXHoloKron.instance.OnScrnMsgUC("No HoloKrons in range ......");
                     scanDelay = 5;
                     OrXHoloKron.instance.checking = false;
                     OrXHoloKron.instance.MainMenu();

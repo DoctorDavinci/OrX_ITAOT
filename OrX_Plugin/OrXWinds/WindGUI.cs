@@ -15,7 +15,7 @@ namespace OrX
         private const float ContentTop = 20;
         public static WindGUI instance;
         public static bool GuiEnabled;
-        public static bool HasAddedButton;
+        public static bool TBBadded;
         private readonly float _incrButtonWidth = 26;
         private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
         private readonly float entryHeight = 20;
@@ -23,6 +23,7 @@ namespace OrX
         private bool _gameUiToggle;
         private float _windowHeight = 250;
         private Rect _windowRect;
+        public static GUISkin OrXGUISkin = HighLogic.Skin;
 
         /// /////////////////////////////////////////////////////////////////////////////
 
@@ -63,7 +64,7 @@ namespace OrX
         private void Start()
         {
             _windowRect = new Rect((Screen.width / 2) - (WindowWidth / 2), 250, WindowWidth, _windowHeight);
-            AddToolbarButton();
+            TBBAdd();
             _wi = windIntensity;
             teaseDelay = 20;
             heading = 0;
@@ -75,6 +76,12 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
+                if (!FlightGlobals.ready) GuiEnabled = false;
+                if (PauseMenu.isOpen) return;
+                GUI.backgroundColor = XKCDColors.DarkGrey;
+                GUI.contentColor = XKCDColors.DarkGrey;
+                GUI.color = XKCDColors.DarkGrey;
+
                 if (GuiEnabled)
                 {
                     _windowRect = GUI.Window(693427116, _windowRect, GuiWindow, "");
@@ -349,13 +356,34 @@ namespace OrX
             alignment = TextAnchor.UpperCenter,
             normal = { textColor = Color.white }
         };
-        static GUIStyle titleStyle = new GUIStyle(centerLabel)
+        static GUIStyle titleStyle = new GUIStyle(centerLabelYellow)
         {
             fontSize = 11,
-            alignment = TextAnchor.MiddleCenter
+            alignment = TextAnchor.UpperCenter,
+            normal = { textColor = Color.yellow }
         };
         static GUIStyle titleStyleL = new GUIStyle(centerLabel) { fontSize = 14, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         static GUIStyle leftLabel = new GUIStyle() { alignment = TextAnchor.UpperLeft, normal = { textColor = Color.white } };
+
+        static GUIStyle centerLabelYellow = new GUIStyle
+        {
+            alignment = TextAnchor.UpperCenter,
+            normal = { textColor = Color.yellow }
+        };
+
+        static GUIStyle centerLabelOrange = new GUIStyle
+        {
+            alignment = TextAnchor.UpperCenter,
+            normal = { textColor = XKCDColors.OrangeRed }
+        };
+
+        static GUIStyle titleStyleOrange = new GUIStyle(centerLabelOrange)
+        {
+            fontSize = 14,
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Bold
+
+        };
 
         private void GuiWindow(int Wind)
         {
@@ -363,7 +391,7 @@ namespace OrX
             float line = 0;
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
-            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX W[ind/S]", titleStyleL);
+            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX W[ind/S]", titleStyleOrange);
             //line++;
             //Draw360Random(line);
             //line++;
@@ -392,14 +420,14 @@ namespace OrX
 
             if (!enableWind)
             {
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Enable W[ind/S]", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Enable W[ind/S]", OrXGUISkin.button))
                 {
                     ToggleWind();
                 }
             }
             else
             {
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Disable W[ind/S]", HighLogic.Skin.box))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Disable W[ind/S]", OrXGUISkin.box))
                 {
                     ToggleWind();
                 }
@@ -409,14 +437,14 @@ namespace OrX
 
             if (!random360)
             {
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Random W[ind/S]", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Random W[ind/S]", OrXGUISkin.button))
                 {
                     random360 = true;
                 }
             }
             else
             {
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Disable Random", HighLogic.Skin.box))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Disable Random", OrXGUISkin.box))
                 {
                     random360 = false;
                 }
@@ -430,7 +458,7 @@ namespace OrX
                 _degrees = GUI.TextField(new Rect(WindowWidth - 100, ContentTop + line * entryHeight, 80, entryHeight), _degrees);
                 line++;
 
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Set Direction", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "Set Direction", OrXGUISkin.button))
                 {
                     setDirection = true;
                     manual = true;
@@ -441,31 +469,24 @@ namespace OrX
             _windowRect.height = _windowHeight;
         }
 
-        private void AddToolbarButton()
+        private void TBBAdd()
         {
             string textureDir = "OrX/Plugin/";
 
-            if (!HasAddedButton)
+            if (!TBBadded)
             {
                 Texture buttonTexture = GameDatabase.Instance.GetTexture(textureDir + "Wind_normal", false); //texture to use for the button
-                ApplicationLauncher.Instance.AddModApplication(EnableGui, DisableGui, Dummy, Dummy, Dummy, Dummy,
+                ApplicationLauncher.Instance.AddModApplication(EnableGui, DisableGui, Blank, Blank, Blank, Blank,
                     ApplicationLauncher.AppScenes.FLIGHT, buttonTexture);
-                HasAddedButton = true;
+                TBBadded = true;
             }
         }
         public void EnableGui()
         {
-            if (OrXHoloKron.instance.devKitInstalled)
-            {
-                _degrees = "0";
-                GuiEnabled = true;
-                guiOpen = true;
-                Debug.Log("[OrX W[ind/S]]: Showing GUI");
-            }
-            else
-            {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("OrX W[ind/S] is currently unavailable ....", 4, ScreenMessageStyle.UPPER_CENTER));
-            }
+            _degrees = "0";
+            GuiEnabled = true;
+            guiOpen = true;
+            Debug.Log("[OrX W[ind/S]]: Showing GUI");
         }
         public void DisableGui()
         {
@@ -477,7 +498,7 @@ namespace OrX
 
         #endregion
 
-        private void Dummy() { }
+        private void Blank() { }
 
 
     }

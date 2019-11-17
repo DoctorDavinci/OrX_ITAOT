@@ -6,7 +6,7 @@ using KSP.UI.Screens;
 using System.IO;
 using System.Reflection;
 
-namespace OrX
+namespace OrX.spawn
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class SpawnCannonBall : MonoBehaviour
@@ -153,22 +153,22 @@ namespace OrX
                     p.temperature = 1.0;
                 }
 
-                // Create a dummy ProtoVessel, we will use this to dump the parts to a config node.
+                // Create a Blank ProtoVessel, we will use this to dump the parts to a config node.
                 // We can't use the config nodes from the .craft file, because they are in a
                 // slightly different format than those required for a ProtoVessel (seriously
                 // Squad?!?).
                 ConfigNode empty = new ConfigNode();
-                ProtoVessel dummyProto = new ProtoVessel(empty, null);
-                Vessel dummyVessel = new Vessel();
-                dummyVessel.parts = shipConstruct.parts;
-                dummyProto.vesselRef = dummyVessel;
+                ProtoVessel BlankProto = new ProtoVessel(empty, null);
+                Vessel BlankVessel = new Vessel();
+                BlankVessel.parts = shipConstruct.parts;
+                BlankProto.vesselRef = BlankVessel;
 
                 // Create the ProtoPartSnapshot objects and then initialize them
                 foreach (Part p in shipConstruct.parts)
                 {
-                    dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto));
+                    BlankProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, BlankProto));
                 }
-                foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
+                foreach (ProtoPartSnapshot p in BlankProto.protoPartSnapshots)
                 {
                     p.storePartRefs();
                 }
@@ -176,7 +176,7 @@ namespace OrX
                 // Create the ship's parts
 
                 List<ConfigNode> partNodesL = new List<ConfigNode>();
-                foreach (ProtoPartSnapshot snapShot in dummyProto.protoPartSnapshots)
+                foreach (ProtoPartSnapshot snapShot in BlankProto.protoPartSnapshots)
                 {
                     ConfigNode node = new ConfigNode("PART");
                     snapShot.Save(node);

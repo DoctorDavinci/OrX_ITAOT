@@ -7,13 +7,13 @@ using System.IO;
 namespace OrX
 {
     [KSPAddon(KSPAddon.Startup.FlightEditorAndKSC, false)]
-    public class OrXUserManual : MonoBehaviour
+    public class OrXEditorChallengeList : MonoBehaviour
     {
         float WindowWidth = 250;
         private const float DraggableHeight = 40;
         private const float LeftIndent = 12;
         private const float ContentTop = 20;
-        public static OrXUserManual instance;
+        public static OrXEditorChallengeList instance;
         public bool guiEnabled = false;
         float entryHeight = 20;
         float _contentWidth;
@@ -73,7 +73,7 @@ namespace OrX
 
         bool kontinuum = false;
 
-        string titleLabel = "OrX User Manual";
+        string titleLabel = "OrX Challenge List";
 
         string _label1 = "";
         string _label2 = "";
@@ -109,7 +109,7 @@ namespace OrX
 
             if (guiEnabled)
             {
-                _windowRect = GUI.Window(902434275, _windowRect, OrXUserManualGUI, "");
+                _windowRect = GUI.Window(423634275, _windowRect, OrXEditorChallengeListGUI, "");
             }
         }
 
@@ -634,7 +634,7 @@ namespace OrX
 
         }
 
-        private void OrXUserManualGUI(int OrXManual)
+        private void OrXEditorChallengeListGUI(int OrXECL)
         {
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
             float line = 0;
@@ -645,18 +645,18 @@ namespace OrX
 
             if (!openSubmenu)
             {
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "The Kontinuum", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "The Kontinuum", OrXGUISkin.button))
                 {
                     //openSubmenu = true;
                     //kontinuum = true;
                     //WindowWidth = 600;
                     //titleLabel = "About the Kontinuum";
-                    OrXHoloKron.instance.ScreenMsg("The Kontinuum is currently unavailable");
+                    OrXHoloKron.instance.OnScrnMsgUC("The Kontinuum is currently unavailable");
                 }
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX Scuba Kerb", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX Scuba Kerb", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     scubaKerb = true;
@@ -667,7 +667,7 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX W[ind/S]", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX W[ind/S]", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     winds = true;
@@ -678,7 +678,7 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX HoloKron System", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "OrX HoloKron System", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     holokron = true;
@@ -689,7 +689,7 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Challenge Types", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Challenge Types", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     challengeTypes = true;
@@ -700,7 +700,7 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Physics Range", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Physics Range", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     pre = true;
@@ -712,7 +712,7 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "About Mr. Kleen", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "About Mr. Kleen", OrXGUISkin.button))
                 {
                     openSubmenu = true;
                     mrKleen = true;
@@ -724,10 +724,11 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Close Kergan's Manual", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Close User Manual", OrXGUISkin.button))
                 {
                     guiEnabled = false;
                 }
+                line += 0.5f;
             }
             else
             {
@@ -740,14 +741,14 @@ namespace OrX
                 {
                     if (!scubaMenu)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb Menu", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb Menu", OrXGUISkin.button))
                         {
                             ScubaKerbMenu();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb Menu", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb Menu", OrXGUISkin.box))
                         {
 
                         }
@@ -758,14 +759,14 @@ namespace OrX
 
                     if (!scubaBallast)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Ballast Controls", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Ballast Controls", OrXGUISkin.button))
                         {
                             ScubaKerbBallast();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Ballast Controls", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Ballast Controls", OrXGUISkin.box))
                         {
 
                         }
@@ -777,14 +778,14 @@ namespace OrX
 
                     if (!narcosis)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Nitrogen Narcosis", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Nitrogen Narcosis", OrXGUISkin.button))
                         {
                             ScubaKerbNarcosis();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Nitrogen Narcosis", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Nitrogen Narcosis", OrXGUISkin.box))
                         {
 
                         }
@@ -797,7 +798,7 @@ namespace OrX
 
                     if (!bends)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Bends", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Bends", OrXGUISkin.button))
                         {
                             ScubaKerbBends();
                         }
@@ -805,7 +806,7 @@ namespace OrX
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Bends", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Bends", OrXGUISkin.box))
                         {
 
                         }
@@ -848,14 +849,14 @@ namespace OrX
                 {
                     if (!windsMenu)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Menu", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Menu", OrXGUISkin.button))
                         {
                             WindsMenu();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Menu", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Menu", OrXGUISkin.box))
                         {
 
                         }
@@ -866,14 +867,14 @@ namespace OrX
 
                     if (!windsControls)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Controls", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Controls", OrXGUISkin.button))
                         {
                             WindsControls();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Controls", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S] Controls", OrXGUISkin.box))
                         {
 
                         }
@@ -924,14 +925,14 @@ namespace OrX
                 {
                     if (!holokronMain)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "HoloKron Files", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "HoloKron Files", OrXGUISkin.button))
                         {
                             HolokKronMain();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "HoloKron Files", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "HoloKron Files", OrXGUISkin.box))
                         {
 
                         }
@@ -942,14 +943,14 @@ namespace OrX
 
                     if (!holokronMain2)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Sharing", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Sharing", OrXGUISkin.button))
                         {
                             HolokKronMain2();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Sharing", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Sharing", OrXGUISkin.box))
                         {
 
                         }
@@ -961,14 +962,14 @@ namespace OrX
 
                     if (!holokronMain3)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating", OrXGUISkin.button))
                         {
                             HolokKronMain3();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating", OrXGUISkin.box))
                         {
 
                         }
@@ -980,14 +981,14 @@ namespace OrX
 
                     if (!holokronMain4)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 2", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 2", OrXGUISkin.button))
                         {
                             HolokKronMain4();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 2", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 2", OrXGUISkin.box))
                         {
 
                         }
@@ -999,14 +1000,14 @@ namespace OrX
 
                     if (!holokronMain5)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 3", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 3", OrXGUISkin.button))
                         {
                             HolokKronMain5();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 3", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 3", OrXGUISkin.box))
                         {
 
                         }
@@ -1017,14 +1018,14 @@ namespace OrX
 
                     if (!holokronMain6)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 4", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 4", OrXGUISkin.button))
                         {
                             HolokKronMain6();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 4", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Creating 4", OrXGUISkin.box))
                         {
 
                         }
@@ -1058,14 +1059,14 @@ namespace OrX
                 {
                     if (!cTypes1)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Challenge Types", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Challenge Types", OrXGUISkin.button))
                         {
                             ChallengeTypesMain();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Challenge Types", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Challenge Types", OrXGUISkin.box))
                         {
 
                         }
@@ -1076,14 +1077,14 @@ namespace OrX
 
                     if (!cTypes8)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Score Board", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Score Board", OrXGUISkin.button))
                         {
                             ChallengeScores();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Score Board", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Score Board", OrXGUISkin.box))
                         {
 
                         }
@@ -1095,14 +1096,14 @@ namespace OrX
 
                     if (!cTypes2)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Drag Racing", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Drag Racing", OrXGUISkin.button))
                         {
                             ChallengeDrag();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Drag Racing", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Drag Racing", OrXGUISkin.box))
                         {
 
                         }
@@ -1114,14 +1115,14 @@ namespace OrX
 
                     if (!cTypes3)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Short Track", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Short Track", OrXGUISkin.button))
                         {
                             ChallengeShortTrack();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Short Track", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Short Track", OrXGUISkin.box))
                         {
 
                         }
@@ -1133,14 +1134,14 @@ namespace OrX
 
                     if (!cTypes4)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Dakar Racing", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Dakar Racing", OrXGUISkin.button))
                         {
                             ChallengeDakar();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Dakar Racing", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Dakar Racing", OrXGUISkin.box))
                         {
 
                         }
@@ -1151,18 +1152,20 @@ namespace OrX
 
                     if (!cTypes5)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S]", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S]", OrXGUISkin.button))
                         {
                             ChallengeWinds();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S]", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "W[ind/S]", OrXGUISkin.box))
                         {
 
                         }
                     }
+                    line++;
+                    line += 0.2f;
 
                     GUI.Label(new Rect(250, ContentTop + (line * entryHeight), WindowWidth, 20), _label6, titleStyle);
                     line++;
@@ -1170,32 +1173,32 @@ namespace OrX
 
                     if (!cTypes6)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb", OrXGUISkin.button))
                         {
                             ChallengeScuba();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Scuba Kerb", OrXGUISkin.box))
                         {
 
                         }
                     }
-                    GUI.Label(new Rect(250, ContentTop + (line * entryHeight), WindowWidth, 20), _label7, titleStyle);
+                        GUI.Label(new Rect(250, ContentTop + (line * entryHeight), WindowWidth, 20), _label7, titleStyle);
                     line++;
                     line += 0.2f;
 
                     if (!cTypes7)
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "BD Armory", HighLogic.Skin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "BD Armory", OrXGUISkin.button))
                         {
                             ChallengeBDAc();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "BD Armory", HighLogic.Skin.box))
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "BD Armory", OrXGUISkin.box))
                         {
 
                         }
@@ -1217,7 +1220,7 @@ namespace OrX
 
                 if (pre)
                 {
-                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Physics Range", HighLogic.Skin.box))
+                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Physics Range", OrXGUISkin.box))
                     {
 
                     }
@@ -1268,7 +1271,7 @@ namespace OrX
 
                 if (mrKleen)
                 {
-                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Magic Eraser", HighLogic.Skin.box))
+                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "The Magic Eraser", OrXGUISkin.box))
                     {
 
                     }
@@ -1318,10 +1321,11 @@ namespace OrX
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Return to Previous Menu", HighLogic.Skin.button))
+                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), 230, 20), "Return to Previous Menu", OrXGUISkin.button))
                 {
                     Reset();
                 }
+                line += 0.5f;
 
             }
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);

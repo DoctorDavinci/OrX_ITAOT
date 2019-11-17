@@ -25,23 +25,30 @@ namespace OrX
         {
             base.OnFixedUpdate();
 
-            if (vessel.loaded && !setup)
+            if (vessel.rootPart.Modules.Contains<ModuleOrXStage>())
             {
-                setup = true;
-                if (!spawn.OrXSpawnHoloKron.instance.spawning)
+                Destroy(this);
+            }
+            else
+            {
+                if (vessel.loaded && !setup)
                 {
-                    OrXLog.instance.SetRange(vessel, 8000);
-                    _parts = new List<string>();
-
-                    if (!vessel.isActiveVessel)
+                    setup = true;
+                    if (!spawn.OrXSpawnHoloKron.instance.spawning)
                     {
-                        _currentPos = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude + 15);
-                        StartCoroutine(Place());
+                        OrXLog.instance.SetRange(vessel, 8000);
+                        _parts = new List<string>();
+
+                        if (!vessel.isActiveVessel)
+                        {
+                            _currentPos = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude + 15);
+                            StartCoroutine(Place());
+                        }
                     }
-                }
-                else
-                {
-                    Destroy(this);
+                    else
+                    {
+                        Destroy(this);
+                    }
                 }
             }
         }

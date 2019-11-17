@@ -513,25 +513,25 @@ namespace OrX.spawn
                 }
 
                 ConfigNode empty = new ConfigNode();
-                ProtoVessel dummyProto = new ProtoVessel(empty, null);
-                Vessel dummyVessel = new Vessel();
-                dummyVessel.parts = shipConstruct.parts;
-                dummyProto.vesselRef = dummyVessel;
+                ProtoVessel BlankProto = new ProtoVessel(empty, null);
+                Vessel BlankVessel = new Vessel();
+                BlankVessel.parts = shipConstruct.parts;
+                BlankProto.vesselRef = BlankVessel;
 
                 foreach (Part p in shipConstruct.parts)
                 {
-                    dummyVessel.loaded = false;
-                    p.vessel = dummyVessel;
+                    BlankVessel.loaded = false;
+                    p.vessel = BlankVessel;
 
-                    dummyProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, dummyProto));
+                    BlankProto.protoPartSnapshots.Add(new ProtoPartSnapshot(p, BlankProto));
                 }
-                foreach (ProtoPartSnapshot p in dummyProto.protoPartSnapshots)
+                foreach (ProtoPartSnapshot p in BlankProto.protoPartSnapshots)
                 {
                     p.storePartRefs();
                 }
 
                 List<ConfigNode> partNodesL = new List<ConfigNode>();
-                foreach (ProtoPartSnapshot snapShot in dummyProto.protoPartSnapshots)
+                foreach (ProtoPartSnapshot snapShot in BlankProto.protoPartSnapshots)
                 {
                     ConfigNode node = new ConfigNode("PART");
                     snapShot.Save(node);

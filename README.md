@@ -68,9 +68,6 @@ By filtering a low AC current through a signal generator using the W[ind/S] form
 
 - The Weather Simulation is a controller for controlling the W[ind/S] direction based on a number of factors and is turned on from within the OrX W[ind/S] menu .... PLEASE NOTE: This is experimental and is in the process of being written so consider it a use at your own risk
 
- 
-
- 
 
 ------------------------------------------------------------------
 OrX HoloKron System
@@ -78,7 +75,7 @@ OrX HoloKron System
 
 The OrX HoloKron System brings GeoCaching to KSP ... Now you can leave a trail of breadcrumbs spanning the solar system (and beyond?)
 
-Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) ... PLEASE NOTE: If within an atmosphere you must be landed or splashed as well as YOU MUST BE EVA TO CREATE A HOLOKRON
+Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the location coordinates (including SOI and other pertinent data) to a config file (.orx file) as well as save any vessels within a 1km range including their GPS coordinates for later spawning
 
 - The creator of the HoloKron can add a craft file that is unlocked and saved to the users save game directory when the HoloKron is opened
 
@@ -86,26 +83,7 @@ Now Kerbo-not's can go to a location and create a 'HoloKron' that will save the 
 
 - Craft files contained in the .orx file have been put through encryption so as to make it difficult for anyone to 'hack' the HoloKron by config editing outside of the game ... If you want to hack the HoloKron you must use the OrX BlackHat (isn't a thing ... yet) or go through the trouble of decoding the .craft file manually (good luck ... lol)
 
-- To start scanning for HoloKrons, click on the green OrX button while in the flight scene to open the OrX Kontinuum menu and click on Scan for HoloKrons 
-PLEASE NOTE: The distance, the altitude and heading to the closest HoloKron within the current SOI will be displayed in the OrX Kontinuum menu if it is within 100km
-
-- If you are within 3km of a Geo-Cache HoloKron location then it will spawn and each of the vessels contained in the HoloKron will be spawned at their saved locations (save your mun base ????)
-
-- To creat a HoloKron you must be EVA ... Go to the location where you want to create the HoloKron and right click on your Kerbal then click on 'HOLOKRONSPAWN' and the HoloKron Creation menu will appear as well as a HoloKron will spawn
-
-- Click on the HoloKron Type button to select from a Geo-Caching or a Challenge HoloKron (HoloKron type is currently locked as Geo-Cache)
-
-- In the 'Name:' text entry box enter a name for your HoloKron ... If a HoloKron of the same name is in the 'OrX/Export' directory the creator will be presented with options to add to the HoloKron of the same name or enter another name when saving
-
-- In the 'Password:' text entry box enter a password for your HoloKron ... The purpose of the password is to lock the HoloKron from being added to from an unauthorized HoloKron creator (default password is 'OrX' ... change this to lock your HoloKron from tampering)
-
-- Add a description of your HoloKron in the description text entry section ... as you type in a text entry field a new text entry box will appear below it, press 'TAB' to jump to the new text entry field (maximum of 10 lines)
-
-- Click on the 'Add Blueprints' check box to open the Craft Browser ... Select a hangar in the Craft Browser (SPH or VAB from your current game save) then select a craft from the list and click on "Load" to add that craft file as a blueprint ... click cancel to return to the previous menu
-
-- Click on the 'Save Local Vessel' check box to have all landed vessels within a 1km radius and all flying vessel within an 8km radius of the HoloKron saved (.orx file) as well all information required for later spawning
-
-- If the HoloKron being created is a Geo-Cache, click on the save button to save the HoloKron
+- Consult The Kurgan Manual in game or visit the forum thread linked above for detailed instructions about the operation of OrX Kontinuum
 
 
 ------------------------------------------------------------------
@@ -118,11 +96,6 @@ ADDITIONAL NOTES
 
 - HoloKrons should work with mods and DLC parts, however if the user of your .orx file does not have the mods or DLC parts in their game that are on the vessels stored in the file then the vessels will not load
 
-
-
-Github download link: COMING SOON !!!!!!
-
-Github issues link: COMING SOON !!!!!!
 
 
 ------------------------------------------------------------------

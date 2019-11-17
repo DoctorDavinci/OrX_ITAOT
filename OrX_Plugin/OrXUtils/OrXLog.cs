@@ -12,6 +12,8 @@ namespace OrX
     {
         public static OrXLog instance;
 
+        #region Variables
+
         public List<Waypoint> waypoints;
 
         public static Dictionary<AddedTech, List<string>> UnlockedTech;
@@ -84,6 +86,12 @@ namespace OrX
         public bool _debugLog = false;
         public bool _mode = false;
         float _preLoadRange = 10;
+        public bool _preInstalled = false;
+        public bool _preEnabled = false;
+        bool cDamage = false;
+        bool uJoints = false;
+
+        #endregion
 
         private void Awake()
         {
@@ -118,7 +126,7 @@ namespace OrX
         private void Start()
         {
             _version = Application.version;
-            OrXLog.instance.DebugLog("[OrX Log] === Application Version : " + Application.version + " ===");
+            Debug.Log("[OrX Log] === Application Version : " + Application.version + " ===");
             if (_version == Application.version)
             {
                 owned = new List<string>();
@@ -153,11 +161,36 @@ namespace OrX
                 DebugLog("[OrX Log] === WRONG KSP VERSION ===");
             }
         }
+
+        public bool PREnabled()
+        {
+            ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
+            if (PREsettings != null)
+            {
+                _preInstalled = true;
+                ConfigNode PREnode = PREsettings.GetNode("PreSettings");
+                if (PREnode.GetValue("ModEnabled") != "False")
+                {
+                    _preEnabled = true;
+                    return true;
+
+                }
+                else
+                {
+                    _preEnabled = false;
+                    return false;
+                }
+            }
+            else
+            {
+                return true;
+            }
+        }
         private void onVesselLoaded(Vessel data)
         {
             if (!data.rootPart.Modules.Contains<ModuleOrXMission>() && !data.rootPart.Modules.Contains<ModuleOrXPlace>())
             {
-                if (!spawn.OrXSpawnHoloKron.instance.spawning)
+                if (!spawn.OrXSpawnHoloKron.instance.spawning && mission && !PREnabled())
                 {
                     data.rootPart.AddModule("ModuleOrXLoadedVesselPlace", true);
                 }
@@ -169,37 +202,43 @@ namespace OrX
         }
         private void onFlightGlobalsReady(bool data)
         {
-            //ImportVesselList();
-            UpdateRangesOnFGReady();
+            if (mission && !PREnabled())
+            {
+                //ImportVesselList();
+                UpdateRangesOnFGReady();
+            }
         }
         public void onVesselChange(Vessel data)
         {
-            SetRange(data, 8000);
-
-            if (spawn.OrXSpawnHoloKron.instance.spawning)
+            if ((mission || OrXHoloKron.instance.building) && !PREnabled())
             {
-                if (data != OrXHoloKron.instance.triggerVessel)
-                {
-                    //FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
-                }
-            }
-            else
-            {
-                EVAUnlockWS();
+                SetRange(data, 8000);
 
-                if (!FlightGlobals.ActiveVessel.isEVA)
+                if (spawn.OrXSpawnHoloKron.instance.spawning)
                 {
+                    if (data != OrXHoloKron.instance.triggerVessel)
+                    {
+                        //FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
+                    }
                 }
                 else
                 {
-                    if (FlightGlobals.ActiveVessel.missionTime == 0)
+                    EVAUnlockWS();
+
+                    if (!FlightGlobals.ActiveVessel.isEVA)
                     {
-                        //AddToVesselList(FlightGlobals.ActiveVessel);
                     }
-
-                    if (FlightGlobals.ActiveVessel.Splashed)
+                    else
                     {
+                        if (FlightGlobals.ActiveVessel.missionTime == 0)
+                        {
+                            //AddToVesselList(FlightGlobals.ActiveVessel);
+                        }
 
+                        if (FlightGlobals.ActiveVessel.Splashed)
+                        {
+
+                        }
                     }
                 }
             }
@@ -232,10 +271,6 @@ namespace OrX
                 DebugLog("[OrX Log] === PRE IS INSTALLED ... RANGES SET TO " + _preLoadRange + " meters ===");
             }
         }
-
-        bool cDamage = false;
-        bool uJoints = false;
-
         public void NoDamage(bool _true)
         {
             if (_true)
@@ -251,7 +286,6 @@ namespace OrX
                 CheatOptions.UnbreakableJoints = uJoints;
             }
         }
-
         public void SetRange(Vessel v, float _range)
         {
             try
@@ -271,9 +305,15 @@ namespace OrX
             }
             catch { }
 
+            float _modRange = _preLoadRange;
+            if (_preLoadRange <= 40000)
+            {
+                _modRange = 40000;
+            }
+
             _vesselLanded = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
-            _vesselFlying = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
-            _vesselOther = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
+            _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
+            _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
 
             _vesselRanges = new VesselRanges
             {
@@ -374,7 +414,6 @@ namespace OrX
             }
             v.Dispose();
         }
-
         public void DebugLog(string _string)
         {
             if (_debugLog)
@@ -913,6 +952,14 @@ namespace OrX
         private KeyCode prev;
         private KeyCode next2;
         private KeyCode prev2;
+        private KeyCode w;
+        private KeyCode a;
+        private KeyCode s;
+        private KeyCode d;
+        private KeyCode w2;
+        private KeyCode a2;
+        private KeyCode s2;
+        private KeyCode d2;
 
         [KSPField(isPersistant = true)]
         public bool keysSet = false;
@@ -955,15 +1002,6 @@ namespace OrX
 
         public bool _EVALockWS = false;
         public bool _EVALockAD = false;
-
-        KeyCode w;
-        KeyCode a;
-        KeyCode s;
-        KeyCode d;
-        KeyCode w2;
-        KeyCode a2;
-        KeyCode s2;
-        KeyCode d2;
 
         public void EVALockWS()
         {

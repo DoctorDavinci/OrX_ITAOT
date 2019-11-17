@@ -162,7 +162,7 @@ namespace OrX
                                                 {
                                                     massModifier = 0.4f;
                                                     holdDepth = true;
-                                                    ScreenMsg("Holding depth at " + Convert.ToInt32(this.vessel.altitude) + " meters");
+                                                    OnScrnMsgUC("Holding depth at " + Convert.ToInt32(this.vessel.altitude) + " meters");
                                                 }
                                                 else
                                                 {
@@ -279,6 +279,13 @@ namespace OrX
                     }
                 }
             }
+        }
+
+        Collision _collision;
+
+        public void OnCollision()
+        {
+
         }
 
         public override void OnFixedUpdate()
@@ -446,7 +453,7 @@ namespace OrX
                     spawnHoloKron = false;
                     if (this.part != this.vessel.rootPart)
                     {
-                        //ScreenMsg("Unable to spawn HoloKron ... Please get out of your chair");
+                        //OnScrnMsgUC("Unable to spawn HoloKron ... Please get out of your chair");
                     }
                     else
                     {
@@ -610,7 +617,7 @@ namespace OrX
             else
             {
                 holdingDepth = false;
-                ScreenMsg("Releasing hold on depth");
+                OnScrnMsgUC("Releasing hold on depth");
             }
         }
         IEnumerator NarcosisCheck()
@@ -855,7 +862,7 @@ namespace OrX
             return ModifierChangeWhen.CONSTANTLY;
         }
 
-        private void ScreenMsg(string msg)
+        private void OnScrnMsgUC(string msg)
         {
             ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 3f, ScreenMessageStyle.UPPER_CENTER));
         }

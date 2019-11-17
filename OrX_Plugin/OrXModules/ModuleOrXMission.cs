@@ -135,21 +135,31 @@ namespace OrX
 
                 if (isLoaded)
                 {
+                    bool _getCoords = false;
+
                     if (this.vessel != OrXVesselMove.Instance.MovingVessel)
                     {
-                        this.vessel.SetPosition(FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude));
+                        if (!OrXHoloKron.instance._killingLastCoord)
+                        {
+                            this.vessel.SetPosition(FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude));
+                        }
+                        else
+                        {
+                            _getCoords = true;
+                        }
                     }
                     else
                     {
-                        if (OrXHoloKron.instance.buildingMission)
+                        _getCoords = true;
+                    }
+
+                    if (_getCoords)
+                    {
+                        if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
                         {
-                            if (longitude != this.vessel.longitude || latitude != this.vessel.latitude)
-                            {
-                                latitude = this.vessel.latitude;
-                                longitude = this.vessel.longitude;
-                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
-                                //pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
-                            }
+                            latitude = this.vessel.latitude;
+                            longitude = this.vessel.longitude;
+                            altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
                         }
                     }
 
@@ -414,6 +424,10 @@ namespace OrX
                         }
                     }
                 }
+            }
+            else
+            {
+
             }
         }
     }

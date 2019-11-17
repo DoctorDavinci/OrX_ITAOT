@@ -14,7 +14,7 @@ namespace OrX
         private const float ContentTop = 20;
         public static WindDirectionIndicator instance;
         public bool GuiEnabledWindDI = false;
-        public static bool HasAddedButton;
+        public static bool TBBadded;
         private readonly float _incrButtonWidth = 26;
         private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
         private readonly float entryHeight = 20;
@@ -168,7 +168,7 @@ namespace OrX
         /// GUI
         /// </summary>
 
-        private void ScreenMsg(string msg)
+        private void OnScrnMsgUC(string msg)
         {
             ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 4, ScreenMessageStyle.UPPER_CENTER));
         }
@@ -286,7 +286,7 @@ namespace OrX
 
         #endregion
 
-        private void Dummy()
+        private void Blank()
         {
         }
     }

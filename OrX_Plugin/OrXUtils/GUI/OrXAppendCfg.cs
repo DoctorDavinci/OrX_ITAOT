@@ -13,7 +13,7 @@ namespace OrX
         private const float ContentTop = 20;
         public static OrXAppendCfg instance;
         public bool GuiEnabledOrXAppendCfg = false;
-        public static bool HasAddedButton;
+        public static bool TBBadded;
         private readonly float _incrButtonWidth = 26;
         private readonly float contentWidth = WindowWidth - 2 * LeftIndent;
         private readonly float entryHeight = 20;
@@ -22,6 +22,7 @@ namespace OrX
         private float _windowHeight = 250;
         private Rect _windowRect;
         public double distance = 0;
+        public static GUISkin OrXGUISkin = HighLogic.Skin;
 
         public string HoloKronName = "";
         public string _HoloKronName = "";
@@ -164,14 +165,14 @@ namespace OrX
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
 
-            if (GUI.Button(saveRect, "Add to " + _HoloKronName, HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "Add to " + _HoloKronName, OrXGUISkin.button))
             {
-                if (OrXHoloKron.instance.Password == OrXHoloKron.instance.pas)
+                if (OrXHoloKron.instance.Password == OrXLog.instance.Decrypt(OrXHoloKron.instance.pas))
                 {
                     if (OrXHoloKron.instance.spawningStartGate)
                     {
                         OrXHoloKron.instance.hkCount = hkCount;
-                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
+                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false);
                     }
                     else
                     {
@@ -184,7 +185,7 @@ namespace OrX
                 }
                 else
                 {
-                    OrXHoloKron.instance.ScreenMsg("WRONG PASSWORD");
+                    OrXHoloKron.instance.OnScrnMsgUC("WRONG PASSWORD");
                 }
             }
         }
@@ -193,18 +194,18 @@ namespace OrX
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
 
-            if (GUI.Button(saveRect, "SAVE", HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "SAVE", OrXGUISkin.button))
             {
                 if (HoloKronName == "")
                 {
-                    OrXHoloKron.instance.ScreenMsg("Unable to create HoloKron with no name");
+                    OrXHoloKron.instance.OnScrnMsgUC("Unable to create HoloKron with no name");
                 }
                 else
                 {
                     if (OrXHoloKron.instance.CheckExports(HoloKronName))
                     {
-                        OrXHoloKron.instance.ScreenMsg(HoloKronName + " also exists .....");
-                        OrXHoloKron.instance.ScreenMsg("What would you like to do?");
+                        OrXHoloKron.instance.OnScrnMsgUC(HoloKronName + " also exists .....");
+                        OrXHoloKron.instance.OnScrnMsgUC("What would you like to do?");
 
                         _HoloKronName = HoloKronName;
                     }
@@ -214,7 +215,7 @@ namespace OrX
                         if (OrXHoloKron.instance.spawningStartGate)
                         {
                             OrXHoloKron.instance.hkCount = 0;
-                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false);
+                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false);
                         }
                         else
                         {
@@ -245,7 +246,7 @@ namespace OrX
         {
             var saveRect = new Rect(LeftIndent * 1.5f, ContentTop + line * entryHeight, contentWidth * 0.9f, entryHeight);
 
-            if (GUI.Button(saveRect, "CANCEL", HighLogic.Skin.button))
+            if (GUI.Button(saveRect, "CANCEL", OrXGUISkin.button))
             {
                 DisableGui();
             }
@@ -253,7 +254,7 @@ namespace OrX
 
         #endregion
 
-        private void Dummy()
+        private void Blank()
         {
         }
     }

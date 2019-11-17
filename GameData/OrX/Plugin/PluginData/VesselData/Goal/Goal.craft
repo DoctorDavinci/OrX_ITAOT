@@ -1,10 +1,10 @@
-ship = Goal
-version = 1.7.3
+ship = Stage Gate
+version = 1.8.1
 description = 
 type = SPH
-size = 19.496315,9.37371635,3.75000262
+size = 27.2368965,9.58620262,9.14298058
 steamPublishedFileId = 0
-persistentId = 3647040396
+persistentId = 3473883439
 rot = 0,0,0,0
 missionFlag = Squad/Flags/default
 vesselType = Debris
@@ -14,12 +14,12 @@ OverrideAxisControl = 0,0,0,0
 OverrideGroupNames = ,,,
 PART
 {
-	part = MassiveBooster_4294628994
+	part = MassiveBooster_4294632826
 	partName = Part
-	persistentId = 3053157622
-	pos = 0.112517133,13.3704834,-0.00669971481
+	persistentId = 3037685074
+	pos = -1.33514404E-05,10.0000086,2.16215849E-05
 	attPos = 0,0,0
-	attPos0 = 0.112517133,13.3704834,-0.00669971481
+	attPos0 = -1.33514404E-05,10.0000086,2.16215849E-05
 	rot = 0.5,-0.5,0.5,0.5
 	attRot = 0,0,0.707106769,0.707106769
 	attRot0 = 0.707106769,0,0,0.707106769
@@ -38,10 +38,13 @@ PART
 	modCost = 0
 	modMass = 0
 	modSize = 0,0,0
-	link = solidBooster1-1_4294624818
-	link = solidBooster1-1_4294622790
-	attN = top,Null_0_0|7.42915916|0_0|1|0_0|7.42915916|0_0|1|0
-	attN = bottom,Null_0_0|-7.43561602|0_0|-1|0_0|-7.43561602|0_0|-1|0
+	link = solidBooster1-1_4294630992
+	link = solidBooster1-1_4294630670
+	link = strutConnector_4294615490
+	link = strutConnector_4294614914
+	link = seatExternalCmd_4294609510
+	attN = top,solidBooster1-1_4294630670_0|7.42915916|0_0|1|0_0|7.42915916|0_0|1|0
+	attN = bottom,solidBooster1-1_4294630992_0|-7.43561602|0_0|-1|0_0|-7.43561602|0_0|-1|0
 	EVENTS
 	{
 	}
@@ -54,15 +57,15 @@ PART
 }
 PART
 {
-	part = solidBooster1-1_4294624818
+	part = solidBooster1-1_4294630992
 	partName = Part
-	persistentId = 3261450131
-	pos = -8.02025032,8.97048283,-0.00669971481
-	attPos = 7.56979261E-08,1.64674473,3.81389523
-	attPos0 = -7.56979261E-08,6.48602295,0.586105347
-	rot = -2.98023224E-08,-0.707106829,1.49011612E-08,0.707106829
-	attRot = -0.707106769,0,0,0.707106769
-	attRot0 = -0.707106769,0,5.96046448E-08,0.707106829
+	persistentId = 1147057088
+	pos = 8.45017242,6.21357822,2.16215849E-05
+	attPos = 0,0,0
+	attPos0 = 0,-11.3556156,9.53674316E-07
+	rot = 0.0922960043,-0.701057434,0.0922960043,0.701057434
+	attRot = -0.430459291,-0.430459291,0.560985565,0.560985565
+	attRot0 = -0.60876143,0,0,0.793353438
 	mir = 1,1,1
 	symMethod = Mirror
 	autostrutMode = Off
@@ -73,15 +76,17 @@ PART
 	sidx = 1
 	sqor = 0
 	sepI = -1
-	attm = 1
+	attm = 0
 	sameVesselCollision = False
 	modCost = 0
 	modMass = 0
 	modSize = 0,0,0
-	link = adapterMk3-Size2_4294587478
-	srfN = srfAttach,MassiveBooster_4294628994,MassiveSRBCollider
-	attN = bottom,adapterMk3-Size2_4294587478_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
-	attN = top,Null_0_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
+	link = airplaneTailB_4294622446
+	link = airplaneTailB_4294622326
+	link = airplaneTailB_4294621914
+	link = pointyNoseConeB_4294616268
+	attN = bottom,Null_0_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
+	attN = top,MassiveBooster_4294632826_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
 	EVENTS
 	{
 	}
@@ -91,19 +96,18 @@ PART
 	PARTDATA
 	{
 	}
-
 }
 PART
 {
-	part = solidBooster1-1_4294622790
+	part = solidBooster1-1_4294630670
 	partName = Part
-	persistentId = 4169776882
-	pos = 8.22846317,8.82657814,-0.00669971481
-	attPos = -3.78488494E-08,-2.38323879,3.95050478
-	attPos0 = 3.78488494E-08,-5.73270702,0.593400002
-	rot = 5.96046448E-08,-0.707106769,0,0.707106829
-	attRot = -0.707106769,0,0,0.707106769
-	attRot0 = -0.707106769,0,-5.96046448E-08,0.707106829
+	persistentId = 2462529036
+	pos = -8.44374275,6.21357822,2.16215849E-05
+	attPos = 0,0,0
+	attPos0 = 0,11.3491583,9.53674316E-07
+	rot = -0.0922960639,-0.701057374,0.0922960639,-0.701057315
+	attRot = 0.430459231,-0.430459261,0.560985625,-0.560985565
+	attRot0 = -2.98023224E-08,-0.608761311,0.793353438,2.98023224E-08
 	mir = 1,1,1
 	symMethod = Mirror
 	autostrutMode = Off
@@ -114,15 +118,56 @@ PART
 	sidx = 2
 	sqor = 0
 	sepI = -1
+	attm = 0
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	link = airplaneTailB_4294622882
+	link = airplaneTailB_4294622782
+	link = airplaneTailB_4294621146
+	link = pointyNoseConeB_4294617156
+	attN = bottom,Null_0_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
+	attN = top,MassiveBooster_4294632826_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = airplaneTailB_4294622882
+	partName = Part
+	persistentId = 2322916555
+	pos = -9.2437439,2.81357861,2.16215849E-05
+	attPos = 0.389891565,-0.426075935,0.107243538
+	attPos0 = -0.389891505,-3.06512737,2.38418579E-07
+	rot = 0.0922960639,0.701057553,0.701057196,0.0922959447
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = 0.499999911,-0.500000119,-0.499999911,-0.50000006
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
 	attm = 1
 	sameVesselCollision = False
 	modCost = 0
 	modMass = 0
 	modSize = 0,0,0
-	link = adapterMk3-Size2_4294589972
-	srfN = srfAttach,MassiveBooster_4294628994,MassiveSRBCollider
-	attN = bottom,adapterMk3-Size2_4294589972_0|-3.91461706|0_0|-1|0_0|-3.91461706|0_0|-1|0
-	attN = top,Null_0_0|3.92000008|0_0|1|0_0|3.92000008|0_0|1|0
+	sym = airplaneTailB_4294622782
+	srfN = srfAttach,solidBooster1-1_4294630670,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
 	EVENTS
 	{
 	}
@@ -132,19 +177,18 @@ PART
 	PARTDATA
 	{
 	}
-
 }
 PART
 {
-	part = adapterMk3-Size2_4294589972
+	part = airplaneTailB_4294622782
 	partName = Part
-	persistentId = 3577419624
-	pos = 8.22846222,6.62657833,-0.00669971481
-	attPos = -3.02582009E-07,3.58961535,7.15256192E-07
-	attPos0 = 4.88028036E-07,-5.78961515,4.76836703E-07
-	rot = 0,0,0,1
+	persistentId = 373634309
+	pos = -9.2437439,2.81357861,2.16215849E-05
+	attPos = -0.389891565,-0.426075935,0.107243538
+	attPos0 = 0.389891624,-3.06512737,2.38418579E-07
+	rot = -0.701057255,0.092296049,-0.0922961831,0.701057434
 	attRot = -0.707106769,0,0,0.707106769
-	attRot0 = -5.96046448E-08,0.707106769,0,0.707106829
+	attRot0 = 0.499999851,0.500000119,0.49999997,-0.500000119
 	mir = 1,1,1
 	symMethod = Mirror
 	autostrutMode = Off
@@ -155,13 +199,14 @@ PART
 	sidx = -1
 	sqor = -1
 	sepI = -1
-	attm = 0
+	attm = 1
 	sameVesselCollision = False
 	modCost = 0
 	modMass = 0
 	modSize = 0,0,0
-	attN = top,solidBooster1-1_4294622790_0|1.875|0_0|1|0_0|1.875|0_0|1|0
-	attN = bottom,Null_0_0|-1.875|0_0|-1|0_0|-1.875|0_0|-1|0
+	sym = airplaneTailB_4294622882
+	srfN = srfAttach,solidBooster1-1_4294630670,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
 	EVENTS
 	{
 	}
@@ -171,19 +216,18 @@ PART
 	PARTDATA
 	{
 	}
-
 }
 PART
 {
-	part = adapterMk3-Size2_4294587478
+	part = airplaneTailB_4294622446
 	partName = Part
-	persistentId = 3334438649
-	pos = -8.02025032,6.77048206,-0.00669971481
-	attPos = 3.02581952E-07,3.58961439,-7.15255169E-07
-	attPos0 = -4.88028036E-07,-5.78961468,4.76836703E-07
-	rot = 0,0,0,1.00000012
+	persistentId = 2930200574
+	pos = 9.25017262,2.81357479,2.16215849E-05
+	attPos = -0.379491508,-1.04940963,0.107244015
+	attPos0 = 0.379491508,-2.4417944,0
+	rot = -0.0922959596,0.701057374,0.701057434,-0.0922960341
 	attRot = -0.707106769,0,0,0.707106769
-	attRot0 = 0,0.707106829,-5.96046448E-08,0.707106829
+	attRot0 = 0.50000006,0.5,0.50000006,-0.5
 	mir = 1,1,1
 	symMethod = Mirror
 	autostrutMode = Off
@@ -194,13 +238,14 @@ PART
 	sidx = -1
 	sqor = -1
 	sepI = -1
-	attm = 0
+	attm = 1
 	sameVesselCollision = False
 	modCost = 0
 	modMass = 0
 	modSize = 0,0,0
-	attN = top,solidBooster1-1_4294624818_0|1.875|0_0|1|0_0|1.875|0_0|1|0
-	attN = bottom,Null_0_0|-1.875|0_0|-1|0_0|-1.875|0_0|-1|0
+	sym = airplaneTailB_4294622326
+	srfN = srfAttach,solidBooster1-1_4294630992,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
 	EVENTS
 	{
 	}
@@ -210,5 +255,455 @@ PART
 	PARTDATA
 	{
 	}
-
+}
+PART
+{
+	part = airplaneTailB_4294622326
+	partName = Part
+	persistentId = 2802983284
+	pos = 9.25017166,2.81357384,2.16215849E-05
+	attPos = 0.379491508,-1.04941082,0.107243299
+	attPos0 = -0.379491508,-2.4417944,0
+	rot = -0.701057315,-0.0922960043,0.0922960043,0.701057553
+	attRot = -0.707106769,0,0,0.707106769
+	attRot0 = -0.5,0.5,0.50000006,0.49999994
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	sym = airplaneTailB_4294622446
+	srfN = srfAttach,solidBooster1-1_4294630992,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = airplaneTailB_4294621914
+	partName = Part
+	persistentId = 1854186758
+	pos = 9.05017281,2.81357574,2.16215849E-05
+	attPos = 1.04782885E-07,-0.900785208,-0.0860276222
+	attPos0 = -1.04782885E-07,-2.53865528,0.386455536
+	rot = -0.500000119,0.5,0.49999997,0.500000179
+	attRot = -0.60876137,1.18696752E-09,-2.08181099E-08,0.793353379
+	attRot0 = -9.45750855E-08,0.793353379,0.608761311,7.25700104E-08
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,solidBooster1-1_4294630992,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = airplaneTailB_4294621146
+	partName = Part
+	persistentId = 1007040848
+	pos = -9.04374218,2.81357765,2.16215849E-05
+	attPos = 6.59934463E-09,-1.24468279,-0.0893752277
+	attPos0 = 6.13547391E-09,-2.19475603,0.389805943
+	rot = -0.500000119,-0.499999881,-0.5,0.5
+	attRot = -0.60876143,9.34973077E-09,5.24282413E-08,0.793353379
+	attRot0 = 6.47727774E-08,0.793353379,0.60876143,-4.27676845E-08
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,solidBooster1-1_4294630670,solidBooster2,0|-1|-0.625,0|0|1,0|-1|-0.625
+	attN = top,Null_0_0|0|0_0|1|0_0|0|0_0|1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = pointyNoseConeB_4294617156
+	partName = Part
+	persistentId = 1198632857
+	pos = -7.24374247,10.6135788,2.16215849E-05
+	attPos = -3.02061949E-07,1.08703136,1.25850177
+	attPos0 = 2.50186105E-07,3.47362566,-1.23819566
+	rot = -0.0922960639,-0.701057374,-0.0922960639,0.701057374
+	attRot = 0,0,0,1
+	attRot0 = -1.10025482E-08,1,-8.8817842E-16,8.35725515E-08
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,solidBooster1-1_4294630670,solidBooster2,0|0|-0.625,0|0|1,0|0|-0.625
+	attN = bottom01,Null_0_0|-0.625|0_0|-1|0_0|-0.625|0_0|-1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = pointyNoseConeB_4294616268
+	partName = Part
+	persistentId = 3441979130
+	pos = 7.25017118,10.6135807,2.16215849E-05
+	attPos = -2.56753907E-07,1.44670224,1.26290023
+	attPos0 = 2.56753907E-07,3.11395574,-1.24259317
+	rot = -0.0922959447,0.701057374,0.0922959745,0.701057553
+	attRot = 0,0,0,1
+	attRot0 = -1.65038063E-08,1,-5.96046377E-08,1.25358824E-07
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,solidBooster1-1_4294630992,solidBooster2,0|0|-0.625,0|0|1,0|0|-0.625
+	attN = bottom01,Null_0_0|-0.625|0_0|-1|0_0|-0.625|0_0|-1|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+	}
+	PARTDATA
+	{
+	}
+}
+PART
+{
+	part = strutConnector_4294615490
+	partName = CompoundPart
+	persistentId = 3290701806
+	pos = 6.32090235,9.41316223,2.16215849E-05
+	attPos = 0,0,0
+	attPos0 = 0,-6.3209157,0.586846352
+	rot = 5.96046448E-08,0,0.707106829,0.707106769
+	attRot = 0,0,0,1
+	attRot0 = 5.96046448E-08,0.707106769,0,0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,MassiveBooster_4294632826,MassiveSRBCollider,0|0|0,0.125|0|0,0|0|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+		ToggleSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		SetSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		RemoveSameVesselInteraction
+		{
+			actionGroup = None
+		}
+	}
+	PARTDATA
+	{
+		tgt = 4294630992
+		pos = -0.690284789,-0.81176132,-0.00686323643
+		rot = -1.05724896E-08,0.21132724,0.761801243,0.612372816
+		dir = -0.647791684,-0.761790276,-0.00644074427
+		col = solidBooster2
+	}
+	MODULE
+	{
+		name = CModuleLinkedMesh
+		isEnabled = True
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
+	MODULE
+	{
+		name = CModuleStrut
+		isEnabled = True
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
+}
+PART
+{
+	part = strutConnector_4294614914
+	partName = CompoundPart
+	persistentId = 848344656
+	pos = -6.25877094,9.41481686,2.16215849E-05
+	attPos = 0,0,0
+	attPos0 = 0,6.25875759,0.585191727
+	rot = -5.96046448E-08,0,0.707106829,0.707106769
+	attRot = 0,0,0,1
+	attRot0 = 0,0.707106829,5.96046448E-08,0.707106769
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,MassiveBooster_4294632826,MassiveSRBCollider,0|0|0,0.125|0|0,0|0|0
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+		ToggleSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		SetSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		RemoveSameVesselInteraction
+		{
+			actionGroup = None
+		}
+	}
+	PARTDATA
+	{
+		tgt = 4294630670
+		pos = -0.678238809,0.870664656,0.0316389799
+		rot = -1.42811079E-08,-0.211326793,-0.761801243,0.612372339
+		dir = -0.6142838,0.788564742,0.0286555607
+		col = solidBooster2
+	}
+	MODULE
+	{
+		name = CModuleLinkedMesh
+		isEnabled = True
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
+	MODULE
+	{
+		name = CModuleStrut
+		isEnabled = True
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
+}
+PART
+{
+	part = seatExternalCmd_4294609510
+	partName = Part
+	persistentId = 3777092126
+	pos = -1.33514404E-05,10.8000088,2.16215849E-05
+	attPos = -7.48350431E-08,0.015396595,-0.016702652
+	attPos0 = 7.48350431E-08,-0.015396595,-0.783297539
+	rot = -0.707106829,-2.98023224E-08,-8.94069672E-08,-0.707106709
+	attRot = 0,0,-0.707106769,0.707106769
+	attRot0 = -8.94069743E-08,0,0.707106769,-0.707106829
+	mir = 1,1,1
+	symMethod = Mirror
+	autostrutMode = Off
+	rigidAttachment = False
+	istg = 0
+	resPri = 0
+	dstg = 0
+	sidx = -1
+	sqor = -1
+	sepI = -1
+	attm = 1
+	sameVesselCollision = False
+	modCost = 0
+	modMass = 0
+	modSize = 0,0,0
+	srfN = srfAttach,MassiveBooster_4294632826,MassiveSRBCollider,0|0|0.200000003,0|0|-1,0|0|0.200000003
+	EVENTS
+	{
+	}
+	ACTIONS
+	{
+		ToggleSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		SetSameVesselInteraction
+		{
+			actionGroup = None
+		}
+		RemoveSameVesselInteraction
+		{
+			actionGroup = None
+		}
+	}
+	PARTDATA
+	{
+	}
+	MODULE
+	{
+		name = KerbalSeat
+		isEnabled = True
+		ejectionForcePercentage = 0
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+			MakeReferenceToggle
+			{
+				actionGroup = None
+			}
+			LeaveSeat
+			{
+				actionGroup = None
+			}
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
+	MODULE
+	{
+		name = ModuleTripLogger
+		isEnabled = True
+		stagingEnabled = True
+		EVENTS
+		{
+		}
+		ACTIONS
+		{
+		}
+		Log
+		{
+			flight = 0
+		}
+		UPGRADESAPPLIED
+		{
+		}
+	}
 }
