@@ -16,17 +16,19 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-                part.force_activate();
-               
+               // part.force_activate();
+               /*
                 List<Part>.Enumerator p = vessel.parts.GetEnumerator();
                 while (p.MoveNext())
                 {
-                    if (p.Current != null && p.Current != part)
+                    if (p.Current != null && p.Current != vessel.rootPart)
                     {
                         p.Current.AddModule("ModuleOrXStage");
                     }
                 }
                 p.Dispose();
+
+                */
             }
             base.OnStart(state);
         }

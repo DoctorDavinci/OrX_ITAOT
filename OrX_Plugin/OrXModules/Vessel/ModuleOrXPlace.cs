@@ -168,23 +168,17 @@ namespace OrX
             yield return new WaitForSeconds(1);
             this.vessel.Die();
         }
-        public void PlaceCraft(bool _challengeStart, float _altToSubtract, float _left, float _pitch)
+        public void PlaceCraft(bool _gate, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
         {
-            if (vessel.radarAltitude <= 100)
+            bool _airborne = false;
+            if (vessel.altitude - vessel.terrainAltitude >= 500)
             {
-                StartCoroutine(Place(false, _challengeStart, _altToSubtract, _left, _pitch));
+                _airborne = true;
             }
-            else
-            {
-                if (vessel.radarAltitude <= 1000)
-                {
-                    _altToSubtract = -1000;
-                }
 
-                StartCoroutine(Place(true, _challengeStart, _altToSubtract, _left, _pitch));
-            }
+            StartCoroutine(Place(_gate, _airborne, _challengeStart, _altToSubtract, _left, _pitch));
         }
-        IEnumerator Place(bool _airborne, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
+        IEnumerator Place(bool _gate, bool _airborne, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
         {
             Rigidbody _rb = vessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
@@ -195,13 +189,12 @@ namespace OrX
                 {
                     _left -= 360;
                 }
-
+               
                 if (vessel.rootPart.Modules.Contains<ModuleOrXStage>())
                 {
                     _left -= 90;
-                    yield return new WaitForFixedUpdate();
                 }
-
+                
                 Quaternion _fixRot = Quaternion.identity;
                 vessel.IgnoreGForces(240);
                 vessel.SetWorldVelocity(Vector3d.zero);
@@ -224,16 +217,16 @@ namespace OrX
             OrXLog.instance.DebugLog("[OrX Place] === PLACING " + vessel.vesselName + " ===");
             float dropRate = Mathf.Clamp((localAlt * mod), 0.1f, 200);
 
-            if (localAlt >= 1000)
+            if (_airborne)
             {
                 while (vessel.radarAltitude <= localAlt)
                 {
                     vessel.IgnoreGForces(240);
                     vessel.SetWorldVelocity(Vector3.zero);
-                    vessel.Translate(10 * Time.fixedDeltaTime * UpVect);
+                    vessel.Translate((float)vessel.radarAltitude * Time.fixedDeltaTime * UpVect);
                     yield return new WaitForFixedUpdate();
                 }
-
+                /*
                 List<Part>.Enumerator p = vessel.parts.GetEnumerator();
                 while (p.MoveNext())
                 {
@@ -257,6 +250,7 @@ namespace OrX
                     }
                 }
                 p.Dispose();
+                */
             }
             else
             {
@@ -309,8 +303,8 @@ namespace OrX
 
                 yield return new WaitForSeconds(1.5f);
                 OrXHoloKron.instance._placingChallenger = false;
+                Destroy(this);
             }
-            Destroy(this);
         }
     }
 }

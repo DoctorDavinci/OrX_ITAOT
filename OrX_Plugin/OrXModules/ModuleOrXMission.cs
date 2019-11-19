@@ -13,6 +13,12 @@ namespace OrX
         #region Fields
 
         [KSPField(isPersistant = true)]
+        public bool fml = false;
+
+        [KSPField(isPersistant = true)]
+        public bool _auto = false;
+
+        [KSPField(isPersistant = true)]
         public bool completed = false;
 
         [KSPField(isPersistant = true)]
@@ -87,6 +93,7 @@ namespace OrX
         double _altDiff = 0;
 
         bool geoCache = true;
+
 
         #endregion
 
@@ -304,12 +311,54 @@ namespace OrX
                                     double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
                                     double _targetDistance = Math.Sqrt(altAdded) * OrXTargetDistance.instance.mPerDegree;
 
-                                    if (_targetDistance <= 10)
+                                    if (!fml)
                                     {
-                                        hideGoal = true;
-                                        OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
-                                        OrXHoloKron.instance.GetNextCoord();
+                                        if (_auto)
+                                        {
+                                            if (_targetDistance <= 25)
+                                            {
+                                                hideGoal = true;
+                                                deploy = false;
+                                                opened = true;
+                                                //hideGoal = true;
+                                                if (missionType == "CHALLENGE" && challengeType != "BD ARMORY")
+                                                {
+                                                    geoCache = false;
+                                                }
+                                                latitude = this.vessel.latitude;
+                                                longitude = this.vessel.longitude;
+                                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+
+                                                OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
+                                                OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                                OrXHoloKron.instance.holoOpen = true;
+                                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (_targetDistance <= 10)
+                                            {
+                                                hideGoal = true;
+                                                OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
+                                                OrXHoloKron.instance.GetNextCoord();
+                                                //OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
+                                            }
+                                        }
                                     }
+                                    else
+                                    {
+                                        if (_targetDistance <= 5000)
+                                        {
+                                            hideGoal = true;
+                                            OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
+                                            //OrXHoloKron.instance.GetNextCoord();
+                                            OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
+                                        }
+                                    }
+                                }
+                                else
+                                {
                                 }
                             }
                         }
@@ -379,10 +428,15 @@ namespace OrX
                                     deploy = false;
                                     opened = true;
                                     //hideGoal = true;
-                                    if (missionType == "CHALLENGE")
+                                    if (missionType == "CHALLENGE" && challengeType != "BD ARMORY")
                                     {
                                         geoCache = false;
                                     }
+                                    latitude = this.vessel.latitude;
+                                    longitude = this.vessel.longitude;
+                                    altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+
+                                    OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
                                     OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
                                     OrXHoloKron.instance.holoOpen = true;
                                     OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
@@ -407,7 +461,7 @@ namespace OrX
                                 deploy = false;
                                 OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
                                 OrXHoloKron.instance.holoOpen = true;
-                                if (missionType == "CHALLENGE")
+                                if (missionType == "CHALLENGE" && challengeType != "BD ARMORY")
                                 {
                                     geoCache = false;
                                 }

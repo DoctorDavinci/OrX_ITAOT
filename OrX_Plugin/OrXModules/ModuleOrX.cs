@@ -70,6 +70,7 @@ namespace OrX
         Rigidbody _rb;
 
         #endregion
+
         [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
      UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
         public bool _chase = false;
@@ -98,8 +99,8 @@ namespace OrX
                 //OrXLog.instance.AddToVesselList(this.vessel);
             }
             kerbal = kerbalControl();
-            _rb = null;
-            kerbal.GetComponentCached<Rigidbody>(ref _rb);
+            //_rb = null;
+            //kerbal.GetComponentCached<Rigidbody>(ref _rb);
             _maxJumpForce = kerbal.maxJumpForce;
             _walkSpeed = kerbal.walkSpeed;
             _runSpeed = kerbal.runSpeed;

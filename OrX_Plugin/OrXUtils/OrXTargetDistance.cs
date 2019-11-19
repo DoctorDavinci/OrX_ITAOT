@@ -365,7 +365,7 @@ namespace OrX
                         }
                     }
 
-                    if (_targetDistance <= 3000)
+                    if (_targetDistance <= 4000)
                     {
                         if (checking)
                         {
@@ -563,11 +563,11 @@ namespace OrX
                 OrXLog.instance.DebugLog("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
                 if (primary)
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, false, false, primary, HoloKronName, OrXHoloKron.instance.missionType);
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, false, false, primary, HoloKronName, OrXHoloKron.instance.challengeType);
                 }
                 else
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.missionType);
+                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.challengeType);
                 }
             }
             else

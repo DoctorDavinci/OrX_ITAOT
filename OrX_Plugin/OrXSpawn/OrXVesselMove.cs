@@ -310,6 +310,42 @@ namespace OrX.spawn
 
         #endregion
 
+        public void SetAltitude(bool _raise, float _alt)
+        {
+            StartCoroutine(SetAltitudeRoutine(_raise, _alt));
+        }
+        IEnumerator SetAltitudeRoutine(bool _raise, float _alt)
+        {
+            if (_raise)
+            {
+                if (MovingVessel.altitude <= _alt)
+                {
+                    MoveHeight += (float)MovingVessel.altitude / 100;
+                    yield return new WaitForFixedUpdate();
+                    StartCoroutine(SetAltitudeRoutine(_raise, _alt));
+                }
+                else
+                {
+                    OrXHoloKron.instance.getNextCoord = true;
+                    OrXHoloKron.instance._spawningVessel = true;
+                }
+            }
+            else
+            {
+                if (MovingVessel.altitude >= _alt)
+                {
+                    MoveHeight -= (float)MovingVessel.altitude / 100;
+                    yield return new WaitForFixedUpdate();
+                    StartCoroutine(SetAltitudeRoutine(_raise, _alt));
+                }
+                else
+                {
+                    OrXHoloKron.instance.getNextCoord = true;
+                    OrXHoloKron.instance._spawningVessel = true;
+                }
+            }
+        }
+
         private void UpdateMove()
         {
             if (!_moving) return;
@@ -381,30 +417,34 @@ namespace OrX.spawn
                     }
                 }
 
-                if (!placingGate)
+                if (placingGate)
                 {
-                    if (GameSettings.PITCH_DOWN.GetKey())
+                    if (MoveHeight >= 20)
                     {
-                        offsetDirection += (forward * _moveSpeed * Time.fixedDeltaTime);
-                        inputting = true;
+                        MoveHeight = 20;
                     }
-                    if (GameSettings.PITCH_UP.GetKey())
-                    {
-                        offsetDirection += (-forward * _moveSpeed * Time.fixedDeltaTime);
-                        inputting = true;
-                    }
+                }
 
-                    if (GameSettings.YAW_RIGHT.GetKey())
-                    {
-                        offsetDirection += (right * _moveSpeed * Time.fixedDeltaTime);
-                        inputting = true;
-                    }
-                    if (GameSettings.YAW_LEFT.GetKey())
-                    {
-                        offsetDirection += (-right * _moveSpeed * Time.fixedDeltaTime);
-                        inputting = true;
-                    }
+                if (GameSettings.PITCH_DOWN.GetKey())
+                {
+                    offsetDirection += (forward * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
+                if (GameSettings.PITCH_UP.GetKey())
+                {
+                    offsetDirection += (-forward * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
 
+                if (GameSettings.YAW_RIGHT.GetKey())
+                {
+                    offsetDirection += (right * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
+                }
+                if (GameSettings.YAW_LEFT.GetKey())
+                {
+                    offsetDirection += (-right * _moveSpeed * Time.fixedDeltaTime);
+                    inputting = true;
                 }
 
                 if (GameSettings.THROTTLE_UP.GetKey())
@@ -642,7 +682,7 @@ namespace OrX.spawn
                 {
                     MovingVessel.IgnoreGForces(240);
                     MovingVessel.SetWorldVelocity(Vector3.zero);
-                    MovingVessel.Translate((float)MovingVessel.radarAltitude * Time.fixedDeltaTime * -UpVect);
+                    MovingVessel.Translate((float)MovingVessel.radarAltitude * 0.6f * Time.fixedDeltaTime * -UpVect);
                     yield return new WaitForFixedUpdate();
                 }
             }
@@ -732,39 +772,21 @@ namespace OrX.spawn
             if (_spawningLocal)
             {
                 spawningLocal = false;
-                MovingVessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-                float _count = 3;
-                var mhv = FlightGlobals.ActiveVessel.rootPart.FindModuleImplementing<ModuleHoldVessel>();
-                if (mhv != null && OrXHoloKron.instance._holdVesselPos)
-                {
-                    mhv.latitude = MovingVessel.latitude;
-                    mhv.longitude = MovingVessel.longitude;
-                    mhv.altitude = OrXHoloKron.instance._saveAltitude;
-                    yield return new WaitForFixedUpdate();
 
-                    /*
-                    while (MovingVessel.radarAltitude <= OrXHoloKron.instance._saveAltitude)
-                    {
-                        _count -= Time.fixedDeltaTime;
-                        MovingVessel.IgnoreGForces(240);
-                        MovingVessel.SetWorldVelocity(Vector3.zero);
-                        MovingVessel.Translate(25 * Time.fixedDeltaTime * UpVect);
-                        yield return new WaitForFixedUpdate();
-                        if (_count <= 0)
-                        {
-                            if (!OrXHoloKron.instance.triggerVessel.isActiveVessel)
-                            {
-                                FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
-                            }
-                        }
-                    }
-                    */
-                    mhv.isLoaded = true;
+                if (OrXHoloKron.instance._holdVesselPos)
+                {
+                    OrXHoloKron.instance._holdVesselPos = false;
+                    FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleHoldVessel", true);
+                    var mhv = FlightGlobals.ActiveVessel.rootPart.FindModuleImplementing<ModuleHoldVessel>();
+                    mhv.SetAltitude(MovingVessel.latitude, MovingVessel.longitude, OrXHoloKron.instance._saveAltitude);
                     OrXLog.instance.DebugLog("[OrX Vessel Move] === HOLDING " + MovingVessel.name + " IN POSITION ===");
+                    OrXHoloKron.instance.getNextCoord = true;
                     OrXHoloKron.instance.PlaceCraft();
                 }
                 else
                 {
+                    MovingVessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+
                     if (MovingVessel == OrXHoloKron.instance.triggerVessel)
                     {
                         OrXHoloKron.instance.OrXHCGUIEnabled = false;
@@ -814,10 +836,13 @@ namespace OrX.spawn
                     }
                 }
             }
-            _rb = MovingVessel.GetComponent<Rigidbody>();
-            _rb.isKinematic = true;
+            if (_rb != null)
+            {
+                _rb = MovingVessel.GetComponent<Rigidbody>();
+                _rb.isKinematic = false;
+                _rb = null;
+            }
             MovingVessel = new Vessel();
-            _rb = null;
             OrXHoloKron.instance._holdVesselPos = false;
             OrXLog.instance.ResetFocusKeys();
         }

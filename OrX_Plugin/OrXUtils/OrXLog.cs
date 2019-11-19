@@ -98,30 +98,41 @@ namespace OrX
             DontDestroyOnLoad(this);
             instance = this;
 
-            Debug.Log("[OrX Log - Awakening] === ADDING OrX MODULE ===");
+            Debug.Log("[OrX Log - The Awakening] === ADDING MODULES ===");
             ConfigNode EVA = new ConfigNode("MODULE");
+            ConfigNode OrXStage = new ConfigNode("MODULE");
+
             EVA.AddValue("name", "ModuleOrX");
+            OrXStage.AddValue("name", "ModuleOrXStage");
 
             try
             {
                 PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
-                DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVA ===");
+                Debug.Log("[OrX Log] === ADDED ORX MODULE TO 'kerbalEVA' ===");
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
+                Debug.Log("[OrX Log] === ADDED ORX MODULE TO 'kerbalEVAfemale' ===");
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                PartLoader.getPartInfoByName("MassiveBooster").partPrefab.AddModule(OrXStage);
+                Debug.Log("[OrX Log] === ADDED STAGE MODULE TO 'MassiveBooster' ===");
             }
             catch
             {
                 //OrXLog.instance.DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVA ===");
             }
 
-            try
-            {
-                PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
-                DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVAfemale ===");
-
-            }
-            catch
-            {
-                // OrXLog.instance.DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVAfemale ===");
-            }
         }
         private void Start()
         {
@@ -202,17 +213,17 @@ namespace OrX
         }
         private void onFlightGlobalsReady(bool data)
         {
-            if (mission && !PREnabled())
+            if (!PREnabled())
             {
                 //ImportVesselList();
-                UpdateRangesOnFGReady();
+                //UpdateRangesOnFGReady();
             }
         }
         public void onVesselChange(Vessel data)
         {
             if ((mission || OrXHoloKron.instance.building) && !PREnabled())
             {
-                SetRange(data, 8000);
+                SetRange(data, 10000);
 
                 if (spawn.OrXSpawnHoloKron.instance.spawning)
                 {
@@ -223,7 +234,7 @@ namespace OrX
                 }
                 else
                 {
-                    EVAUnlockWS();
+                    //EVAUnlockWS();
 
                     if (!FlightGlobals.ActiveVessel.isEVA)
                     {
@@ -286,32 +297,64 @@ namespace OrX
                 CheatOptions.UnbreakableJoints = uJoints;
             }
         }
-        public void SetRange(Vessel v, float _range)
+        public void SetTerrainLoad()
         {
             try
             {
                 var pqs = FlightGlobals.currentMainBody.pqsController;
                 if (pqs != null)
                 {
-                    if (pqs.horizonDistance != _preLoadRange)
+                    if (pqs.horizonDistance != _preLoadRange * 1000)
                     {
-                        pqs.horizonDistance = _preLoadRange;
-                        pqs.maxDetailDistance = _preLoadRange;
-                        pqs.minDetailDistance = _preLoadRange;
+                        pqs.horizonDistance = _preLoadRange * 1000;
+                        pqs.maxDetailDistance = _preLoadRange * 1000;
+                        pqs.minDetailDistance = _preLoadRange * 1000;
                         pqs.visRadSeaLevelValue = 200;
                         pqs.collapseSeaLevelValue = 200;
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
                     }
                 }
             }
             catch { }
+        }
+        public void SetRange(Vessel v, float _range)
+        {
+            /*
+            try
+            {
+                var pqs = FlightGlobals.currentMainBody.pqsController;
+                if (pqs != null)
+                {
+                    if (pqs.horizonDistance != _preLoadRange * 1000)
+                    {
+                        pqs.horizonDistance = _preLoadRange * 1000;
+                        pqs.maxDetailDistance = _preLoadRange * 1000;
+                        pqs.minDetailDistance = _preLoadRange * 1000;
+                        pqs.visRadSeaLevelValue = 200;
+                        pqs.collapseSeaLevelValue = 200;
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+                    }
+                }
+            }
+            catch { }
+            */
+            Debug.Log("[OrX Log Set Range] === SETTING RANGES FOR " + v.vesselName + " ===");
 
-            float _modRange = _preLoadRange;
-            if (_preLoadRange <= 40000)
+            float _modRange = _preLoadRange * 1000;
+            if (_modRange <= 40000)
             {
                 _modRange = 40000;
             }
 
-            _vesselLanded = new VesselRanges.Situation(_preLoadRange, _preLoadRange, _preLoadRange, _preLoadRange);
+            _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);
             _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
             _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
 
@@ -326,7 +369,7 @@ namespace OrX
                 subOrbital = _vesselOther
             };
 
-            if (v.vesselRanges.landed.load <= _preLoadRange * 0.95f)
+            if (v.vesselRanges.landed.load <= _preLoadRange * 950f)
             {
                 //OrXLog.instance.DebugLog("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
                 v.vesselRanges = new VesselRanges(_vesselRanges);
@@ -404,12 +447,14 @@ namespace OrX
 
         public void UpdateRangesOnFGReady()
         {
+            //SetTerrainLoad();
+
             List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
             while(v.MoveNext())
             {
                 if (v.Current != null)
                 {
-                    SetRange(v.Current, 8000);
+                    SetRange(v.Current, 10000);
                 }
             }
             v.Dispose();
