@@ -29,6 +29,7 @@ namespace OrX
         double _lonMission = 0;
         double _altMission = 0;
         bool _checking = true;
+        bool _airsupportSpawned = false;
 
         private void Awake()
         {
@@ -38,12 +39,34 @@ namespace OrX
 
         public void TargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
         {
+            _airsupportSpawned = false;
+            _checking = checking;
+            OrXHoloKron.instance.airTime = 0;
+
             if (!OrXHoloKron.instance.buildingMission)
             {
-                if (!OrXLog.instance.PREnabled())
+                if (OrXLog.instance._preInstalled)
                 {
-                    _checking = checking;
-                    OrXHoloKron.instance.airTime = 0;
+                    if (!OrXLog.instance.PREnabled())
+                    {
+
+                        if (b)
+                        {
+                            OrXHoloKron.instance.showTargets = true;
+
+                            _latMission = missionCoords.x;
+                            _lonMission = missionCoords.y;
+                            _altMission = missionCoords.z;
+                        }
+                        else
+                        {
+                            OrXHoloKron.instance.showTargets = false;
+                        }
+                        StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
+                    }
+                }
+                else
+                {
 
                     if (b)
                     {
@@ -59,6 +82,7 @@ namespace OrX
                     }
                     StartCoroutine(CheckTargetDistance(primary, b, Goal, checking, HoloKronName, missionCoords));
                 }
+
             }
         }
         IEnumerator CheckTargetDistance(bool primary, bool b, bool Goal, bool checking, string HoloKronName, Vector3d missionCoords)
@@ -365,7 +389,7 @@ namespace OrX
                         }
                     }
 
-                    if (_targetDistance <= 4000)
+                    if (_targetDistance <= 15000)
                     {
                         if (checking)
                         {
@@ -392,8 +416,11 @@ namespace OrX
                     }
                     else
                     {
-                        //OrXHoloKron.instance.OrXHCGUIEnabled = true;
-                        //OrXHoloKron.instance.challengeRunning = Goal;
+                        if (_targetDistance <= 60000 && !_airsupportSpawned)
+                        {
+                            _airsupportSpawned = true;
+                            OrXSpawnHoloKron.instance.SpawnAirSupport(true, HoloKronName, new Vector3d());
+                        }
                     }
                 }
 

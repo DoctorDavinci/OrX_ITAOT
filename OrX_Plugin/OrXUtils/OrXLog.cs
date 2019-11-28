@@ -85,7 +85,7 @@ namespace OrX
         private static VesselRanges.Situation _vesselOther;
         public bool _debugLog = false;
         public bool _mode = false;
-        float _preLoadRange = 10;
+        public float _preLoadRange = 65;
         public bool _preInstalled = false;
         public bool _preEnabled = false;
         bool cDamage = false;
@@ -166,6 +166,7 @@ namespace OrX
                 GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
                 GameEvents.onVesselLoaded.Add(onVesselLoaded);
                 CheckUpgrades();
+                _preEnabled = PREnabled();
             }
             else
             {
@@ -182,28 +183,34 @@ namespace OrX
                 ConfigNode PREnode = PREsettings.GetNode("PreSettings");
                 if (PREnode.GetValue("ModEnabled") != "False")
                 {
+                    _preInstalled = true;
                     _preEnabled = true;
                     return true;
 
                 }
                 else
                 {
+                    _preInstalled = false;
                     _preEnabled = false;
                     return false;
                 }
             }
             else
             {
-                return true;
+                return false;
             }
         }
         private void onVesselLoaded(Vessel data)
         {
             if (!data.rootPart.Modules.Contains<ModuleOrXMission>() && !data.rootPart.Modules.Contains<ModuleOrXPlace>())
             {
-                if (!spawn.OrXSpawnHoloKron.instance.spawning && mission && !PREnabled())
+                if (!PREnabled())
                 {
-                    data.rootPart.AddModule("ModuleOrXLoadedVesselPlace", true);
+                    SetRange(data, 25000);
+                    if (!spawn.OrXSpawnHoloKron.instance.spawning && mission && !_preEnabled)
+                    {
+                        data.rootPart.AddModule("ModuleOrXLoadedVesselPlace", true);
+                    }
                 }
             }
         }
@@ -213,7 +220,15 @@ namespace OrX
         }
         private void onFlightGlobalsReady(bool data)
         {
-            if (!PREnabled())
+            if (OrXLog.instance._preInstalled)
+            {
+                if (!OrXLog.instance.PREnabled())
+                {
+                    //ImportVesselList();
+                    //UpdateRangesOnFGReady();
+                }
+            }
+            else
             {
                 //ImportVesselList();
                 //UpdateRangesOnFGReady();
@@ -221,9 +236,9 @@ namespace OrX
         }
         public void onVesselChange(Vessel data)
         {
-            if ((mission || OrXHoloKron.instance.building) && !PREnabled())
+            if ((mission || OrXHoloKron.instance.building) && !_preEnabled)
             {
-                SetRange(data, 10000);
+                SetRange(data, 15000);
 
                 if (spawn.OrXSpawnHoloKron.instance.spawning)
                 {
@@ -304,19 +319,27 @@ namespace OrX
                 var pqs = FlightGlobals.currentMainBody.pqsController;
                 if (pqs != null)
                 {
-                    if (pqs.horizonDistance != _preLoadRange * 1000)
+                    float _modRange = _preLoadRange * 1000;
+                    if (_modRange <= 65000)
                     {
-                        pqs.horizonDistance = _preLoadRange * 1000;
-                        pqs.maxDetailDistance = _preLoadRange * 1000;
-                        pqs.minDetailDistance = _preLoadRange * 1000;
-                        pqs.visRadSeaLevelValue = 200;
-                        pqs.collapseSeaLevelValue = 200;
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+                        _modRange = 65000;
                     }
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+
+                    pqs.horizonDistance = _modRange;
+                    pqs.maxDetailDistance = _modRange;
+                    pqs.minDetailDistance = _modRange;
+                    pqs.visRadSeaLevelValue = 200;
+                    pqs.collapseSeaLevelValue = 200;
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
+                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
                 }
             }
             catch { }
@@ -349,9 +372,9 @@ namespace OrX
             Debug.Log("[OrX Log Set Range] === SETTING RANGES FOR " + v.vesselName + " ===");
 
             float _modRange = _preLoadRange * 1000;
-            if (_modRange <= 40000)
+            if (_modRange <= 65000)
             {
-                _modRange = 40000;
+                _modRange = 65000;
             }
 
             _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);

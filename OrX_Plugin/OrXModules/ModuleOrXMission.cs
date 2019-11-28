@@ -55,6 +55,19 @@ namespace OrX
         [KSPField(isPersistant = true)]
         public string Bronze = string.Empty;
 
+        [KSPField(isPersistant = true)]
+        public double _asRangeMed = 50000;
+        [KSPField(isPersistant = true)]
+        public double _asRangeShort = 25000;
+        [KSPField(isPersistant = true)]
+        public double _asRangeLong = 75000;
+
+        [KSPField(isPersistant = true)]
+        public bool asRangeMed = false;
+        [KSPField(isPersistant = true)]
+        public bool asRangeShort = false;
+        [KSPField(isPersistant = true)]
+        public bool asRangeLong = false;
 
         [KSPField(isPersistant = true)]
         public bool blueprintsAdded = false;
@@ -337,7 +350,7 @@ namespace OrX
                                         }
                                         else
                                         {
-                                            if (_targetDistance <= 10)
+                                            if (_targetDistance <= 8)
                                             {
                                                 hideGoal = true;
                                                 OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
@@ -348,12 +361,39 @@ namespace OrX
                                     }
                                     else
                                     {
-                                        if (_targetDistance <= 5000)
+                                        if (_targetDistance <= _asRangeLong)
                                         {
-                                            hideGoal = true;
-                                            OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
-                                            //OrXHoloKron.instance.GetNextCoord();
-                                            OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
+                                            if (!asRangeLong)
+                                            {
+                                                asRangeLong = true;
+
+                                            }
+
+                                            if (_targetDistance <= _asRangeMed)
+                                            {
+                                                if (!asRangeMed)
+                                                {
+                                                    asRangeMed = true;
+
+                                                }
+
+                                                if (_targetDistance <= _asRangeShort)
+                                                {
+                                                    if (!asRangeShort)
+                                                    {
+                                                        asRangeShort = true;
+
+                                                    }
+
+                                                    if (_targetDistance <= 10000)
+                                                    {
+                                                        _auto = true;
+                                                        fml = false;
+                                                        OrXLog.instance.DebugLog("[Module OrX Mission - BDAc Challenge] == TARGET DISTANCE: " + _targetDistance);
+                                                        OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

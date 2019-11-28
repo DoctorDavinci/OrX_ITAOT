@@ -312,36 +312,43 @@ namespace OrX.spawn
 
         public void SetAltitude(bool _raise, float _alt)
         {
+            _lineRender.enabled = false;
+            MovingVessel.ActionGroups.SetGroup(KSPActionGroup.Gear, true);
+            _alt += (float)MovingVessel.altitude;
             StartCoroutine(SetAltitudeRoutine(_raise, _alt));
         }
         IEnumerator SetAltitudeRoutine(bool _raise, float _alt)
         {
+            MovingVessel.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
+
             if (_raise)
             {
                 if (MovingVessel.altitude <= _alt)
                 {
-                    MoveHeight += (float)MovingVessel.altitude / 100;
+                    MovingVessel.IgnoreGForces(240);
+
+                    MoveHeight += (float)MovingVessel.radarAltitude / 80;
                     yield return new WaitForFixedUpdate();
                     StartCoroutine(SetAltitudeRoutine(_raise, _alt));
                 }
                 else
                 {
-                    OrXHoloKron.instance.getNextCoord = true;
                     OrXHoloKron.instance._spawningVessel = true;
+                    OrXHoloKron.instance.getNextCoord = true;
                 }
             }
             else
             {
                 if (MovingVessel.altitude >= _alt)
                 {
-                    MoveHeight -= (float)MovingVessel.altitude / 100;
+                    MoveHeight -= (float)MovingVessel.radarAltitude / 100;
                     yield return new WaitForFixedUpdate();
                     StartCoroutine(SetAltitudeRoutine(_raise, _alt));
                 }
                 else
                 {
-                    OrXHoloKron.instance.getNextCoord = true;
                     OrXHoloKron.instance._spawningVessel = true;
+                    OrXHoloKron.instance.getNextCoord = true;
                 }
             }
         }
@@ -350,7 +357,6 @@ namespace OrX.spawn
         {
             if (!_moving) return;
             MovingVessel.IgnoreGForces(240);
-
             // Lerp is animating move
             if (!_hoverChanged)
             {
@@ -609,7 +615,7 @@ namespace OrX.spawn
                             _rb.isKinematic = true;
                             _rb = null;
                             OrXLog.instance.ResetFocusKeys();
-                            OrXHoloKron.instance.MainMenu();
+                            OrXHoloKron.instance.OpenScoreboardMenu();
                         }
                         else
                         {
@@ -622,6 +628,7 @@ namespace OrX.spawn
         public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _placingGate, bool _external)
         {
             OrXLog.instance.SetFocusKeys();
+
             _externalControl = _external;
             MovingVessel = new Vessel();
             placingGate = _placingGate;
@@ -632,7 +639,7 @@ namespace OrX.spawn
             IsMovingVessel = true;
             if (MovingVessel == OrXHoloKron.instance._HoloKron)
             {
-                MoveHeight = (float)MovingVessel.radarAltitude + _alt;
+                MoveHeight = 10;
             }
             else
             {
@@ -651,8 +658,12 @@ namespace OrX.spawn
 
             if (MovingVessel != FlightGlobals.ActiveVessel)
             {
+                Debug.Log("[OrX Vessel Move] ===== SETTING ACTIVE VESSEL =====");
                 FlightGlobals.ForceSetActiveVessel(MovingVessel);
             }
+            OrXHoloKron.instance._spawningVessel = true;
+            OrXHoloKron.instance.getNextCoord = true;
+            OrXHoloKron.instance.OrXHCGUIEnabled = true;
         }
 
         public void KillMove(bool _place, bool _gate)
@@ -661,9 +672,18 @@ namespace OrX.spawn
         }
         IEnumerator KillMoveRoutine(bool _place, bool _gate)
         {
+            if (OrXHoloKron.instance._settingAltitude)
+            {
+                MovingVessel.rootPart.AddModule("ModuleHoldVessel");
+                var _holdModule = MovingVessel.rootPart.FindModuleImplementing<ModuleHoldVessel>();
+                _holdModule.altitude = MovingVessel.altitude;
+                _holdModule.latitude = MovingVessel.latitude;
+                _holdModule.longitude = MovingVessel.longitude;
+            }
+
             _moving = false;
             _externalControl = false;
-            MovingVessel.SetWorldVelocity(Vector3.zero);
+            //MovingVessel.SetWorldVelocity(Vector3.zero);
             MovingVessel.IgnoreGForces(240);
             spawningLocal = false;
             OrXLog.instance.DebugLog("[OrX Vessel Move] ===== KILLING MOVE =====");
@@ -672,6 +692,11 @@ namespace OrX.spawn
             MoveHeight = 0;
             _hoverAdjust = 0f;
             UpVect = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
+            if (OrXHoloKron.instance.triggerVessel != MovingVessel)
+            {
+                //MovingVessel.rootPart.AddModule("ModuleOrXCraftSetup", true);
+            }
+
             yield return new WaitForFixedUpdate();
 
             if (_place && MovingVessel != OrXHoloKron.instance._HoloKron)
@@ -690,9 +715,8 @@ namespace OrX.spawn
             {
 
             }
-
             _rb = MovingVessel.GetComponent<Rigidbody>();
-            _rb.isKinematic = true;
+            _rb.isKinematic = false;
             _rb = null;
             if (_gate)
             {
@@ -702,17 +726,24 @@ namespace OrX.spawn
             {
                 if (OrXHoloKron.instance.triggerVessel != MovingVessel)
                 {
+                    FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
                     OrXLog.instance.ResetFocusKeys();
-                    OrXHoloKron.instance.getNextCoord = true;
+                    OrXHoloKron.instance.SpawnMenu();
                 }
                 else
                 {
-                    OrXLog.instance.ResetFocusKeys();
-                    OrXHoloKron.instance.OpenScoreboardMenu();
+                    if (!OrXHoloKron.instance.bdaChallenge)
+                    {
+                        OrXLog.instance.ResetFocusKeys();
+                        OrXHoloKron.instance.OpenScoreboardMenu();
+                    }
+                    else
+                    {
+
+                    }
                 }
             }
             MovingVessel = new Vessel();
-            OrXHoloKron.instance._holdVesselPos = false;
         }
 
         public void EndMove(bool addingCoords, bool _spawningLocal, bool _gate)
@@ -773,14 +804,10 @@ namespace OrX.spawn
             {
                 spawningLocal = false;
 
-                if (OrXHoloKron.instance._holdVesselPos)
+                if (OrXHoloKron.instance._holdVesselPos || _gate)
                 {
-                    OrXHoloKron.instance._holdVesselPos = false;
-                    FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleHoldVessel", true);
-                    var mhv = FlightGlobals.ActiveVessel.rootPart.FindModuleImplementing<ModuleHoldVessel>();
-                    mhv.SetAltitude(MovingVessel.latitude, MovingVessel.longitude, OrXHoloKron.instance._saveAltitude);
-                    OrXLog.instance.DebugLog("[OrX Vessel Move] === HOLDING " + MovingVessel.name + " IN POSITION ===");
-                    OrXHoloKron.instance.getNextCoord = true;
+                    //MovingVessel.rootPart.AddModule("ModuleOrXCraftSetup", true);
+
                     OrXHoloKron.instance.PlaceCraft();
                 }
                 else
@@ -794,6 +821,8 @@ namespace OrX.spawn
                     }
                     else
                     {
+                        //MovingVessel.rootPart.AddModule("ModuleOrXCraftSetup", true);
+
                         OrXHoloKron.instance.PlaceCraft();
                     }
                 }

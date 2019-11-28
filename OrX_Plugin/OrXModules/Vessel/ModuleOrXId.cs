@@ -9,7 +9,7 @@ namespace OrX
     {
         [KSPField(isPersistant = true)]
         public int _partCount = 0;
-
+        float salt = 0;
         public bool kill = false;
 
         public override void OnStart(StartState state)
@@ -17,16 +17,20 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                  part.force_activate();
-                
-                 List<Part>.Enumerator p = vessel.parts.GetEnumerator();
+
+                float _salt = 0;
+                List<Part>.Enumerator p = vessel.parts.GetEnumerator();
                  while (p.MoveNext())
                  {
                      if (p.Current != null)
                      {
                         _partCount += 1;
-                    }
+                        _salt += p.Current.mass;
+                     }
                  }
                  p.Dispose();
+
+                salt = _salt / vessel.parts.Count;
             }
             base.OnStart(state);
         }
@@ -34,6 +38,33 @@ namespace OrX
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
+            try
+            {
+                if (vessel.parts.Count <= _partCount)
+                {
+                    OrX_KC.instance.salt += salt * (_partCount - vessel.parts.Count);
+
+
+
+                    float _salt = 0;
+                    List<Part>.Enumerator p = vessel.parts.GetEnumerator();
+                    while (p.MoveNext())
+                    {
+                        if (p.Current != null)
+                        {
+                            _partCount += 1;
+                            _salt += p.Current.mass;
+                        }
+                    }
+                    p.Dispose();
+
+                    salt = _salt / vessel.parts.Count;
+                }
+            }
+            catch
+            {
+
+            }
         }
     }
 }

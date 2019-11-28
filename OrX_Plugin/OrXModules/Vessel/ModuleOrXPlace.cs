@@ -30,27 +30,6 @@ namespace OrX
             {
                 part.force_activate();
                 vessel.IgnoreGForces(240);
-                if (!vessel.isActiveVessel)
-                {
-                    List<Part>.Enumerator p = vessel.parts.GetEnumerator();
-                    while (p.MoveNext())
-                    {
-                        if (p.Current != null)
-                        {
-                            if (p.Current != part && p.Current.Modules.Contains<KerbalEVA>())
-                            {
-                                //parkingBrake = true;
-                            }
-
-                            if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
-                            {
-                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                //brakeTweakable = wheel.brakeTweakable;
-                            }
-                        }
-                    }
-                    p.Dispose();
-                }
             }
             base.OnStart(state);
         }
@@ -108,50 +87,6 @@ namespace OrX
         {
             base.OnFixedUpdate();
 
-            if (parkingBrake)
-            {
-                //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
-
-                if (this.vessel.srfSpeed >= 1)
-                {
-                    List<Part>.Enumerator p = vessel.parts.GetEnumerator();
-                    while (p.MoveNext())
-                    {
-                        if (p.Current != null)
-                        {
-                            if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
-                            {
-                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                //wheel.brakeTweakable = 1000;
-                                //tweaked = true;
-                            }
-                        }
-                    }
-                    p.Dispose();
-                }
-            }
-            else
-            {
-                if (tweaked)
-                {
-                    tweaked = false;
-
-                    List<Part>.Enumerator p = vessel.parts.GetEnumerator();
-                    while (p.MoveNext())
-                    {
-                        if (p.Current != null)
-                        {
-                            if (p.Current.Modules.Contains<ModuleWheels.ModuleWheelBrakes>())
-                            {
-                                //var wheel = p.Current.FindModuleImplementing<ModuleWheels.ModuleWheelBrakes>();
-                                //wheel.brakeTweakable = brakeTweakable;
-                                //tweaked = false;
-                            }
-                        }
-                    }
-                    p.Dispose();
-                }
-            }
         }
 
         public void Die()
@@ -168,17 +103,14 @@ namespace OrX
             yield return new WaitForSeconds(1);
             this.vessel.Die();
         }
-        public void PlaceCraft(bool _gate, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
+        public void PlaceCraft(bool _bda, bool _airborne, bool _gate, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
         {
-            bool _airborne = false;
-            if (vessel.altitude - vessel.terrainAltitude >= 500)
-            {
-                _airborne = true;
-            }
-
-            StartCoroutine(Place(_gate, _airborne, _challengeStart, _altToSubtract, _left, _pitch));
+            vessel.IgnoreGForces(240);
+            vessel.angularVelocity = Vector3.zero;
+            vessel.angularMomentum = Vector3.zero;
+            StartCoroutine(Place(_bda, _gate, _airborne, _challengeStart, _altToSubtract, _left, _pitch));
         }
-        IEnumerator Place(bool _gate, bool _airborne, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
+        IEnumerator Place(bool _bda, bool _gate, bool _airborne, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
         {
             Rigidbody _rb = vessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
@@ -217,16 +149,8 @@ namespace OrX
             OrXLog.instance.DebugLog("[OrX Place] === PLACING " + vessel.vesselName + " ===");
             float dropRate = Mathf.Clamp((localAlt * mod), 0.1f, 200);
 
-            if (_airborne)
+            if (_bda)
             {
-                while (vessel.radarAltitude <= localAlt)
-                {
-                    vessel.IgnoreGForces(240);
-                    vessel.SetWorldVelocity(Vector3.zero);
-                    vessel.Translate((float)vessel.radarAltitude * Time.fixedDeltaTime * UpVect);
-                    yield return new WaitForFixedUpdate();
-                }
-                /*
                 List<Part>.Enumerator p = vessel.parts.GetEnumerator();
                 while (p.MoveNext())
                 {
@@ -236,6 +160,7 @@ namespace OrX
                         var enginesFX = p.Current.FindModuleImplementing<ModuleEnginesFX>();
                         if (engines != null)
                         {
+                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND ENGINES ON " + FlightGlobals.ActiveVessel.vesselName + " ... ACTIVATING =====");
                             p.Current.force_activate();
                             engines.ActivateAction(new KSPActionParam(KSPActionGroup.None, KSPActionType.Activate));
                             engines.Activate();
@@ -243,20 +168,39 @@ namespace OrX
 
                         if (enginesFX != null)
                         {
+                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND ENGINEFX ON " + FlightGlobals.ActiveVessel.vesselName + " ... ACTIVATING =====");
                             p.Current.force_activate();
                             enginesFX.ActivateAction(new KSPActionParam(KSPActionGroup.None, KSPActionType.Activate));
                             enginesFX.Activate();
                         }
+
+                        if (p.Current.Modules.Contains("BDModulePilotAI") || p.Current.Modules.Contains("BDModuleSurfaceAI"))
+                        {
+                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND PILOT AI ON " + FlightGlobals.ActiveVessel.vesselName + " ... ACTIVATING =====");
+                            p.Current.SendMessage("ActivatePilot");
+                        }
+
+                        if (p.Current.Modules.Contains("MissileFire"))
+                        {
+                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND WEAPON MANAGER ON " + FlightGlobals.ActiveVessel.vesselName + " ... ACTIVATING GUARD MODE =====");
+                            p.Current.SendMessage("ToggleGuardMode");
+                        }
                     }
                 }
                 p.Dispose();
-                */
+            }
+
+            if (_airborne)
+            {
+               // Destroy(this);
             }
             else
             {
                 while (!vessel.LandedOrSplashed)
                 {
                     vessel.IgnoreGForces(240);
+                    vessel.angularVelocity = Vector3.zero;
+                    vessel.angularMomentum = Vector3.zero;
                     vessel.SetWorldVelocity(Vector3.zero);
                     dropRate = Mathf.Clamp((localAlt), 0.1f, 200);
 
@@ -303,7 +247,7 @@ namespace OrX
 
                 yield return new WaitForSeconds(1.5f);
                 OrXHoloKron.instance._placingChallenger = false;
-                Destroy(this);
+               // Destroy(this);
             }
         }
     }

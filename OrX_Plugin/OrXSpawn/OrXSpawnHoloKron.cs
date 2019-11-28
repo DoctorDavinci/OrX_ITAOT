@@ -7,7 +7,7 @@ using System.IO;
 
 namespace OrX.spawn
 {
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    [KSPAddon(KSPAddon.Startup.FlightAndEditor, false)]
     public class OrXSpawnHoloKron : MonoBehaviour
     {
         public static OrXSpawnHoloKron instance;
@@ -26,6 +26,10 @@ namespace OrX.spawn
         public bool spawning = false;
         public string _vesselName = "";
 
+        string GoalPostCraft = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/Goal/Goal.craft";
+        public bool _spawnCraftFile = false;
+
+        public double _holoAlt = 0;
         private void Awake()
         {
             if (instance) Destroy(instance);
@@ -49,13 +53,20 @@ namespace OrX.spawn
         {
             OrXHoloKron.instance.Reach();
 
-            if (!OrXLog.instance.PREnabled())
+            if (OrXLog.instance._preInstalled)
+            {
+                if (!OrXLog.instance.PREnabled())
+                {
+                    spawning = true;
+                    StartCoroutine(SpawnHoloKron(stageStartCoords, vect, Goal, empty, primary, HoloKronName, challengeType));
+                }
+            }
+            else
             {
                 spawning = true;
                 StartCoroutine(SpawnHoloKron(stageStartCoords, vect, Goal, empty, primary, HoloKronName, challengeType));
             }
         }
-
         IEnumerator SpawnHoloKron(Vector3d stageStartCoords, Vector3d vect, bool b, bool empty, bool primary, string HoloKronName, string challengeType)
         {
             int count = OrXHoloKron.instance.locCount + 1;
@@ -70,7 +81,7 @@ namespace OrX.spawn
 
             if (primary)
             {
-                _alt += 5;
+                _alt += 10;
 
                 OrXLog.instance.DebugLog("[Spawn OrX HoloKron] Spawning " + HoloKronName + " " + OrXHoloKron.instance.hkCount);
             }
@@ -243,6 +254,30 @@ namespace OrX.spawn
                     var tHeight = FlightGlobals.currentMainBody.pqsController.radius - terrainHeight;
                     terrainHeight += tHeight;
                 }
+
+                if (!b && primary)
+                {
+                    if (FlightGlobals.currentMainBody.pqsController.horizonDistance != OrXLog.instance._preLoadRange * 1000)
+                    {
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+
+                        FlightGlobals.currentMainBody.pqsController.horizonDistance = OrXLog.instance._preLoadRange * 1000;
+                        FlightGlobals.currentMainBody.pqsController.maxDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                        FlightGlobals.currentMainBody.pqsController.minDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                        FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue = 200;
+                        FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue = 200;
+
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                        OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+                    }
+                }
             }
             bool splashed = false;
 
@@ -293,17 +328,15 @@ namespace OrX.spawn
             {
                 if (!p.vessel)
                 {
-                    Destroy(p.gameObject);
-                }
-            }
+                    p.gameObject.SetActive(false);
+                    OrXGameobjectTrash.instance._objectsToDestroy.Add(p.gameObject);
+                    OrXLog.instance.DebugLog("[Spawn OrX Craft File] THROWING " + p.gameObject.name + " IN THE TRASH .......");
 
-            if (!OrXHoloKron.instance.buildingMission)
-            {
-                foreach (Part p in holoCube.parts)
-                {
-                    p.SetOpacity(0);
+                    // Destroy(p.gameObject);
                 }
             }
+            yield return new WaitForFixedUpdate();
+            OrXGameobjectTrash.instance.EmptyTrashBin();
 
 
             //yield return new WaitForFixedUpdate();
@@ -317,7 +350,7 @@ namespace OrX.spawn
                 yield return null;
             }
             holoCube.SetWorldVelocity(Vector3d.zero);
-            yield return null;
+            //yield return null;
             holoCube.IgnoreGForces(240);
             var mom = holoCube.rootPart.FindModuleImplementing<ModuleOrXMission>();
 
@@ -336,6 +369,7 @@ namespace OrX.spawn
                 mom.longitude = _lon;
                 mom.altitude = _alt;
                 mom.pos = tpoint;
+                _holoAlt = _alt;
             }
             else
             {
@@ -354,7 +388,6 @@ namespace OrX.spawn
                     _orxStage._stageCount = count;
                 }
             }
-
 
             holoCube.GoOffRails();
             holoCube.IgnoreGForces(240);
@@ -393,8 +426,7 @@ namespace OrX.spawn
                             {
                                 mom.fml = true;
                                 mom.Goal = true;
-                                OrXHoloKron.instance.SetBDAc();
-                                StartCoroutine(SpawnLocalVessels(true, HoloKronName, vect));
+                                //StartCoroutine(SpawnLocalVessels(true, HoloKronName, vect));
                             }
                         }
                     }
@@ -402,7 +434,6 @@ namespace OrX.spawn
                 else
                 {
                     spawning = false;
-
                     OrXHoloKron.instance.GetShortTrackCenter(OrXHoloKron.instance._challengeStartLoc);
                     OrXHoloKron.instance._HoloKron = holoCube;
                     OrXHoloKron.instance.PlayOrXMission = false;
@@ -468,15 +499,61 @@ namespace OrX.spawn
         }
         public void SpawnLocal(bool _bda, string HoloKronName, Vector3d vect)
         {
-            if (!OrXLog.instance.PREnabled())
+            if (OrXLog.instance._preInstalled)
+            {
+                if (!OrXLog.instance.PREnabled())
+                {
+                    spawning = true;
+                    if (!_bda)
+                    {
+                        OrXHoloKron.instance.Reach();
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.SetBDAc();
+                    }
+                    StartCoroutine(SpawnLocalVessels(_bda, HoloKronName, vect));
+                }
+            }
+            else
             {
                 spawning = true;
-                OrXHoloKron.instance.Reach();
+                if (!_bda)
+                {
+                    OrXHoloKron.instance.Reach();
+                }
+                else
+                {
+                    OrXHoloKron.instance.SetBDAc();
+                }
+
                 StartCoroutine(SpawnLocalVessels(_bda, HoloKronName, vect));
             }
         }
         IEnumerator SpawnLocalVessels(bool _bda, string HoloKronName, Vector3d vect)
         {
+            OrXHoloKron.instance.bdaChallenge = _bda;
+            if (FlightGlobals.currentMainBody.pqsController.horizonDistance != OrXLog.instance._preLoadRange * 1000)
+            {
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+
+                FlightGlobals.currentMainBody.pqsController.horizonDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.maxDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.minDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue = 200;
+                FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue = 200;
+
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+            }
+
             string missionCraftLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp";
             string pas = "";
             string _orxFileLoc = "";
@@ -528,25 +605,27 @@ namespace OrX.spawn
                             {
                                 if (data.name == "challengeType")
                                 {
-                                    if (data.value == "OUTLAW RACING")
+                                    if (data.value.Contains("OUTLAW RACING"))
                                     {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is OUTLAW RACING ===");
+
                                         OrXHoloKron.instance.outlawRacing = true;
                                     }
 
-                                    if (data.value == "BD ARMORY")
+                                    if (data.value.Contains("BD ARMORY"))
                                     {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is BD ARMORY ===");
+
                                         OrXHoloKron.instance.bdaChallenge = true;
-                                        OrXHoloKron.instance.geoCache = false;
                                         OrXHoloKron.instance.outlawRacing = false;
 
                                     }
 
-                                    if (data.value == "GEO-CACHE")
+                                    if (data.value.Contains("GEO-CACHE"))
                                     {
-                                        OrXHoloKron.instance.geoCache = true;
-                                        OrXHoloKron.instance.bdaChallenge = false;
-                                        OrXHoloKron.instance.outlawRacing = false;
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is GEO-CACHE ===");
 
+                                        OrXHoloKron.instance.geoCache = true;
                                     }
                                 }
 
@@ -557,7 +636,7 @@ namespace OrX.spawn
                                         OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has not spawned ===");
                                         spawnCheck.SetValue("spawned", "True", true);
                                         _file.Save(_orxFileLoc);
-                                        break;
+                                        //break;
                                     }
                                     else
                                     {
@@ -568,7 +647,7 @@ namespace OrX.spawn
                                             if (spawnCheck.GetValue("extras") == "False")
                                             {
                                                 OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has no extras ... END TRANSMISSION");
-                                                break;
+                                                //break;
                                             }
                                             else
                                             {
@@ -599,6 +678,7 @@ namespace OrX.spawn
                             double _la = 0;
                             double _lo = 0;
                             int _serial = 1138;
+                            bool _airborne = false;
 
                             _vesselName = _vts.GetValue("vesselName");
 
@@ -610,6 +690,744 @@ namespace OrX.spawn
                                 string cvEncryptedValue = OrXLog.instance.Decrypt(loc.value);
                                 loc.name = cvEncryptedName;
                                 loc.value = cvEncryptedValue;
+                                if (loc.name == "airborne")
+                                {
+                                    if (loc.value == "True")
+                                    {
+                                        _airborne = true;
+                                    }
+                                }
+
+                                if (loc.name == "vesselName")
+                                {
+                                    _vesselName = loc.value;
+                                }
+                                if (loc.name == "lat")
+                                {
+                                    _la = double.Parse(loc.value);
+                                }
+                                if (loc.name == "lon")
+                                {
+                                    _lo = double.Parse(loc.value);
+                                }
+                                if (loc.name == "alt")
+                                {
+                                    _al = double.Parse(loc.value);
+                                    _al += 10;
+                                }
+                                if (loc.name == "left")
+                                {
+                                    _left = float.Parse(loc.value);
+                                }
+                                if (loc.name == "pitch")
+                                {
+                                    _pitch = float.Parse(loc.value);
+                                }
+                                if (loc.name == "pas")
+                                {
+                                    pas = loc.value;
+                                }
+                            }
+
+                            if (!_airborne)
+                            {
+                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === VESSEL SPAWN COORDS READY ===");
+
+                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === DECRYPTING CRAFT FILE DATA FOR " + _vts.name + " ===");
+                                ConfigNode craftFile = _vts.GetNode("craft");
+
+                                foreach (ConfigNode.Value cv in craftFile.values)
+                                {
+                                    string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                                    string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                                    cv.name = cvEncryptedName;
+                                    cv.value = cvEncryptedValue;
+
+                                    if (cv.name == "ship")
+                                    {
+                                        cv.value = _vesselName;
+                                    }
+
+                                    if (cv.name == "size")
+                                    {
+                                        string[] _sizeString = cv.value.Split(new char[] { ',' });
+
+                                        try
+                                        {
+                                            if (_sizeString[0] != null && _sizeString[0].Length > 0 && _sizeString[0] != "null")
+                                            {
+                                                for (int i = 0; i < _sizeString.Length; i++)
+                                                {
+                                                    if (_sizeString[i] != null && _sizeString[i].Length > 0)
+                                                    {
+                                                        float _maxValue = Math.Max(float.Parse(_sizeString[0]), Math.Max(float.Parse(_sizeString[1]), float.Parse(_sizeString[2])));
+                                                        _altToSubtract = _maxValue / 2;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        catch (IndexOutOfRangeException e)
+                                        {
+                                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Altitude calculated ...... ");
+                                        }
+                                    }
+                                }
+
+                                foreach (ConfigNode cn in craftFile.nodes)
+                                {
+                                    foreach (ConfigNode.Value cv in cn.values)
+                                    {
+                                        string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                                        cv.name = cvEncryptedName;
+                                        cv.value = cvEncryptedValue;
+                                    }
+
+                                    foreach (ConfigNode cn2 in cn.nodes)
+                                    {
+                                        foreach (ConfigNode.Value cv2 in cn2.values)
+                                        {
+                                            if (!cv2.name.Contains("(") && !cv2.name.Contains(")"))
+                                            {
+                                                string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                                                string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                                                cv2.name = cvEncryptedName;
+                                                cv2.value = cvEncryptedValue;
+                                            }
+                                        }
+                                    }
+                                }
+                                yield return new WaitForFixedUpdate();
+
+                                craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
+                                yield return new WaitForFixedUpdate();
+
+                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === VESSEL DECRYPTED - CHECKING MODULES ===");
+                                List<string> partsLoaded = new List<string>();
+                                int partCount = 0;
+                                bool okToLoad = true;
+                                bool hasKerbal = false;
+                                spawningGoal = false;
+
+                                foreach (ConfigNode partCheck in craftFile.nodes)
+                                {
+                                    if (node.name == "PART")
+                                    {
+                                        foreach (ConfigNode.Value partCheck2 in partCheck.values)
+                                        {
+                                            if (partCheck2.name == "name")
+                                            {
+                                                if (partCheck2.value.Contains("kerbalEVA"))
+                                                {
+                                                    hasKerbal = true;
+                                                }
+
+                                                if (partCheck2.value.Contains("ModuleOrXStage"))
+                                                {
+                                                    spawningGoal = true;
+                                                }
+                                                /*
+                                                if (!partsLoaded.Contains(partCheck2.value))
+                                                {
+                                                    partCount += 1;
+                                                    partsLoaded.Add(partCheck2.value);
+                                                }
+                                                */
+                                            }
+                                        }
+                                    }
+                                }
+
+                                /*
+                                List<AvailablePart>.Enumerator availablePart = PartLoader.LoadedPartsList.GetEnumerator();
+                                while (availablePart.MoveNext())
+                                {
+                                    try
+                                    {
+                                        if (availablePart.Current != null)
+                                        {
+                                            if (partsLoaded.Contains(availablePart.Current.name))
+                                            {
+                                                partCount -= 1;
+                                                partsLoaded.Remove(availablePart.Current.name);
+                                            }
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + e + " ===");
+                                    }
+                                }
+                                availablePart.Dispose();
+
+                                if (partCount >= 0)
+                                {
+                                    foreach (string s in partsLoaded)
+                                    {
+                                        okToLoad = false;
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + _vts.name + " CONTAINS UNRECOGNIZED PARTS ... SKIPPING ===");
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + s + " UNRECOGNIZED ===");
+                                    }
+                                }
+
+                                */
+
+                                if (okToLoad && !hasKerbal || spawningGoal)
+                                {
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + _vesselName + " READY FOR SPAWNING ===");
+                                    //yield return new WaitForFixedUpdate();
+
+                                    VesselType vt;
+
+                                    if (spawningGoal)
+                                    {
+                                        vt = VesselType.Debris;
+                                    }
+                                    else
+                                    {
+                                        vt = VesselType.Ship;
+                                    }
+
+                                    //craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
+                                    yield return new WaitForFixedUpdate();
+
+                                    Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
+                                    Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+                                    Orbit orbit = null;
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Altitude: " + gpsPos.z);
+
+                                    bool landed = false;
+                                    if (!landed)
+                                    {
+                                        landed = true;
+
+                                        Vector3d pos = FlightGlobals.currentMainBody.GetRelSurfacePosition(gpsPos.x, gpsPos.y, gpsPos.z);
+                                        orbit = new Orbit(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, FlightGlobals.currentMainBody);
+                                        orbit.UpdateFromStateVectors(pos, FlightGlobals.currentMainBody.getRFrmVel(pos), FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
+                                    }
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Orbit Data Processed");
+                                    yield return new WaitForFixedUpdate();
+
+                                    ConfigNode[] partNodes;
+                                    ShipConstruct shipConstruct = null;
+
+                                    ConfigNode currentShip = ShipConstruction.ShipConfig;
+                                    shipConstruct = ShipConstruction.LoadShip("GameData/OrX/Plugin/PluginData/spawn.tmp");
+                                    ShipConstruction.ShipConfig = currentShip;
+                                    uint missionID = (uint)Guid.NewGuid().GetHashCode();
+                                    uint launchID = HighLogic.CurrentGame.launchID++;
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Ship construct created");
+
+                                    foreach (Part p in shipConstruct.parts)
+                                    {
+                                        p.flightID = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
+                                        p.missionID = missionID;
+                                        p.launchID = launchID;
+                                        p.flagURL = "";
+                                        p.temperature = 1.0;
+                                    }
+                                    //yield return new WaitForFixedUpdate();
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Part flight ID's processed");
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Constructing protoCraft");
+
+                                    bool hasSeat = false;
+
+                                    List<Part>.Enumerator part = shipConstruct.parts.GetEnumerator();
+                                    while (part.MoveNext())
+                                    {
+                                        if (part.Current != null)
+                                        {
+                                            if (part.Current.Modules.Contains<KerbalSeat>())
+                                            {
+                                                hasSeat = true;
+                                                /*
+                                                ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                  ? ProtoCrewMember.Gender.Female
+                                                  : ProtoCrewMember.Gender.Male;
+                                                _serial = new System.Random().Next(1000, 9999);
+                                                crewMember.trait = "Pilot";
+                                                //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                */
+                                            }
+                                            else
+                                            {
+                                                if (part.Current.Modules.Contains<KerbalEVA>())
+                                                {
+                                                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                      ? ProtoCrewMember.Gender.Female
+                                                      : ProtoCrewMember.Gender.Male;
+                                                    _serial = new System.Random().Next(1000, 9999);
+                                                    if (_bda)
+                                                    {
+                                                        crewMember.trait = "Pilot";
+                                                    }
+                                                    else
+                                                    {
+                                                        crewMember.trait = "Tourist";
+                                                    }
+                                                    //HighLogic.CurrentGame.CrewRoster.ChangeName(crewMember.KerbalRef.crewMemberName, "TK - " + _serial);
+                                                    //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                    part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                    //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                    //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+
+                                                    if (!part.Current.Modules.Contains<ModuleOrX>())
+                                                    {
+                                                        part.Current.AddModule("ModuleOrX");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (part.Current.Modules.Contains<ModuleCommand>() && part.Current.protoModuleCrew.Count <= 1)
+                                                    {
+                                                        ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                        crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                          ? ProtoCrewMember.Gender.Female
+                                                          : ProtoCrewMember.Gender.Male;
+                                                        _serial = new System.Random().Next(1000, 9999);
+                                                        if (_bda)
+                                                        {
+                                                            crewMember.trait = "Pilot";
+                                                        }
+                                                        else
+                                                        {
+                                                            crewMember.trait = "Tourist";
+                                                        }
+                                                        //HighLogic.CurrentGame.CrewRoster.ChangeName(crewMember.KerbalRef.crewMemberName, "TK - " + _serial);
+
+                                                        //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                        part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                        //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                        //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    part.Dispose();
+
+                                    ConfigNode _tempC = new ConfigNode();
+                                    ProtoVessel _tempP = new ProtoVessel(_tempC, null);
+                                    Vessel _tempV = new Vessel();
+                                    _tempV.parts = shipConstruct.parts;
+                                    _tempP.vesselRef = _tempV;
+
+                                    foreach (Part p in shipConstruct.parts)
+                                    {
+                                        _tempV.loaded = false;
+                                        p.vessel = _tempV;
+                                        _tempP.protoPartSnapshots.Add(new ProtoPartSnapshot(p, _tempP));
+                                    }
+
+                                    foreach (ProtoPartSnapshot p in _tempP.protoPartSnapshots)
+                                    {
+                                        p.storePartRefs();
+                                    }
+
+                                    List<ConfigNode> partNodesL = new List<ConfigNode>();
+                                    foreach (ProtoPartSnapshot snapShot in _tempP.protoPartSnapshots)
+                                    {
+                                        ConfigNode partNode = new ConfigNode("PART");
+                                        snapShot.Save(partNode);
+                                        partNodesL.Add(partNode);
+                                    }
+                                    partNodes = partNodesL.ToArray();
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] CREATING ADDITIONAL NODES FOR " + HoloKronName);
+                                    ConfigNode[] additionalNodes = new ConfigNode[0];
+                                    ConfigNode protoNode = ProtoVessel.CreateVesselNode(HoloKronName, vt, orbit, 0, partNodes, additionalNodes);
+                                    bool splashed = false;
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] FINDING NORTH FOR " + HoloKronName);
+
+                                    Vector3d norm = FlightGlobals.currentMainBody.GetRelSurfaceNVector(gpsPos.x, gpsPos.y);
+                                    splashed = false;
+                                    protoNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
+                                      Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
+                                    protoNode.SetValue("landed", (landed && !splashed).ToString());
+                                    protoNode.SetValue("splashed", splashed.ToString());
+                                    protoNode.SetValue("lat", gpsPos.x.ToString());
+                                    protoNode.SetValue("lon", gpsPos.y.ToString());
+                                    protoNode.SetValue("alt", gpsPos.z.ToString());
+                                    protoNode.SetValue("landedAt", FlightGlobals.currentMainBody.name);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] protoCraft SET VALUES FOR " + HoloKronName);
+
+                                    Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
+                                    Quaternion rotation = Quaternion.identity;
+                                    float heading = 0;
+                                    if (shipConstruct == null)
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
+                                    }
+                                    else if (shipConstruct.shipFacility == EditorFacility.SPH)
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
+                                        heading += 180.0f;
+                                    }
+                                    else
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
+                                        rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
+                                    }
+
+                                    rotation = rotation * Quaternion.AngleAxis(heading, Vector3.back);
+                                    rotation = rotation * Quaternion.AngleAxis(0, Vector3.down);
+                                    rotation = rotation * Quaternion.AngleAxis(0, Vector3.left);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] INITIALIZING ROTATIONS FOR " + HoloKronName);
+
+                                    protoNode.SetValue("hgt", "0", true);
+                                    protoNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+                                    Vector3 nrm = (rotation * Vector3.forward);
+                                    protoNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
+                                    protoNode.SetValue("prst", false.ToString(), true);
+
+                                    //protoNode.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + "Vessel" + _vesselCount + ".proto");
+                                    /*
+                                    foreach (ConfigNode cn in protoNode.nodes)
+                                    {
+                                        if (cn.name == "PART")
+                                        {
+                                            foreach (ConfigNode.Value cv in cn.values)
+                                            {
+                                                if (cv.name == "part")
+                                                {
+                                                    if (cv.value.Contains("kerbalEVA"))
+                                                    {
+                                                        string tkName = "";
+                                                        string currentName = "";
+
+                                                        foreach (ConfigNode cn2 in cn.nodes)
+                                                        {
+                                                            if (cn2.name == "MODULE")
+                                                            {
+                                                                foreach (ConfigNode.Value cv2 in cn2.values)
+                                                                {
+                                                                    if (cv2.name == "name")
+                                                                    {
+                                                                        if (cv2.value == "KerbalEVA")
+                                                                        {
+                                                                            //ConfigNode vInfo = cn2.GetNode("vInfo");
+                                                                            //_serial = new System.Random().Next(1000, 9999);
+                                                                            //tkName = "TK - " + _serial;
+                                                                            //currentName = vInfo.GetValue("vesselName");
+                                                                           // vInfo.SetValue("vesselName", "TK - " + _serial, true);
+
+                                                                            //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                                            //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    */
+                                    ProtoVessel protoCraft = HighLogic.CurrentGame.AddVessel(protoNode);
+
+                                    foreach (Part p in protoCraft.vesselRef.parts)
+                                    {
+                                        //p.SetOpacity(0);
+                                    }
+                                    protoCraft.vesselRef.transform.rotation = protoCraft.rotation;
+
+                                    Vessel localVessel = protoCraft.vesselRef;
+                                    OrXLog.instance.SetRange(localVessel, 10000);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] VESSEL RANGES SET FOR " + localVessel.vesselName);
+
+                                    foreach (Part p in FindObjectsOfType<Part>())
+                                    {
+                                        if (!p.vessel)
+                                        {
+                                            /*
+                                            foreach (PartModule pm in p.Modules)
+                                            {
+                                                //Destroy(pm);
+                                            }
+                                            //p.gameObject.SetActive(false);
+                                            //OrXGameobjectTrash.instance._objectsToDestroy.Add(p.gameObject);
+                                            //OrXLog.instance.DebugLog("[Spawn OrX Craft File] THROWING " + p.gameObject.name + " IN THE TRASH .......");
+                                            */
+                                            Destroy(p.gameObject);
+                                        }
+                                    }
+
+                                    localVessel.isPersistent = true;
+                                    localVessel.Landed = false;
+                                    localVessel.situation = Vessel.Situations.FLYING;
+                                    while (localVessel.packed)
+                                    {
+                                        yield return null;
+                                    }
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] " + HoloKronName + " IS GOING OFF RAILS");
+                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Placing " + _vesselName, 1, ScreenMessageStyle.UPPER_CENTER));
+
+                                    localVessel.SetWorldVelocity(Vector3d.zero);
+                                    localVessel.GoOffRails();
+                                    localVessel.IgnoreGForces(240);
+                                    localVessel.angularVelocity = Vector3.zero;
+                                    localVessel.angularMomentum = Vector3.zero;
+
+                                    StageManager.BeginFlight();
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === BEGINNING FLIGHT FOR " + _vts.name + " ===");
+                                    localVessel.IgnoreGForces(240);
+                                    localVessel.angularVelocity = Vector3.zero;
+                                    localVessel.angularMomentum = Vector3.zero;
+
+                                    localVessel.rootPart.AddModule("ModuleOrXPlace", true);
+                                    var _place = localVessel.rootPart.FindModuleImplementing<ModuleOrXPlace>();
+                                    _place.PlaceCraft(_bda, _airborne, localVessel.rootPart.Modules.Contains<ModuleOrXStage>(), false, _altToSubtract, _left, _pitch);
+
+                                    yield return new WaitForFixedUpdate();
+                                    float _salt = 0;
+                                    if (_bda)
+                                    {
+                                        foreach (Part p in localVessel.parts)
+                                        {
+                                            p.AddModule("ModuleAddSalt", true);
+                                            //_salt += p.mass;
+                                        }
+                                    }
+                                    //OrXHoloKron.instance._enemyCraft.Add(localVessel.id.ToString() + "," + _salt);
+
+                                    ConfigNode craft = ConfigNode.Load(missionCraftLoc);
+                                    craft.ClearData();
+                                    craft.Save(missionCraftLoc);
+                                    OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + _vts.name + " Spawned ===");
+                                }
+                            }
+                        }
+                    }
+
+                    if (_bda)
+                    {
+                        if (!OrXHoloKron.instance._showTimer)
+                        {
+                            OrXHoloKron.instance.StartTimer();
+                        }
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                        OrXHoloKron.instance.MainMenu();
+                    }
+                    spawning = false;
+                    //OrXGameobjectTrash.instance.EmptyTrashBin();
+                }
+            }
+        }
+
+        public void SpawnAirSupport(bool _bda, string HoloKronName, Vector3d vect)
+        {
+            if (OrXLog.instance._preInstalled)
+            {
+                if (!OrXLog.instance.PREnabled())
+                {
+                    spawning = true;
+                    if (!_bda)
+                    {
+                        OrXHoloKron.instance.Reach();
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.SetBDAc();
+                    }
+                    StartCoroutine(SpawnAirSupportRoutine(_bda, HoloKronName, vect));
+                }
+            }
+            else
+            {
+                spawning = true;
+                if (!_bda)
+                {
+                    OrXHoloKron.instance.Reach();
+                }
+                else
+                {
+                    OrXHoloKron.instance.SetBDAc();
+                }
+
+                StartCoroutine(SpawnAirSupportRoutine(_bda, HoloKronName, vect));
+            }
+        }
+        IEnumerator SpawnAirSupportRoutine(bool _bda, string HoloKronName, Vector3d vect)
+        {
+            OrXHoloKron.instance.bdaChallenge = _bda;
+            if (FlightGlobals.currentMainBody.pqsController.horizonDistance != OrXLog.instance._preLoadRange * 1000)
+            {
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+
+                FlightGlobals.currentMainBody.pqsController.horizonDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.maxDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.minDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue = 200;
+                FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue = 200;
+
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                OrXLog.instance.DebugLog("[OrX Spawn Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+            }
+
+            string airSupportLoc = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/airSupport.tmp";
+            string pas = "";
+            string _orxFileLoc = "";
+            float _altToSubtract = 0;
+            UpVect = (FlightGlobals.ActiveVessel.ReferenceTransform.position - FlightGlobals.ActiveVessel.mainBody.position).normalized;
+            EastVect = FlightGlobals.ActiveVessel.mainBody.getRFrmVel(FlightGlobals.ActiveVessel.CoM).normalized;
+            NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+            ConfigNode _file = new ConfigNode();
+            string _orxFile = "";
+
+            string importLoc = UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/";
+            List<string> files = new List<string>(Directory.GetFiles(importLoc, "*.orx", SearchOption.AllDirectories));
+            if (files != null)
+            {
+                List<string>.Enumerator orxFile = files.GetEnumerator();
+                while (orxFile.MoveNext())
+                {
+                    if (orxFile.Current != null)
+                    {
+                        if (orxFile.Current.Contains(HoloKronName + "-" + OrXHoloKron.instance.hkCount + "-" + OrXHoloKron.instance.creatorName))
+                        {
+                            _orxFileLoc = orxFile.Current;
+                            _file = ConfigNode.Load(orxFile.Current);
+                            break;
+                        }
+                    }
+                }
+                orxFile.Dispose();
+            }
+
+            if (_file != null)
+            {
+                OrXLog.instance.DebugLog("[OrX Spawn Air Support] === Spawning Air Support === ");
+
+                if (HoloKronName != "")
+                {
+                    int _vesselCount = 1;
+                    int _hkCount = 0;
+                    ConfigNode node = _file.GetNode("OrX");
+
+                    foreach (ConfigNode spawnCheck in node.nodes)
+                    {
+                        if (spawnCheck.name.Contains("OrXHoloKronCoords" + _hkCount))
+                        {
+                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === FOUND " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " ... DECRYPTING ===");
+
+                            foreach (ConfigNode.Value data in spawnCheck.values)
+                            {
+                                if (data.name == "challengeType")
+                                {
+                                    if (data.value.Contains("OUTLAW RACING"))
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is OUTLAW RACING ===");
+
+                                        OrXHoloKron.instance.outlawRacing = true;
+                                    }
+
+                                    if (data.value.Contains("BD ARMORY"))
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is BD ARMORY ===");
+
+                                        OrXHoloKron.instance.bdaChallenge = true;
+                                        OrXHoloKron.instance.outlawRacing = false;
+
+                                    }
+
+                                    if (data.value.Contains("GEO-CACHE"))
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " is GEO-CACHE ===");
+
+                                        OrXHoloKron.instance.geoCache = true;
+                                    }
+                                }
+
+                                if (data.name == "spawned")
+                                {
+                                    if (data.value == "False")
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] ===  " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has not spawned ===");
+                                        spawnCheck.SetValue("spawned", "True", true);
+                                        _file.Save(_orxFileLoc);
+                                        //break;
+                                    }
+                                    else
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has spawned ... CHECKING FOR EXTRAS");
+
+                                        if (spawnCheck.HasValue("extras"))
+                                        {
+                                            if (spawnCheck.GetValue("extras") == "False")
+                                            {
+                                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has no extras ... END TRANSMISSION");
+                                                //break;
+                                            }
+                                            else
+                                            {
+                                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + HoloKronName + " " + _hkCount + "-" + OrXHoloKron.instance.creatorName + " has extras ... SEARCHING");
+                                                _hkCount += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === DATA PROCESSED ===");
+                        }
+                    }
+
+                    foreach (ConfigNode _vts in node.nodes)
+                    {
+                        if (_vts.name.Contains("HC" + _hkCount + "OrXv" + _vesselCount))
+                        {
+                            OrXLog.instance.DebugLog("[OrX Spawn Air Support] === GRABBING CRAFT FILE FOR " + _vts.name + " ===");
+                            _vesselCount += 1;
+                            float _left = 0;
+                            float _pitch = 0;
+                            double _al = 0;
+                            double _la = 0;
+                            double _lo = 0;
+                            int _serial = 1138;
+                            bool _airborne = false;
+
+                            _vesselName = _vts.GetValue("vesselName");
+
+                            ConfigNode location = _vts.GetNode("coords");
+
+                            foreach (ConfigNode.Value loc in location.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Decrypt(loc.name);
+                                string cvEncryptedValue = OrXLog.instance.Decrypt(loc.value);
+                                loc.name = cvEncryptedName;
+                                loc.value = cvEncryptedValue;
+                                if (loc.name == "airborne")
+                                {
+                                    if (loc.value == "True")
+                                    {
+                                        _airborne = true;
+                                    }
+                                }
+
                                 if (loc.name == "vesselName")
                                 {
                                     _vesselName = loc.value;
@@ -641,111 +1459,439 @@ namespace OrX.spawn
                                 }
                             }
 
-                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === VESSEL SPAWN COORDS READY ===");
-
-                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === DECRYPTING CRAFT FILE DATA FOR " + _vts.name + " ===");
-                            ConfigNode craftFile = _vts.GetNode("craft");
-
-                            foreach (ConfigNode.Value cv in craftFile.values)
+                            if (_airborne)
                             {
-                                string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
-                                string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
-                                cv.name = cvEncryptedName;
-                                cv.value = cvEncryptedValue;
 
-                                if (cv.name == "ship")
-                                {
-                                    cv.value = _vesselName;
-                                }
+                                OrXLog.instance.DebugLog("[OrX Spawn Air Support] === VESSEL SPAWN COORDS READY ===");
 
-                                if (cv.name == "size")
-                                {
-                                    string[] _sizeString = cv.value.Split(new char[] { ',' });
+                                OrXLog.instance.DebugLog("[OrX Spawn Air Support] === DECRYPTING CRAFT FILE DATA FOR " + _vts.name + " ===");
+                                ConfigNode craftFile = _vts.GetNode("craft");
 
-                                    try
-                                    {
-                                        if (_sizeString[0] != null && _sizeString[0].Length > 0 && _sizeString[0] != "null")
-                                        {
-                                            for (int i = 0; i < _sizeString.Length; i++)
-                                            {
-                                                if (_sizeString[i] != null && _sizeString[i].Length > 0)
-                                                {
-                                                    float _maxValue = Math.Max(float.Parse(_sizeString[0]), Math.Max(float.Parse(_sizeString[1]), float.Parse(_sizeString[2])));
-                                                    _altToSubtract = _maxValue / 2;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    catch (IndexOutOfRangeException e)
-                                    {
-                                        OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Altitude calculated ...... ");
-                                    }
-                                }
-                            }
-
-                            foreach (ConfigNode cn in craftFile.nodes)
-                            {
-                                foreach (ConfigNode.Value cv in cn.values)
+                                foreach (ConfigNode.Value cv in craftFile.values)
                                 {
                                     string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
                                     string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
                                     cv.name = cvEncryptedName;
                                     cv.value = cvEncryptedValue;
-                                }
 
-                                foreach (ConfigNode cn2 in cn.nodes)
-                                {
-                                    foreach (ConfigNode.Value cv2 in cn2.values)
+                                    if (cv.name == "ship")
                                     {
-                                        if (cv2.name != "currentRotation")
+                                        cv.value = _vesselName;
+                                    }
+
+                                    if (cv.name == "size")
+                                    {
+                                        string[] _sizeString = cv.value.Split(new char[] { ',' });
+
+                                        try
                                         {
-                                            string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
-                                            string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
-                                            cv2.name = cvEncryptedName;
-                                            cv2.value = cvEncryptedValue;
+                                            if (_sizeString[0] != null && _sizeString[0].Length > 0 && _sizeString[0] != "null")
+                                            {
+                                                for (int i = 0; i < _sizeString.Length; i++)
+                                                {
+                                                    if (_sizeString[i] != null && _sizeString[i].Length > 0)
+                                                    {
+                                                        float _maxValue = Math.Max(float.Parse(_sizeString[0]), Math.Max(float.Parse(_sizeString[1]), float.Parse(_sizeString[2])));
+                                                        _altToSubtract = _maxValue / 2;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        catch (IndexOutOfRangeException e)
+                                        {
+                                            OrXLog.instance.DebugLog("[OrX Spawn Air Support] Altitude calculated ...... ");
                                         }
                                     }
                                 }
-                            }
-                            yield return new WaitForFixedUpdate();
 
-                            craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
-                            yield return new WaitForFixedUpdate();
-
-                            OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === VESSEL DECRYPTED - CHECKING MODULES ===");
-                            List<string> partsLoaded = new List<string>();
-                            int partCount = 0;
-                            bool okToLoad = true;
-                            bool hasKerbal = false;
-                            spawningGoal = false;
-
-                            foreach (ConfigNode partCheck in craftFile.nodes)
-                            {
-                                if (node.name == "PART")
+                                foreach (ConfigNode cn in craftFile.nodes)
                                 {
-                                    foreach (ConfigNode.Value partCheck2 in partCheck.values)
+                                    foreach (ConfigNode.Value cv in cn.values)
                                     {
-                                        if (partCheck2.name == "name")
-                                        {
-                                            if (partCheck2.value.Contains("kerbalEVA"))
-                                            {
-                                                hasKerbal = true;
-                                            }
+                                        string cvEncryptedName = OrXLog.instance.Decrypt(cv.name);
+                                        string cvEncryptedValue = OrXLog.instance.Decrypt(cv.value);
+                                        cv.name = cvEncryptedName;
+                                        cv.value = cvEncryptedValue;
+                                    }
 
-                                            if (partCheck2.value.Contains("ModuleOrXStage"))
+                                    foreach (ConfigNode cn2 in cn.nodes)
+                                    {
+                                        foreach (ConfigNode.Value cv2 in cn2.values)
+                                        {
+                                            if (!cv2.name.Contains("(") && !cv2.name.Contains(")"))
                                             {
-                                                spawningGoal = true;
+                                                string cvEncryptedName = OrXLog.instance.Decrypt(cv2.name);
+                                                string cvEncryptedValue = OrXLog.instance.Decrypt(cv2.value);
+                                                cv2.name = cvEncryptedName;
+                                                cv2.value = cvEncryptedValue;
                                             }
+                                        }
+                                    }
+                                }
+                                yield return new WaitForFixedUpdate();
+
+                                craftFile.Save(airSupportLoc);
+                                yield return new WaitForFixedUpdate();
+
+                                OrXLog.instance.DebugLog("[OrX Spawn Air Support] === VESSEL DECRYPTED - CHECKING MODULES ===");
+                                List<string> partsLoaded = new List<string>();
+                                int partCount = 0;
+                                bool okToLoad = true;
+                                bool hasKerbal = false;
+                                spawningGoal = false;
+
+                                foreach (ConfigNode partCheck in craftFile.nodes)
+                                {
+                                    if (node.name == "PART")
+                                    {
+                                        foreach (ConfigNode.Value partCheck2 in partCheck.values)
+                                        {
+                                            if (partCheck2.name == "name")
+                                            {
+                                                if (partCheck2.value.Contains("kerbalEVA"))
+                                                {
+                                                    hasKerbal = true;
+                                                }
+                                                /*
+                                                if (!partsLoaded.Contains(partCheck2.value))
+                                                {
+                                                    partCount += 1;
+                                                    partsLoaded.Add(partCheck2.value);
+                                                }
+                                                */
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (okToLoad && !hasKerbal || spawningGoal)
+                                {
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] === " + _vesselName + " READY FOR SPAWNING ===");
+                                    //yield return new WaitForFixedUpdate();
+
+                                    VesselType vt;
+
+                                    vt = VesselType.Ship;
+
+                                    //craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
+                                    yield return new WaitForFixedUpdate();
+
+                                    Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
+                                    Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+                                    Orbit orbit = null;
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] Altitude: " + gpsPos.z);
+
+                                    bool landed = false;
+                                    if (!landed)
+                                    {
+                                        landed = true;
+
+                                        Vector3d pos = FlightGlobals.currentMainBody.GetRelSurfacePosition(gpsPos.x, gpsPos.y, gpsPos.z);
+                                        orbit = new Orbit(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, FlightGlobals.currentMainBody);
+                                        orbit.UpdateFromStateVectors(pos, FlightGlobals.currentMainBody.getRFrmVel(pos), FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
+                                    }
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] Orbit Data Processed");
+                                    yield return new WaitForFixedUpdate();
+
+                                    ConfigNode[] partNodes;
+                                    ShipConstruct shipConstruct = null;
+
+                                    ConfigNode currentShip = ShipConstruction.ShipConfig;
+                                    shipConstruct = ShipConstruction.LoadShip(airSupportLoc);
+                                    ShipConstruction.ShipConfig = currentShip;
+                                    uint missionID = (uint)Guid.NewGuid().GetHashCode();
+                                    uint launchID = HighLogic.CurrentGame.launchID++;
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] Ship construct created");
+
+                                    foreach (Part p in shipConstruct.parts)
+                                    {
+                                        p.flightID = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
+                                        p.missionID = missionID;
+                                        p.launchID = launchID;
+                                        p.flagURL = "";
+                                        p.temperature = 1.0;
+                                    }
+                                    //yield return new WaitForFixedUpdate();
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] Part flight ID's processed");
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] Constructing protoCraft");
+
+                                    bool hasSeat = false;
+
+                                    List<Part>.Enumerator part = shipConstruct.parts.GetEnumerator();
+                                    while (part.MoveNext())
+                                    {
+                                        if (part.Current != null)
+                                        {
+                                            if (part.Current.Modules.Contains<KerbalSeat>())
+                                            {
+                                                hasSeat = true;
+                                                /*
+                                                ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                  ? ProtoCrewMember.Gender.Female
+                                                  : ProtoCrewMember.Gender.Male;
+                                                _serial = new System.Random().Next(1000, 9999);
+                                                crewMember.trait = "Pilot";
+                                                //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                */
+                                            }
+                                            else
+                                            {
+                                                if (part.Current.Modules.Contains<KerbalEVA>())
+                                                {
+                                                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                      ? ProtoCrewMember.Gender.Female
+                                                      : ProtoCrewMember.Gender.Male;
+                                                    _serial = new System.Random().Next(1000, 9999);
+                                                    if (_bda)
+                                                    {
+                                                        crewMember.trait = "Pilot";
+                                                    }
+                                                    else
+                                                    {
+                                                        crewMember.trait = "Tourist";
+                                                    }
+                                                    //HighLogic.CurrentGame.CrewRoster.ChangeName(crewMember.KerbalRef.crewMemberName, "TK - " + _serial);
+                                                    //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                    part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                    //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                    //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+
+                                                    if (!part.Current.Modules.Contains<ModuleOrX>())
+                                                    {
+                                                        part.Current.AddModule("ModuleOrX");
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    if (part.Current.Modules.Contains<ModuleCommand>() && part.Current.protoModuleCrew.Count <= 1)
+                                                    {
+                                                        ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+                                                        crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
+                                                          ? ProtoCrewMember.Gender.Female
+                                                          : ProtoCrewMember.Gender.Male;
+                                                        _serial = new System.Random().Next(1000, 9999);
+                                                        if (_bda)
+                                                        {
+                                                            crewMember.trait = "Pilot";
+                                                        }
+                                                        else
+                                                        {
+                                                            crewMember.trait = "Tourist";
+                                                        }
+                                                        //HighLogic.CurrentGame.CrewRoster.ChangeName(crewMember.KerbalRef.crewMemberName, "TK - " + _serial);
+
+                                                        //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
+                                                        part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
+                                                        //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                        //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    part.Dispose();
+
+                                    ConfigNode _tempC = new ConfigNode();
+                                    ProtoVessel _tempP = new ProtoVessel(_tempC, null);
+                                    Vessel _tempV = new Vessel();
+                                    _tempV.parts = shipConstruct.parts;
+                                    _tempP.vesselRef = _tempV;
+
+                                    foreach (Part p in shipConstruct.parts)
+                                    {
+                                        _tempV.loaded = false;
+                                        p.vessel = _tempV;
+                                        _tempP.protoPartSnapshots.Add(new ProtoPartSnapshot(p, _tempP));
+                                    }
+
+                                    foreach (ProtoPartSnapshot p in _tempP.protoPartSnapshots)
+                                    {
+                                        p.storePartRefs();
+                                    }
+
+                                    List<ConfigNode> partNodesL = new List<ConfigNode>();
+                                    foreach (ProtoPartSnapshot snapShot in _tempP.protoPartSnapshots)
+                                    {
+                                        ConfigNode partNode = new ConfigNode("PART");
+                                        snapShot.Save(partNode);
+                                        partNodesL.Add(partNode);
+                                    }
+                                    partNodes = partNodesL.ToArray();
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] CREATING ADDITIONAL NODES FOR " + HoloKronName);
+                                    ConfigNode[] additionalNodes = new ConfigNode[0];
+                                    ConfigNode protoNode = ProtoVessel.CreateVesselNode(HoloKronName, vt, orbit, 0, partNodes, additionalNodes);
+                                    bool splashed = false;
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] FINDING NORTH FOR " + HoloKronName);
+
+                                    Vector3d norm = FlightGlobals.currentMainBody.GetRelSurfaceNVector(gpsPos.x, gpsPos.y);
+                                    splashed = false;
+                                    protoNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
+                                      Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
+                                    protoNode.SetValue("landed", (landed && !splashed).ToString());
+                                    protoNode.SetValue("splashed", splashed.ToString());
+                                    protoNode.SetValue("lat", gpsPos.x.ToString());
+                                    protoNode.SetValue("lon", gpsPos.y.ToString());
+                                    protoNode.SetValue("alt", gpsPos.z.ToString());
+                                    protoNode.SetValue("landedAt", FlightGlobals.currentMainBody.name);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] protoCraft SET VALUES FOR " + HoloKronName);
+
+                                    Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
+                                    Quaternion rotation = Quaternion.identity;
+                                    float heading = 0;
+                                    if (shipConstruct == null)
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
+                                    }
+                                    else if (shipConstruct.shipFacility == EditorFacility.SPH)
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
+                                        heading += 180.0f;
+                                    }
+                                    else
+                                    {
+                                        rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
+                                        rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
+                                    }
+
+                                    rotation = rotation * Quaternion.AngleAxis(heading, Vector3.back);
+                                    rotation = rotation * Quaternion.AngleAxis(0, Vector3.down);
+                                    rotation = rotation * Quaternion.AngleAxis(0, Vector3.left);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] INITIALIZING ROTATIONS FOR " + HoloKronName);
+
+                                    protoNode.SetValue("hgt", "0", true);
+                                    protoNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
+                                    Vector3 nrm = (rotation * Vector3.forward);
+                                    protoNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
+                                    protoNode.SetValue("prst", false.ToString(), true);
+
+                                    //protoNode.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + "Vessel" + _vesselCount + ".proto");
+                                    /*
+                                    foreach (ConfigNode cn in protoNode.nodes)
+                                    {
+                                        if (cn.name == "PART")
+                                        {
+                                            foreach (ConfigNode.Value cv in cn.values)
+                                            {
+                                                if (cv.name == "part")
+                                                {
+                                                    if (cv.value.Contains("kerbalEVA"))
+                                                    {
+                                                        string tkName = "";
+                                                        string currentName = "";
+
+                                                        foreach (ConfigNode cn2 in cn.nodes)
+                                                        {
+                                                            if (cn2.name == "MODULE")
+                                                            {
+                                                                foreach (ConfigNode.Value cv2 in cn2.values)
+                                                                {
+                                                                    if (cv2.name == "name")
+                                                                    {
+                                                                        if (cv2.value == "KerbalEVA")
+                                                                        {
+                                                                            //ConfigNode vInfo = cn2.GetNode("vInfo");
+                                                                            //_serial = new System.Random().Next(1000, 9999);
+                                                                            //tkName = "TK - " + _serial;
+                                                                            //currentName = vInfo.GetValue("vesselName");
+                                                                           // vInfo.SetValue("vesselName", "TK - " + _serial, true);
+
+                                                                            //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
+                                                                            //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    */
+                                    ProtoVessel protoCraft = HighLogic.CurrentGame.AddVessel(protoNode);
+
+                                    foreach (Part p in protoCraft.vesselRef.parts)
+                                    {
+                                        //p.SetOpacity(0);
+                                    }
+                                    protoCraft.vesselRef.transform.rotation = protoCraft.rotation;
+
+                                    Vessel localVessel = protoCraft.vesselRef;
+                                    OrXLog.instance.SetRange(localVessel, 10000);
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] VESSEL RANGES SET FOR " + localVessel.vesselName);
+
+                                    foreach (Part p in FindObjectsOfType<Part>())
+                                    {
+                                        if (!p.vessel)
+                                        {
                                             /*
-                                            if (!partsLoaded.Contains(partCheck2.value))
+                                            foreach (PartModule pm in p.Modules)
                                             {
-                                                partCount += 1;
-                                                partsLoaded.Add(partCheck2.value);
+                                                //Destroy(pm);
                                             }
+                                            //p.gameObject.SetActive(false);
+                                            //OrXGameobjectTrash.instance._objectsToDestroy.Add(p.gameObject);
+                                            //OrXLog.instance.DebugLog("[Spawn OrX Craft File] THROWING " + p.gameObject.name + " IN THE TRASH .......");
                                             */
+                                            Destroy(p.gameObject);
                                         }
                                     }
+
+                                    localVessel.isPersistent = true;
+                                    localVessel.Landed = false;
+                                    localVessel.situation = Vessel.Situations.FLYING;
+                                    while (localVessel.packed)
+                                    {
+                                        yield return null;
+                                    }
+
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] " + _vesselName + " IS GOING OFF RAILS");
+                                    //ScreenMessages.PostScreenMessage(new ScreenMessage("Placing " + _vesselName, 1, ScreenMessageStyle.UPPER_CENTER));
+
+                                    localVessel.SetWorldVelocity(Vector3d.zero);
+                                    localVessel.GoOffRails();
+                                    localVessel.IgnoreGForces(240);
+                                    localVessel.angularVelocity = Vector3.zero;
+                                    localVessel.angularMomentum = Vector3.zero;
+
+                                    StageManager.BeginFlight();
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] === BEGINNING FLIGHT FOR " + _vts.name + " ===");
+                                    localVessel.IgnoreGForces(240);
+                                    localVessel.angularVelocity = Vector3.zero;
+                                    localVessel.angularMomentum = Vector3.zero;
+
+                                    localVessel.rootPart.AddModule("ModuleOrXPlace", true);
+                                    var _place = localVessel.rootPart.FindModuleImplementing<ModuleOrXPlace>();
+                                    _place.PlaceCraft(_bda, _airborne, localVessel.rootPart.Modules.Contains<ModuleOrXStage>(), false, _altToSubtract, _left, _pitch);
+                                    float _salt = 0;
+                                    yield return new WaitForFixedUpdate();
+                                    if (_bda)
+                                    {
+                                        foreach (Part p in localVessel.parts)
+                                        {
+                                            p.AddModule("ModuleAddSalt", true);
+                                            //_salt += p.mass;
+                                        }
+                                    }
+                                    ConfigNode craft = ConfigNode.Load(airSupportLoc);
+                                    craft.ClearData();
+                                    craft.Save(airSupportLoc);
+                                    OrXLog.instance.DebugLog("[OrX Spawn Air Support] === " + _vts.name + " Spawned ===");
                                 }
+
                             }
 
                             /*
@@ -782,323 +1928,30 @@ namespace OrX.spawn
 
                             */
 
-                            if (okToLoad && !hasKerbal || spawningGoal)
-                            {
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + _vesselName + " READY FOR SPAWNING ===");
-                                //yield return new WaitForFixedUpdate();
-
-                                VesselType vt;
-
-                                if (spawningGoal)
-                                {
-                                    vt = VesselType.Debris;
-                                }
-                                else
-                                {
-                                    vt = VesselType.Ship;
-                                }
-
-                                //craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/spawn.tmp");
-                                yield return new WaitForFixedUpdate();
-
-                                Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
-                                Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
-                                Orbit orbit = null;
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Altitude: " + gpsPos.z);
-
-                                bool landed = false;
-                                if (!landed)
-                                {
-                                    landed = true;
-
-                                    Vector3d pos = FlightGlobals.currentMainBody.GetRelSurfacePosition(gpsPos.x, gpsPos.y, gpsPos.z);
-                                    orbit = new Orbit(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, FlightGlobals.currentMainBody);
-                                    orbit.UpdateFromStateVectors(pos, FlightGlobals.currentMainBody.getRFrmVel(pos), FlightGlobals.currentMainBody, Planetarium.GetUniversalTime());
-                                }
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Orbit Data Processed");
-                                yield return new WaitForFixedUpdate();
-
-                                ConfigNode[] partNodes;
-                                ShipConstruct shipConstruct = null;
-
-                                ConfigNode currentShip = ShipConstruction.ShipConfig;
-                                shipConstruct = ShipConstruction.LoadShip("GameData/OrX/Plugin/PluginData/spawn.tmp");
-                                ShipConstruction.ShipConfig = currentShip;
-                                uint missionID = (uint)Guid.NewGuid().GetHashCode();
-                                uint launchID = HighLogic.CurrentGame.launchID++;
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Ship construct created");
-
-                                foreach (Part p in shipConstruct.parts)
-                                {
-                                    p.flightID = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
-                                    p.missionID = missionID;
-                                    p.launchID = launchID;
-                                    p.flagURL = "";
-                                    p.temperature = 1.0;
-                                }
-                                //yield return new WaitForFixedUpdate();
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Part flight ID's processed");
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] Constructing protoCraft");
-
-                                bool hasSeat = false;
-
-                                List<Part>.Enumerator part = shipConstruct.parts.GetEnumerator();
-                                while (part.MoveNext())
-                                {
-                                    if (part.Current != null)
-                                    {
-                                        part.Current.SetOpacity(0);
-
-                                        if (part.Current.Modules.Contains<KerbalSeat>())
-                                        {
-                                            hasSeat = true;
-                                            /*
-                                            ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
-                                            crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                                              ? ProtoCrewMember.Gender.Female
-                                              : ProtoCrewMember.Gender.Male;
-                                            _serial = new System.Random().Next(1000, 9999);
-                                            crewMember.trait = "Pilot";
-                                            //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
-                                            part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
-                                            //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
-                                            //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
-                                            */
-                                        }
-                                        else
-                                        {
-                                            if (part.Current.Modules.Contains<KerbalEVA>())
-                                            {
-                                                ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
-                                                crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                                                  ? ProtoCrewMember.Gender.Female
-                                                  : ProtoCrewMember.Gender.Male;
-                                                _serial = new System.Random().Next(1000, 9999);
-                                                crewMember.trait = "Pilot";
-                                                //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
-                                                part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
-                                                //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
-                                                //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
-
-                                                if (!part.Current.Modules.Contains<ModuleOrX>())
-                                                {
-                                                    part.Current.AddModule("ModuleOrX");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                if (part.Current.Modules.Contains<ModuleCommand>() && part.Current.protoModuleCrew.Count <= 1)
-                                                {
-                                                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
-                                                    crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
-                                                      ? ProtoCrewMember.Gender.Female
-                                                      : ProtoCrewMember.Gender.Male;
-                                                    _serial = new System.Random().Next(1000, 9999);
-                                                    crewMember.trait = "Pilot";
-                                                    //crewMember.KerbalRef.crewMemberName = "TK - " + _serial;
-                                                    part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
-                                                    //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
-                                                    //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                part.Dispose();
-
-                                ConfigNode _tempC = new ConfigNode();
-                                ProtoVessel _tempP = new ProtoVessel(_tempC, null);
-                                Vessel _tempV = new Vessel();
-                                _tempV.parts = shipConstruct.parts;
-                                _tempP.vesselRef = _tempV;
-
-                                foreach (Part p in shipConstruct.parts)
-                                {
-                                    _tempV.loaded = false;
-                                    p.vessel = _tempV;
-                                    _tempP.protoPartSnapshots.Add(new ProtoPartSnapshot(p, _tempP));
-                                }
-
-                                foreach (ProtoPartSnapshot p in _tempP.protoPartSnapshots)
-                                {
-                                    p.storePartRefs();
-                                }
-
-                                List<ConfigNode> partNodesL = new List<ConfigNode>();
-                                foreach (ProtoPartSnapshot snapShot in _tempP.protoPartSnapshots)
-                                {
-                                    ConfigNode partNode = new ConfigNode("PART");
-                                    snapShot.Save(partNode);
-                                    partNodesL.Add(partNode);
-                                }
-                                partNodes = partNodesL.ToArray();
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] CREATING ADDITIONAL NODES FOR " + HoloKronName);
-                                ConfigNode[] additionalNodes = new ConfigNode[0];
-                                ConfigNode protoNode = ProtoVessel.CreateVesselNode(HoloKronName, vt, orbit, 0, partNodes, additionalNodes);
-                                bool splashed = false;
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] FINDING NORTH FOR " + HoloKronName);
-
-                                Vector3d norm = FlightGlobals.currentMainBody.GetRelSurfaceNVector(gpsPos.x, gpsPos.y);
-                                splashed = false;
-                                protoNode.SetValue("sit", (splashed ? Vessel.Situations.SPLASHED : landed ?
-                                  Vessel.Situations.LANDED : Vessel.Situations.FLYING).ToString());
-                                protoNode.SetValue("landed", (landed && !splashed).ToString());
-                                protoNode.SetValue("splashed", splashed.ToString());
-                                protoNode.SetValue("lat", gpsPos.x.ToString());
-                                protoNode.SetValue("lon", gpsPos.y.ToString());
-                                protoNode.SetValue("alt", gpsPos.z.ToString());
-                                protoNode.SetValue("landedAt", FlightGlobals.currentMainBody.name);
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] protoCraft SET VALUES FOR " + HoloKronName);
-
-                                Quaternion normal = Quaternion.LookRotation((Vector3)norm);// new Vector3((float)norm.x, (float)norm.y, (float)norm.z));
-                                Quaternion rotation = Quaternion.identity;
-                                float heading = 0;
-                                if (shipConstruct == null)
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.back);
-                                }
-                                else if (shipConstruct.shipFacility == EditorFacility.SPH)
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.forward, -Vector3.forward);
-                                    heading += 180.0f;
-                                }
-                                else
-                                {
-                                    rotation = rotation * Quaternion.FromToRotation(Vector3.up, Vector3.forward);
-                                    rotation = Quaternion.FromToRotation(Vector3.up, -Vector3.up) * rotation;
-                                }
-
-                                rotation = rotation * Quaternion.AngleAxis(heading, Vector3.back);
-                                rotation = rotation * Quaternion.AngleAxis(0, Vector3.down);
-                                rotation = rotation * Quaternion.AngleAxis(0, Vector3.left);
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] INITIALIZING ROTATIONS FOR " + HoloKronName);
-
-                                protoNode.SetValue("hgt", "0", true);
-                                protoNode.SetValue("rot", KSPUtil.WriteQuaternion(normal * rotation), true);
-                                Vector3 nrm = (rotation * Vector3.forward);
-                                protoNode.SetValue("nrm", nrm.x + "," + nrm.y + "," + nrm.z, true);
-                                protoNode.SetValue("prst", false.ToString(), true);
-
-                                //protoNode.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + "Vessel" + _vesselCount + ".proto");
-                                /*
-                                foreach (ConfigNode cn in protoNode.nodes)
-                                {
-                                    if (cn.name == "PART")
-                                    {
-                                        foreach (ConfigNode.Value cv in cn.values)
-                                        {
-                                            if (cv.name == "part")
-                                            {
-                                                if (cv.value.Contains("kerbalEVA"))
-                                                {
-                                                    string tkName = "";
-                                                    string currentName = "";
-
-                                                    foreach (ConfigNode cn2 in cn.nodes)
-                                                    {
-                                                        if (cn2.name == "MODULE")
-                                                        {
-                                                            foreach (ConfigNode.Value cv2 in cn2.values)
-                                                            {
-                                                                if (cv2.name == "name")
-                                                                {
-                                                                    if (cv2.value == "KerbalEVA")
-                                                                    {
-                                                                        //ConfigNode vInfo = cn2.GetNode("vInfo");
-                                                                        //_serial = new System.Random().Next(1000, 9999);
-                                                                        //tkName = "TK - " + _serial;
-                                                                        //currentName = vInfo.GetValue("vesselName");
-                                                                       // vInfo.SetValue("vesselName", "TK - " + _serial, true);
-
-                                                                        //OrXLog.instance.DebugLog("[OrX Klone Activation] === OrX Klone " + "TK - " + _serial + " coming online ===");
-                                                                        //ScreenMessages.PostScreenMessage(new ScreenMessage("OrX Klone " + "TK - " + _serial + " coming online", 1, ScreenMessageStyle.UPPER_CENTER));
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                */
-                                ProtoVessel protoCraft = HighLogic.CurrentGame.AddVessel(protoNode);
-
-                                foreach (Part p in protoCraft.vesselRef.parts)
-                                {
-                                    //p.SetOpacity(0);
-                                }
-                                protoCraft.vesselRef.transform.rotation = protoCraft.rotation;
-
-                                Vessel localVessel = protoCraft.vesselRef;
-                                OrXLog.instance.SetRange(localVessel, 10000);
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] VESSEL RANGES SET FOR " + localVessel.vesselName);
-
-                                foreach (Part p in FindObjectsOfType<Part>())
-                                {
-                                    if (!p.vessel)
-                                    {
-                                        Destroy(p.gameObject);
-                                    }
-                                }
-
-                                localVessel.isPersistent = true;
-                                localVessel.Landed = false;
-                                localVessel.situation = Vessel.Situations.FLYING;
-                                while (localVessel.packed)
-                                {
-                                    yield return null;
-                                }
-
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] " + HoloKronName + " IS GOING OFF RAILS");
-                                ScreenMessages.PostScreenMessage(new ScreenMessage("Placing " + _vesselName, 1, ScreenMessageStyle.UPPER_CENTER));
-
-                                localVessel.SetWorldVelocity(Vector3d.zero);
-                                localVessel.GoOffRails();
-                                localVessel.IgnoreGForces(240);
-
-                                StageManager.BeginFlight();
-                                localVessel.rootPart.AddModule("ModuleOrXPlace", true);
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === FIXING ROTATION FOR " + _vts.name + " ===");
-
-                                if (_bda)
-                                {
-
-                                }
-
-                                var _place = localVessel.rootPart.FindModuleImplementing<ModuleOrXPlace>();
-                                _place.PlaceCraft(localVessel.rootPart.Modules.Contains<ModuleOrXStage>(),false, _altToSubtract, _left, _pitch);
-                                yield return new WaitForFixedUpdate();
-
-                                ConfigNode craft = ConfigNode.Load(missionCraftLoc);
-                                craft.ClearData();
-                                craft.Save(missionCraftLoc);
-                                OrXLog.instance.DebugLog("[OrX Spawn Local Vessels] === " + _vts.name + " Spawned ===");
-                            }
                         }
                     }
-                    OrXHoloKron.instance.movingCraft = false;
+
+                    if (_bda)
+                    {
+                        OrXHoloKron.instance.SetBDAc();
+                    }
+                    else
+                    {
+                        OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                        OrXHoloKron.instance.MainMenu();
+                    }
                     spawning = false;
+                    //OrXGameobjectTrash.instance.EmptyTrashBin();
                 }
             }
         }
 
-        string GoalPostCraft = UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/Goal/Goal.craft";
-
-        public void CraftSelect(bool _spawningBarrier)
+        public void CraftSelect(bool _spawningBarrier, bool scf)
         {
-            StartCoroutine(StartVesselSelectRoutine(_spawningBarrier));
+            _spawnCraftFile = scf;
+            StartCoroutine(StartVesselSelectRoutine(_spawningBarrier, scf));
         }
-        public IEnumerator StartVesselSelectRoutine(bool _spawningBarrier)
+        public IEnumerator StartVesselSelectRoutine(bool _spawningBarrier, bool scf)
         {
             string _dir = "";
             if (_spawningBarrier)
@@ -1114,9 +1967,6 @@ namespace OrX.spawn
                 _dir = HighLogic.SaveFolder;
             }
             OrXLog.instance.DebugLog("[OrX Craft Select] Start craft selection");
-            OrXHoloKron.instance.OrXHCGUIEnabled = false;
-            OrXHoloKron.instance.movingCraft = true;
-            OrXHoloKron.instance.openingCraftBrowser = true;
             yield return null;
             craftBrowser = CraftBrowserDialog.Spawn(EditorFacility.SPH, _dir, OnSelected, OnCancelled, false);
         }
@@ -1188,33 +2038,47 @@ namespace OrX.spawn
                         OrXHoloKron.instance.OnScrnMsgUC(OrXHoloKron.instance.craftToAddMission + " Saved to HoloKron ....");
                         OrXHoloKron.instance.GuiEnabledOrXMissions = true;
                     }
+                    else
+                    {
+                    }
                 }
                 else
                 {
                     _spawnCraftFile = false;
-                    StartCoroutine(SpawnFromCraftFile(_selectedCraftFile, OrXHoloKron.instance._addCrew));
+
+                    if (HighLogic.LoadedSceneIsEditor)
+                    {
+                        OrXEditor.instance._tuneCraft = true;
+                        OrXEditor.instance._craftSelected = true;
+                        OrXEditor.instance._craftBeingTuned = _selectedCraftFile;
+                        EditorLogic.LoadShipFromFile(_selectedCraftFile);
+                    }
+                    else
+                    {
+                        if (HighLogic.LoadedSceneIsFlight)
+                        {
+                            spawning = true;
+                            StartCoroutine(SpawnFromCraftFile(_selectedCraftFile, true, false));
+                        }
+                    }
                 }
             }
         }
         public void OnCancelled()
         {
             OrXLog.instance.DebugLog("[OrX Craft Select] Cancelling Select Craft ............");
-
-            OrXHoloKron.instance.GuiEnabledOrXMissions = true;
-            OrXHoloKron.instance.movingCraft = false;
-            OrXHoloKron.instance.spawningGoal = false;
-            OrXHoloKron.instance.craftBrowser = null;
-            OrXHoloKron.instance.openingCraftBrowser = false;
-            OrXHoloKron.instance.OrXHCGUIEnabled = true;
+            OrXHoloKron.instance.SpawnMenu();
+            spawningGoal = false;
+            spawning = false;
         }
 
-        public bool _spawnCraftFile = false;
-
-        IEnumerator SpawnFromCraftFile(string _craftFile, bool _addCrew)
+        public void SpawnFile(string _craftFile, bool _addCrew, bool _eva)
         {
-            OrXHoloKron.instance.Reach();
-            OrXHoloKron.instance.OrXHCGUIEnabled = true;
-            OrXHoloKron.instance.GetShortTrackCenter(OrXHoloKron.instance._challengeStartLoc);
+            spawning = true;
+            StartCoroutine(SpawnFromCraftFile(_craftFile, _addCrew, _eva));
+        }
+        IEnumerator SpawnFromCraftFile(string _craftFile, bool _addCrew, bool _eva)
+        {
             string _name = "";
             float _altToAdd = 15;
 
@@ -1321,7 +2185,7 @@ namespace OrX.spawn
                                 crewMember.gender = UnityEngine.Random.Range(0, 100) > 50
                                   ? ProtoCrewMember.Gender.Female
                                   : ProtoCrewMember.Gender.Male;
-                                crewMember.trait = "Tourist";
+                                crewMember.trait = "Pilot";
                                 part.Current.AddCrewmemberAt(crewMember, part.Current.protoModuleCrew.Count);
                             }
                             else
@@ -1458,19 +2322,16 @@ namespace OrX.spawn
             {
                 if (!p.vessel)
                 {
-                    Destroy(p.gameObject);
+                    foreach (PartModule pm in p.Modules)
+                    {
+                        Destroy(p);
+                    }
+                    p.gameObject.SetActive(false);
+                    OrXGameobjectTrash.instance._objectsToDestroy.Add(p.gameObject);
+                    //OrXLog.instance.DebugLog("[Spawn OrX Craft File] THROWING " + p.gameObject.name + " IN THE TRASH .......");
                 }
             }
-
-            if (!OrXHoloKron.instance.buildingMission)
-            {
-                foreach (Part p in craftFromFile.parts)
-                {
-                    p.SetOpacity(0);
-                }
-            }
-
-            //yield return new WaitForFixedUpdate();
+            OrXGameobjectTrash.instance.EmptyTrashBin();
             craftFromFile.IgnoreGForces(240);
             craftFromFile.isPersistent = true;
             craftFromFile.Landed = false;
@@ -1480,15 +2341,24 @@ namespace OrX.spawn
                 yield return null;
             }
             craftFromFile.SetWorldVelocity(Vector3d.zero);
-            yield return null;
+            craftFromFile.IgnoreGForces(240);
+            craftFromFile.GoOffRails();
+            OrXHoloKron.instance._spawnedCraft = craftFromFile;
+            StageManager.BeginFlight();
             craftFromFile.IgnoreGForces(240);
 
-            craftFromFile.GoOffRails();
-            craftFromFile.IgnoreGForces(240);
-            StageManager.BeginFlight();
-            spawning = false;
-            OrXVesselMove.Instance.StartMove(craftFromFile, false, _altToAdd, false, false);
-            OrXHoloKron.instance.getNextCoord = true;
+            if (!_eva)
+            {
+                craftFromFile.IgnoreGForces(500);
+                craftFromFile.ActionGroups.SetGroup(KSPActionGroup.Gear, false);
+
+                //craftFromFile.rootPart.AddModule("ModuleHideVessel", true);
+                OrXVesselMove.Instance.StartMove(craftFromFile, false, _altToAdd, false, false);
+            }
+            else
+            {
+                craftFromFile.GetComponent<Rigidbody>().velocity = UnityEngine.Random.onUnitSphere * 25;
+            }
             spawning = false;
         }
     }

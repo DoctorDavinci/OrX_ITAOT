@@ -36,22 +36,13 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
-                List<Part>.Enumerator p = vessel.parts.GetEnumerator();
-                while (p.MoveNext())
-                {
-                    if (p.Current != null)
-                    {
-                        p.Current.SetOpacity(tLevel);
-                    }
-                }
-                p.Dispose();
             }
             base.OnStart(state);
         }
 
         public void Update()
         {
-            if (HighLogic.LoadedSceneIsFlight && triggered)
+            if (HighLogic.LoadedSceneIsFlight)
             {
                 float delta = Time.deltaTime * rateOfFade;
                 if (tLevel > maxfade)

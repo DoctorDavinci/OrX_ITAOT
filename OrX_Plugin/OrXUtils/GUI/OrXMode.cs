@@ -30,6 +30,9 @@ namespace OrX
         public static GUISkin OrXGUISkin = HighLogic.Skin;
         string _pKarma = "";
         public bool _Karma = false;
+        int victimCount = 0;
+        int count = 0;
+
         static GUIStyle centerLabel = new GUIStyle
         {
             alignment = TextAnchor.UpperCenter,
@@ -41,7 +44,6 @@ namespace OrX
             alignment = TextAnchor.MiddleCenter,
             fontStyle = FontStyle.Bold
         };
-        int count = 0;
 
         #endregion
 
@@ -116,14 +118,16 @@ namespace OrX
             line += 0.2f;
             if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Karmageddon", OrXGUISkin.button))
             {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Does this really need clarifying ???", 4, ScreenMessageStyle.UPPER_CENTER));
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Coming Soon to a Kontinuum near you .....", 4, ScreenMessageStyle.UPPER_CENTER));
-                count = 0;
-                FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleKarma", true);
-                StartCoroutine(SpawnKarma());
                 _modeEnabled = false;
-                OrXHoloKron.instance.MainMenu();
                 _Karma = true;
+                _guiEnabled = false;
+                OrXHoloKron.instance.OrXHCGUIEnabled = false;
+                OrXHoloKron.instance.MainMenu();
+                OrXHoloKron.instance.StartTimer();
+                OrX_KC.instance.ToggleKarma(true);
+                ScreenMessages.PostScreenMessage(new ScreenMessage("Does this really need clarifying ???", 4, ScreenMessageStyle.UPPER_CENTER));
+                ScreenMessages.PostScreenMessage(new ScreenMessage("Watch out for pedestrians .....", 4, ScreenMessageStyle.UPPER_CENTER));
+                //FlightGlobals.ActiveVessel.rootPart.AddModule("ModuleKarma", true);
             }
 
             line++;
@@ -156,23 +160,6 @@ namespace OrX
 
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
-        }
-
-        IEnumerator SpawnKarma()
-        {
-            if (count <= 5)
-            {
-                ScreenMessages.PostScreenMessage(new ScreenMessage("Karmageddon victim #" + count + " spawning .....", 4, ScreenMessageStyle.UPPER_CENTER));
-
-                count += 1;
-                spawn.OrXSpawn.instance.SpawnInfected();
-                yield return new WaitForFixedUpdate();
-                while (spawn.OrXSpawn.instance.spawning)
-                {
-                    yield return null;
-                }
-                StartCoroutine(SpawnKarma());
-            }
         }
     }
 }

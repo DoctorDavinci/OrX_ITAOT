@@ -4,16 +4,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using OrX.chase;
 
 namespace OrX
 {
     public class ModuleOrX : PartModule, IPartMassModifier
     {
         #region Fields
-
-        [KSPField(isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "HOLOKRONSPAWN"),
-             UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
-        public bool spawnHoloKron = false;
 
         [KSPField(unfocusedRange = 1, isPersistant = false, guiActiveEditor = false, guiActive = false, guiName = "REVIVE"),
              UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
@@ -68,12 +65,18 @@ namespace OrX
         float localScale = 0;
 
         Rigidbody _rb;
+        double mPerDegree = 0;
+        double degPerMeter = 0;
 
         #endregion
 
         [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
      UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
         public bool _chase = false;
+
+        [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
+UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
+        public bool GetDragCubes = false;
 
         public enum AnimationState
         {
@@ -100,7 +103,6 @@ namespace OrX
             }
             kerbal = kerbalControl();
             //_rb = null;
-            //kerbal.GetComponentCached<Rigidbody>(ref _rb);
             _maxJumpForce = kerbal.maxJumpForce;
             _walkSpeed = kerbal.walkSpeed;
             _runSpeed = kerbal.runSpeed;
@@ -110,22 +112,13 @@ namespace OrX
             trimModifier = _trimModifier;
             forward = this.part.transform.forward;
             localScale = this.part.transform.localScale.x;
-            //GameEvents.onCollision.Add(onCollision);
             //this.part.collider.isTrigger = true;
-
+            mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+            degPerMeter = 1 / mPerDegree;
             base.OnStart(state);
         }
 
-        private void onCollision(EventReport data)
-        {
-            if (OrXMode.instance._Karma)
-            {
-                part.explosionPotential *= 0.2f;
-                part.explode();
-                this.part.collider.isTrigger = true;
-                
-            }
-        }
+        private bool chasing = false;
 
         public void Update()
         {
@@ -157,32 +150,7 @@ namespace OrX
                                     {
                                         if (vessel.isActiveVessel)
                                         {
-                                            if (Input.GetKeyDown(KeyCode.Tab))
-                                            {
-                                                if (!holdDepth)
-                                                {
-                                                    massModifier = 0.4f;
-                                                    holdDepth = true;
-                                                    OnScrnMsgUC("Holding depth at " + Convert.ToInt32(this.vessel.altitude) + " meters");
-                                                }
-                                                else
-                                                {
-                                                    holdDepth = false;
-                                                    holdingDepth = false;
-                                                }
-                                            }
-
-                                            if (Input.GetKeyDown(KeyCode.Z))
-                                                massModifier = 0;
-
-                                            if (Input.GetKeyDown(KeyCode.X))
-                                                massModifier += 10;
-
-                                            if (Input.GetKeyDown(KeyCode.E))
-                                                massModifier += 0.4f;
-
-                                            if (Input.GetKeyDown(KeyCode.Q))
-                                                massModifier -= 0.4f;
+                                            CheckScuba();
                                         }
                                     }
                                     else
@@ -222,21 +190,9 @@ namespace OrX
                     {
                         if (_chase)
                         {
-                            Vector3 _currLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)vessel.latitude, (double)vessel.longitude, (double)vessel.altitude);
-                            Vector3 _targetLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)FlightGlobals.ActiveVessel.latitude, (double)FlightGlobals.ActiveVessel.longitude, (double)vessel.altitude);
-                            Vector3 _rotty = (_currLoc - _targetLoc).normalized;
-                            Quaternion _lookTo = Quaternion.LookRotation((_rotty * TimeWarp.deltaTime), kerbal.fUp);
-
-                            //Quaternion _lookRot = Quaternion.LookRotation((vessel.transform.up * TimeWarp.deltaTime), kerbal.fUp);
-                            Quaternion _rotTo = Quaternion.RotateTowards(vessel.transform.rotation, _lookTo, kerbal.turnRate);
-
-                            float _vel = kerbal.walkSpeed * Time.deltaTime;
-
-                            UpdateAnims(ref _vel);
-                            kerbal.part.vessel.SetRotation(_rotTo);
-                            if (_rb != null)
+                            if (chasing)
                             {
-                                _rb.MovePosition(_currLoc - (_targetLoc * (kerbal.walkSpeed / 2)) * Time.deltaTime);
+
                             }
                         }
                         else
@@ -281,50 +237,40 @@ namespace OrX
                 }
             }
         }
-
-        Collision _collision;
-
-        public void OnCollision()
-        {
-
-        }
-
+        int kdcCount = 0;
+        string _KDCFILE = UrlDir.ApplicationRootPath + "GameData/OrX/kerbalDragCubes.txt";
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
 
             if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
             {
+                if (GetDragCubes)
+                {
+                    GetDragCubes = false;
+                    ConfigNode CubeFile = ConfigNode.Load(_KDCFILE);
+                    if (CubeFile == null)
+                    {
+                        CubeFile = new ConfigNode();
+                    }
+                    ConfigNode _dragCubes = part.DragCubes.SaveCubes();
+                    _dragCubes.CopyTo(CubeFile);
+                    CubeFile.Save(_KDCFILE);
+                }
+                if (_chase && orx)
+                {
+                    if (!chasing)
+                    {
+                        chasing = true;
+                        kerbal.splatEnabled = false;
+                        GetTarget(true);
+                        StartCoroutine(GetDistance());
+                    }
+                }
+
                 if (revive)
                 {
-                    if (!bends)
-                    {
-                        if (drunk && this.vessel.Splashed)
-                        {
-                            _scubaLevel += 0.01f;
-                            drunk = false;
-                        }
-                    }
-                    else
-                    {
-                        int r = new System.Random().Next(1, 10);
-                        if (r >= 2)
-                        {
-                            if (r >= 8)
-                            {
-                                this.vessel.Translate((this.vessel.ReferenceTransform.position - this.vessel.mainBody.transform.position).normalized * 2);
-                            }
-                            else
-                            {
-                                StartCoroutine(PopKornRevival());
-                            }
-                        }
-                        else
-                        {
-                            this.part.explosionPotential *= 0.2f;
-                            this.part.explode();
-                        }
-                    }
+                    Revive();
                 }
 
                 if (massModifier <= 0)
@@ -342,103 +288,7 @@ namespace OrX
 
                 if (this.vessel.Splashed)
                 {
-                    if (this.vessel.isActiveVessel)
-                    {
-                        OrXScubaKerbGUI.instance.drunk = drunk;
-                        OrXScubaKerbGUI.instance.oxygen = oxygen;
-                        OrXScubaKerbGUI.instance.martiniLevel = martiniLevel;
-                    }
-
-                    if (this.vessel.altitude <= narcosisDepth * _scubaLevel)
-                    {
-                        _scubaLevel += 0.0001f;
-
-                        if (_bendsDepth >= this.vessel.altitude)
-                        {
-                            _bendsDepth = this.vessel.altitude;
-                        }
-                    }
-
-                    if (_scubaLevel >= 1.00002f)
-                    {
-                        if (this.vessel.altitude >= (_bendsDepth * 0.667f) * _scubaLevel)
-                        {
-                            bends = true;
-                        }
-                        else
-                        {
-                            if (this.vessel.altitude >= _bendsDepth * 0.9f)
-                            {
-                                _bendsDepth += 0.1f;
-                                _scubaLevel -= 0.00001f;
-                            }
-                        }
-                    }
-
-                    if (!bends)
-                    {
-                        if (!holdingDepth && holdDepth)
-                        {
-                            holdingDepth = true;
-                            depth = this.vessel.altitude;
-                            StartCoroutine(DepthCheck());
-                        }
-
-                        martiniLevel = this.vessel.altitude / (narcosisDepth * _scubaLevel);
-                        if (!narcosisCheck)
-                        {
-                            narcosisCheck = true;
-                            StartCoroutine(NarcosisCheck());
-                        }
-
-                        if (drunk)
-                        {
-                            if (!drunkTank)
-                            {
-                                drunkTank = true;
-                            }
-
-                            if (this.vessel.isActiveVessel && !OrXLog.instance._EVALockWS)
-                            {
-                                OrXLog.instance.EVALockWS();
-                                kerbal = kerbalControl();
-                                kerbal.canRecover = false;
-                                kerbal.isRagdoll = true;
-                                MiniMe();
-                            }
-
-                            if (!this.vessel.Landed)
-                            {
-                                this.part.transform.Rotate(new Vector3(42, 42, 42) * Time.fixedDeltaTime);
-                            }
-                        }
-                        else
-                        {
-                            if (drunkTank)
-                            {
-                                drunkTank = false;
-
-                                if (this.vessel.isActiveVessel && OrXLog.instance._EVALockWS)
-                                {
-                                    OrXLog.instance.EVAUnlockWS();
-                                }
-                                kerbal = kerbalControl();
-                                kerbal.canRecover = true;
-                                kerbal.isRagdoll = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (this.vessel.rootPart.Modules.Contains<KerbalEVA>() && _scubaLevel >= 1.0002f)
-                        {
-                            if (!poppingKorn)
-                            {
-                                poppingKorn = true;
-                                PopKorn();
-                            }
-                        }
-                    }
+                    SplashedCheck();
                 }
                 else
                 {
@@ -448,22 +298,323 @@ namespace OrX
                     revive = false;
                     narcosisCheck = false;
                 }
+            }
+        }
 
-                if (spawnHoloKron)
+        private void CheckScuba()
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+                if (!holdDepth)
                 {
-                    spawnHoloKron = false;
-                    if (this.part != this.vessel.rootPart)
+                    massModifier = 0.4f;
+                    holdDepth = true;
+                    OrXHoloKron.instance.OnScrnMsgUC("Holding depth at " + Convert.ToInt32(this.vessel.altitude) + " meters");
+                }
+                else
+                {
+                    holdDepth = false;
+                    holdingDepth = false;
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.Z))
+                massModifier = 0;
+
+            if (Input.GetKeyDown(KeyCode.X))
+                massModifier += 10;
+
+            if (Input.GetKeyDown(KeyCode.E))
+                massModifier += 0.4f;
+
+            if (Input.GetKeyDown(KeyCode.Q))
+                massModifier -= 0.4f;
+        }
+
+        /*
+        void OnCollisionEnter(Collision collision)
+        {
+            if (collision.gameObject != this.gameObject && !collision.gameObject.name.Contains("Kerbin"))
+            {
+                if (_chase && targetDistance <= 2)
+                {
+                    OrXHoloKron.instance.salt += part.mass;
+                    OrX_KC.instance.salt += part.mass;
+                    OrX_KC.instance.victimCount -= 1;
+                    this.part.explode();
+                }
+            }
+        }
+        
+        */
+        IEnumerator GetDistance()
+        {
+            if (chasing)
+            {
+                double _latDiff = 0;
+                double _lonDiff = 0;
+                double _altDiff = 0;
+
+                if (FlightGlobals.ActiveVessel.altitude <= vessel.altitude)
+                {
+                    _altDiff = vessel.altitude - FlightGlobals.ActiveVessel.altitude;
+                }
+                else
+                {
+                    _altDiff = FlightGlobals.ActiveVessel.altitude - vessel.altitude;
+                }
+
+                if (vessel.latitude >= 0)
+                {
+                    if (FlightGlobals.ActiveVessel.latitude >= vessel.latitude)
                     {
-                        //OnScrnMsgUC("Unable to spawn HoloKron ... Please get out of your chair");
+                        _latDiff = FlightGlobals.ActiveVessel.latitude - vessel.latitude;
                     }
                     else
                     {
-                        //OrXHoloKron.instance.SpawnByOrX(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
-                        if (this.vessel.Splashed)
+                        _latDiff = vessel.latitude - FlightGlobals.ActiveVessel.latitude;
+                    }
+                }
+                else
+                {
+                    if (FlightGlobals.ActiveVessel.latitude >= 0)
+                    {
+                        _latDiff = FlightGlobals.ActiveVessel.latitude - vessel.latitude;
+                    }
+                    else
+                    {
+                        if (FlightGlobals.ActiveVessel.latitude <= vessel.latitude)
                         {
-                            holdingDepth = false;
-                            holdDepth = true;
+                            _latDiff = FlightGlobals.ActiveVessel.latitude - vessel.latitude;
                         }
+                        else
+                        {
+
+                            _latDiff = vessel.latitude - FlightGlobals.ActiveVessel.latitude;
+                        }
+                    }
+                }
+
+                if (vessel.longitude >= 0)
+                {
+                    if (FlightGlobals.ActiveVessel.longitude >= vessel.longitude)
+                    {
+                        _lonDiff = FlightGlobals.ActiveVessel.longitude - vessel.longitude;
+                    }
+                    else
+                    {
+                        _lonDiff = vessel.longitude - FlightGlobals.ActiveVessel.latitude;
+                    }
+                }
+                else
+                {
+                    if (FlightGlobals.ActiveVessel.longitude >= 0)
+                    {
+                        _lonDiff = FlightGlobals.ActiveVessel.longitude - vessel.longitude;
+                    }
+                    else
+                    {
+                        if (FlightGlobals.ActiveVessel.longitude <= vessel.longitude)
+                        {
+                            _lonDiff = FlightGlobals.ActiveVessel.longitude - vessel.longitude;
+                        }
+                        else
+                        {
+
+                            _lonDiff = vessel.longitude - FlightGlobals.ActiveVessel.longitude;
+                        }
+                    }
+                }
+
+                double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                double _altDiffDeg = _altDiff * degPerMeter;
+                double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+
+                yield return new WaitForFixedUpdate();
+                StartCoroutine(GetDistance());
+                RunAway();
+            }
+        }
+
+        double targetDistance = 0;
+        Vector3d targetCoords;
+
+        public void GetTarget(bool _run)
+        {
+            if (_run)
+            {
+                targetCoords = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, vessel.altitude);
+            }
+        }
+
+        public void RunAway()
+        {
+            Vector3 _currLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)vessel.latitude, (double)vessel.longitude, (double)vessel.altitude);
+            Vector3 _targetLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)targetCoords.x, (double)targetCoords.y, (double)vessel.altitude);
+            Vector3 _rotty = (_currLoc - _targetLoc).normalized;
+            Quaternion _lookTo = Quaternion.LookRotation((_rotty * TimeWarp.fixedDeltaTime), kerbal.fUp);
+            Quaternion _rotTo = Quaternion.RotateTowards(vessel.transform.rotation, _lookTo, kerbal.turnRate);
+            kerbal.part.vessel.SetRotation(_rotTo);
+            float _vel = TimeWarp.fixedDeltaTime;
+            UpdateAnims(ref _vel);
+
+            if (targetDistance <= 50)
+            {
+                if (targetDistance <= 10)
+                {
+                    int _right = UnityEngine.Random.Range(0, 100);
+
+                    if (_right >= 50)
+                    {
+                        vessel.GetComponent<Rigidbody>().velocity = vessel.transform.right * 15;
+                    }
+                    else
+                    {
+                        vessel.GetComponent<Rigidbody>().velocity = -vessel.transform.right * 15;
+                    }
+
+                    GetTarget(true);
+                }
+                else
+                {
+                    vessel.GetComponent<Rigidbody>().velocity = vessel.transform.up * kerbal.runSpeed * Time.fixedDeltaTime;
+                }
+            }
+            else
+            {
+                vessel.GetComponent<Rigidbody>().velocity = vessel.transform.up * kerbal.walkSpeed * Time.fixedDeltaTime;
+            }
+        }
+
+
+        private void Revive()
+        {
+            if (!bends)
+            {
+                if (drunk && this.vessel.Splashed)
+                {
+                    _scubaLevel += 0.01f;
+                    drunk = false;
+                }
+            }
+            else
+            {
+                int r = new System.Random().Next(1, 10);
+                if (r >= 2)
+                {
+                    if (r >= 8)
+                    {
+                        this.vessel.Translate((this.vessel.ReferenceTransform.position - this.vessel.mainBody.transform.position).normalized * 2);
+                    }
+                    else
+                    {
+                        StartCoroutine(PopKornRevival());
+                    }
+                }
+                else
+                {
+                    this.part.explosionPotential *= 0.2f;
+                    this.part.explode();
+                }
+            }
+        }
+        private void SplashedCheck()
+        {
+            if (this.vessel.isActiveVessel)
+            {
+                OrXScubaKerbGUI.instance.drunk = drunk;
+                OrXScubaKerbGUI.instance.oxygen = oxygen;
+                OrXScubaKerbGUI.instance.martiniLevel = martiniLevel;
+            }
+
+            if (this.vessel.altitude <= narcosisDepth * _scubaLevel)
+            {
+                _scubaLevel += 0.0001f;
+
+                if (_bendsDepth >= this.vessel.altitude)
+                {
+                    _bendsDepth = this.vessel.altitude;
+                }
+            }
+
+            if (_scubaLevel >= 1.00002f)
+            {
+                if (this.vessel.altitude >= (_bendsDepth * 0.667f) * _scubaLevel)
+                {
+                    bends = true;
+                }
+                else
+                {
+                    if (this.vessel.altitude >= _bendsDepth * 0.9f)
+                    {
+                        _bendsDepth += 0.1f;
+                        _scubaLevel -= 0.00001f;
+                    }
+                }
+            }
+
+            if (!bends)
+            {
+                if (!holdingDepth && holdDepth)
+                {
+                    holdingDepth = true;
+                    depth = this.vessel.altitude;
+                    StartCoroutine(DepthCheck());
+                }
+
+                martiniLevel = this.vessel.altitude / (narcosisDepth * _scubaLevel);
+                if (!narcosisCheck)
+                {
+                    narcosisCheck = true;
+                    StartCoroutine(NarcosisCheck());
+                }
+
+                if (drunk)
+                {
+                    if (!drunkTank)
+                    {
+                        drunkTank = true;
+                    }
+
+                    if (this.vessel.isActiveVessel && !OrXLog.instance._EVALockWS)
+                    {
+                        OrXLog.instance.EVALockWS();
+                        kerbal = kerbalControl();
+                        kerbal.canRecover = false;
+                        kerbal.isRagdoll = true;
+                        MiniMe();
+                    }
+
+                    if (!this.vessel.Landed)
+                    {
+                        this.part.transform.Rotate(new Vector3(42, 42, 42) * Time.fixedDeltaTime);
+                    }
+                }
+                else
+                {
+                    if (drunkTank)
+                    {
+                        drunkTank = false;
+
+                        if (this.vessel.isActiveVessel && OrXLog.instance._EVALockWS)
+                        {
+                            OrXLog.instance.EVAUnlockWS();
+                        }
+                        kerbal = kerbalControl();
+                        kerbal.canRecover = true;
+                        kerbal.isRagdoll = false;
+                    }
+                }
+            }
+            else
+            {
+                if (this.vessel.rootPart.Modules.Contains<KerbalEVA>() && _scubaLevel >= 1.0002f)
+                {
+                    if (!poppingKorn)
+                    {
+                        poppingKorn = true;
+                        PopKorn();
                     }
                 }
             }
@@ -504,7 +655,6 @@ namespace OrX
                 }
             }
         }
-
         IEnumerator PopKornRevival()
         {
             if (this.part.transform.localScale.x >= localScale)
@@ -514,7 +664,6 @@ namespace OrX
                 StartCoroutine(PopKornRevival());
             }
         }
-
         private void MiniMe()
         {
             bends = false;
@@ -529,7 +678,6 @@ namespace OrX
             localScale = this.part.transform.localScale.x / 2;
             StartCoroutine(MiniMeKerbal());
         }
-
         IEnumerator MiniMeKerbal()
         {
             if (this.part.transform.localScale.x >= localScale)
@@ -618,7 +766,7 @@ namespace OrX
             else
             {
                 holdingDepth = false;
-                OnScrnMsgUC("Releasing hold on depth");
+                OrXHoloKron.instance.OnScrnMsgUC("Releasing hold on depth");
             }
         }
         IEnumerator NarcosisCheck()
@@ -735,7 +883,6 @@ namespace OrX
             kerbal.lampOn = false;
             helmetRemoved = true;
         }
-
         public void ResetOrXStats()
         {
             OrXLog.instance.DebugLog("[Module OrX] RESET ORX STATS ========================================");
@@ -776,28 +923,34 @@ namespace OrX
                 _anim.CrossFade(_animState);
             }
         }
-
         public void UpdateAnims(ref float speed)
         {
-            if (kerbal.part.WaterContact)
+            if (speed == 0)
             {
-                speed *= kerbal.swimSpeed;
-                AnimState(AnimationState.Swim);
-            }
-            else if (kerbal.JetpackDeployed)
-            {
-                speed *= 1f;
                 AnimState(AnimationState.Idle);
             }
-            else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minRunningGee)
+            else
             {
-                speed *= kerbal.runSpeed;
-                AnimState(AnimationState.Run);
-            }
-            else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minWalkingGee)
-            {
-                speed *= kerbal.walkSpeed;
-                AnimState(AnimationState.Walk);
+                if (kerbal.part.WaterContact)
+                {
+                    speed *= kerbal.swimSpeed;
+                    AnimState(AnimationState.Swim);
+                }
+                else if (kerbal.JetpackDeployed)
+                {
+                    speed *= 1f;
+                    AnimState(AnimationState.Idle);
+                }
+                else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minRunningGee)
+                {
+                    speed *= kerbal.runSpeed;
+                    AnimState(AnimationState.Run);
+                }
+                else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minWalkingGee)
+                {
+                    speed *= kerbal.walkSpeed;
+                    AnimState(AnimationState.Walk);
+                }
             }
         }
 
@@ -861,11 +1014,6 @@ namespace OrX
         public ModifierChangeWhen GetModuleMassChangeWhen()
         {
             return ModifierChangeWhen.CONSTANTLY;
-        }
-
-        private void OnScrnMsgUC(string msg)
-        {
-            ScreenMessages.PostScreenMessage(new ScreenMessage(msg, 3f, ScreenMessageStyle.UPPER_CENTER));
         }
 
         #endregion

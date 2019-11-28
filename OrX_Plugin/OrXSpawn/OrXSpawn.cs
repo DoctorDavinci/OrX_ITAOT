@@ -65,6 +65,8 @@ namespace OrX.spawn
         ConfigNode toLoad;
 
         public bool spawning = false;
+        public double mPerDegree = 0;
+        public double degPerMeter = 0;
 
 
         private void Awake()
@@ -85,36 +87,14 @@ namespace OrX.spawn
         {
             spawning = true;
             randomizeLoc = new System.Random().Next(1, 100);
+            mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+            degPerMeter = 1 / mPerDegree;
 
-            if (randomizeLoc <= 26)
-            {
-                _lat_ = 0.001f;
-                _lon_ = 0.001f;
-            }
-            else
-            {
-                if (randomizeLoc <= 51)
-                {
-                    _lat_ = -0.001f;
-                    _lon_ = 0.001f;
-                }
-                else
-                {
-                    if (randomizeLoc <= 76)
-                    {
-                        _lat_ = 0.001f;
-                        _lon_ = -0.001f;
-                    }
-                    else
-                    {
-                        if (randomizeLoc <= 101)
-                        {
-                            _lat_ = -0.001f;
-                            _lon_ = -0.001f;
-                        }
-                    }
-                }
-            }
+            int _distOffset = new System.Random().Next(25, 100);
+            double _randomLatOffset = new System.Random().Next(-50, 50);
+            double _randomLonOffset = new System.Random().Next(-100, 100);
+            _lat_ = (_randomLatOffset + _distOffset) * degPerMeter;
+            _lon_ = (_randomLonOffset + _distOffset) * degPerMeter;
 
             OrXLog.instance.DebugLog("[OrX Spawn] SpawnInfected ................. ");
             loadingCraft = true;
@@ -494,21 +474,7 @@ namespace OrX.spawn
                       : ProtoCrewMember.Gender.Male;
                     System.Random r = new System.Random();
                     int trait_ = r.Next(0, 100);
-                    if (trait_ <= 33)
-                    {
-                        crewMember.trait = "Pilot";
-                    }
-                    else
-                    {
-                        if (trait_ <= 66)
-                        {
-                            crewMember.trait = "Engineer";
-                        }
-                        else
-                        {
-                            crewMember.trait = "Scientist";
-                        }
-                    }
+                    crewMember.trait = "Tourist";
                     part.AddCrewmemberAt(crewMember, part.protoModuleCrew.Count);
                 }
 
@@ -545,7 +511,7 @@ namespace OrX.spawn
                 int i = 0;
                 foreach (CrewData cd in vesselData.crew)
                 {
-                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal(ProtoCrewMember.KerbalType.Crew);
+                    ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.GetNewKerbal(ProtoCrewMember.KerbalType.Tourist);
                     if (cd.name != null)
                     {
                         crewMember.KerbalRef.name = Spawnedname;
@@ -679,7 +645,7 @@ namespace OrX.spawn
                 protoVesselNode.SetValue("prst", false.ToString(), true);
             }
 
-            OrXLog.instance.DebugLog("[OrX Spawn] // Add vessel to the game");
+            OrXLog.instance.DebugLog("[OrX Spawn] Add vessel to the game");
 
             // Add vessel to the game
             ProtoVessel protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
@@ -709,7 +675,7 @@ namespace OrX.spawn
         private IEnumerator PlaceSpawnedVessel(Vessel v, bool moveVessel)
         {
             OrXLog.instance.DebugLog("[SPAWN OrX] PLACING SPAWNED OrX ...................");
-            
+
             loadingCraft = true;
             v.isPersistent = true;
             v.Landed = true;
@@ -718,28 +684,34 @@ namespace OrX.spawn
             {
                 yield return null;
             }
-            v.IgnoreGForces(60);
+            //v.IgnoreGForces(60);
             v.SetWorldVelocity(Vector3d.zero);
-            yield return null;
+            //yield return null;
+            OrXLog.instance.SetRange(v, 10000);
 
             if (infectedCount <= 1)
             {
                 ConfigNode temp = new ConfigNode();
-                temp.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/OrX.tmp");
+                //temp.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/OrX.tmp");
             }
+
+            v.GoOffRails();
             var orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
             if (orx == null)
             {
                 v.rootPart.AddModule("ModuleOrX", true);
+                orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
             }
-            orx = v.rootPart.FindModuleImplementing<ModuleOrX>();
             orx.orx = true;
             orx._chase = true;
+            //v.rootPart.AddModule("ModuleAddSalt", true);
+            OrXLog.instance.SetRange(v, 10000);
 
-            v.GoOffRails();
             StageManager.BeginFlight();
             spawning = false;
             loadingCraft = false;
+            ConfigNode _dragCubes = v.rootPart.DragCubes.SaveCubes();
+            _dragCubes.Save(UrlDir.ApplicationRootPath + "GameData/OrX/kerbalDragCubes.txt");
         }
 
         public Vector3d _SpawnCoords()
