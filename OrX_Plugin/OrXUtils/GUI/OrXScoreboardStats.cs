@@ -269,9 +269,16 @@ namespace OrX
 
             GUI.Label(new Rect(10, ContentTop + line * entryHeight, 60, 20), "Stage", titleStyleMedYellow);
             GUI.Label(new Rect(65, ContentTop + line * entryHeight, 100, 20), "Time", titleStyleMedYellow);
-            GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), "Air Time", titleStyleMedYellow);
-            GUI.Label(new Rect(265, ContentTop + line * entryHeight, 100, 20), "Top Speed", titleStyleMedYellow);
-            GUI.Label(new Rect(365, ContentTop + line * entryHeight, 100, 20), "Max Depth", titleStyleMedYellow);
+            if (OrXHoloKron.instance.bdaChallenge)
+            {
+                GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), "Salt", titleStyleMedYellow);
+            }
+            else
+            {
+                GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), "Air Time", titleStyleMedYellow);
+                GUI.Label(new Rect(265, ContentTop + line * entryHeight, 100, 20), "Top Speed", titleStyleMedYellow);
+                GUI.Label(new Rect(365, ContentTop + line * entryHeight, 100, 20), "Max Depth", titleStyleMedYellow);
+            }
 
             GUI.Label(new Rect(465, ContentTop + line * entryHeight, 50, 20), "NCD", titleStyleMedYellow);
             GUI.Label(new Rect(520, ContentTop + line * entryHeight, 50, 20), "UJ", titleStyleMedYellow);
@@ -304,9 +311,17 @@ namespace OrX
                         string[] data = scoreStats.Current.Split(new char[] { ',' });
                         GUI.Label(new Rect(10, ContentTop + line * entryHeight, 60, 20), data[0], titleStyle);
                         GUI.Label(new Rect(65, ContentTop + line * entryHeight, 100, 20), OrXHoloKron.instance.TimeSet(float.Parse(data[4])), titleStyle);
-                        GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), OrXHoloKron.instance.TimeSet(float.Parse(data[3])), _switchAirTimeStyle(data[3], data[4]));
-                        GUI.Label(new Rect(265, ContentTop + line * entryHeight, 100, 20), Math.Round(float.Parse(data[1]), 1) + " m/s", titleStyle);
-                        GUI.Label(new Rect(365, ContentTop + line * entryHeight, 100, 20), Math.Round(float.Parse(data[2]), 1) + "", titleStyle);
+                        if (OrXHoloKron.instance.bdaChallenge)
+                        {
+                            GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), data[3], titleStyle);
+                        }
+                        else
+                        {
+                            GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), OrXHoloKron.instance.TimeSet(float.Parse(data[3])), _switchAirTimeStyle(data[3], data[4]));
+                            GUI.Label(new Rect(265, ContentTop + line * entryHeight, 100, 20), Math.Round(float.Parse(data[1]), 1) + " m/s", titleStyle);
+                            GUI.Label(new Rect(365, ContentTop + line * entryHeight, 100, 20), Math.Round(float.Parse(data[2]), 1) + "", titleStyle);
+
+                        }
 
                         GUI.Label(new Rect(465, ContentTop + line * entryHeight, 50, 20), data[5], _switchCheatStyle(data[5]));
                         GUI.Label(new Rect(520, ContentTop + line * entryHeight, 50, 20), data[6], _switchCheatStyle(data[6]));

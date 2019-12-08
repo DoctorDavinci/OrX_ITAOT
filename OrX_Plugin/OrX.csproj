@@ -125,30 +125,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OrXChase\ControlTypes\IOrXchaseControlType.cs" />
-    <Compile Include="OrXChase\ControlTypes\OrXchaseFormation.cs" />
-    <Compile Include="OrXChase\ControlTypes\OrXchaseOrder.cs" />
-    <Compile Include="OrXChase\ControlTypes\OrXchasePatrol.cs" />
-    <Compile Include="OrXChase\ControlTypes\OrXchaseStructs.cs" />
-    <Compile Include="OrXChase\ControlTypes\OrXchaseWanderer.cs" />
-    <Compile Include="OrXChase\Detection\DeadSpaceDetection.cs" />
-    <Compile Include="OrXChase\Detection\IDetection.cs" />
-    <Compile Include="OrXChase\Extensions\OrXchaseExtentions.cs" />
-    <Compile Include="OrXChase\Extensions\Util.cs" />
-    <Compile Include="OrXChase\OrXchaseContainer.cs" />
-    <Compile Include="OrXChase\OrXchaseController.cs" />
-    <Compile Include="OrXChase\OrXchaseDebug.cs" />
-    <Compile Include="OrXChase\OrXchaseLogic.cs" />
-    <Compile Include="OrXChase\OrXchaseModule.cs" />
-    <Compile Include="OrXChase\OrXchaseOrderController.cs" />
-    <Compile Include="OrXChase\OrXchaseSettings.cs" />
-    <Compile Include="OrXChase\OrXchaseTokenReader.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXCraftSetup.cs" />
     <Compile Include="OrXModules\Vessel\ModuleAddSalt.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXId.cs" />
     <Compile Include="OrXModules\Vessel\ModuleHoldVessel.cs" />
     <Compile Include="OrXUtils\GUI\OrXEditorChallengeList.cs" />
     <Compile Include="OrXUtils\GUI\OrXEditorGUI.cs" />
+    <Compile Include="OrXUtils\GUI\OrXEnemy.cs" />
+    <Compile Include="OrXUtils\OrXBDAcExtension.cs" />
     <Compile Include="OrXUtils\OrXGameobjectTrash.cs" />
     <Compile Include="OrXUtils\GUI\OrXUserManual.cs" />
     <Compile Include="OrXModules\ModuleKarma.cs" />

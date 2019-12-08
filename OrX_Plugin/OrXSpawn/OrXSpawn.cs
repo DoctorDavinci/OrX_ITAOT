@@ -679,7 +679,7 @@ namespace OrX.spawn
             loadingCraft = true;
             v.isPersistent = true;
             v.Landed = true;
-            v.situation = Vessel.Situations.LANDED;
+            v.situation = Vessel.Situations.PRELAUNCH;
             while (v.packed)
             {
                 yield return null;

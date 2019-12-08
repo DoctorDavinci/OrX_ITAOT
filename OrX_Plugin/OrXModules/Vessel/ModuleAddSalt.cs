@@ -7,21 +7,26 @@ namespace OrX
 {
     public class ModuleAddSalt : PartModule
     {
-        
+        float _partSalt = 0;
+
         public override void OnStart(StartState state)
         {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                part.force_activate();
-                GameEvents.onPartDie.Add(AddSalt);
-            }
+            part.force_activate();
             base.OnStart(state);
         }
 
-        private void AddSalt(Part data)
+        public void AddSalt()
+        {
+            _partSalt = part.mass;
+            OrXLog.instance.DebugLog("[OrX Add Salt - " + part.name + "] ===== " + _partSalt + " Salt Total =====");
+            part.OnJustAboutToBeDestroyed += OnPartAboutToDie;
+        }
+
+        public void OnPartAboutToDie()
         {
             OrXHoloKron.instance.salt += part.mass;
             OrX_KC.instance.salt += part.mass;
+            OrXLog.instance.DebugLog("[OrX Add Salt - " + part.name + "] ===== " + part.mass + " Salt Added =====");
         }
     }
 }

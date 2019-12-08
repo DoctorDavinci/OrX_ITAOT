@@ -16,26 +16,26 @@ namespace OrX
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class OrXHoloKron : MonoBehaviour
     {
-        #region Core
 
         #region Variables
 
-        bool _getCenterDist = false;
-        bool _editor = false;
+        public bool _getCenterDist = false;
+        public bool _editor = false;
         public double airTime = 0;
-        bool reset = false;
-        bool mrKleen = false;
+        public bool reset = false;
+        public bool mrKleen = false;
         public bool devKitInstalled = false;
         Kontinuum.OrXKontinuum KontinuumClient;
-        string fileDateTime = "";
-        string fileSize = "";
+        public string fileDateTime = "";
+        public string fileSize = "";
         public List<string> KontinuumDirectoryList;
-        string _ate = "9";
+        public string _ate = "9";
+        public bool _spawningOrX = false;
 
         public Vector3 UpVect;
         public Vector3 EastVect;
         public Vector3 NorthVect;
-        Vector3 worldPos;
+        public Vector3 worldPos;
 
         public Vector3 targetPos = Vector3.zero;
         public Vessel triggerVessel;
@@ -56,8 +56,8 @@ namespace OrX
 
         public bool addNextCoord = false;
 
-        string _sth = string.Empty;
-        bool showScores = false;
+        public string _sth = string.Empty;
+        public bool showScores = false;
 
         public bool unlocked = false;
 
@@ -163,6 +163,7 @@ namespace OrX
 
         public bool bdaChallenge = false;
         public bool outlawRacing = false;
+        public bool LBC = false;
         public bool Scuba = false;
         public bool windRacing = false;
         public bool snowballFight = false;
@@ -195,7 +196,7 @@ namespace OrX
         public string blueprintsFile = string.Empty;
         public string holoToAdd = string.Empty;
 
-        int gpsCount = 0;
+        public int gpsCount = 0;
         public double latMission = 0;
         public double lonMission = 0;
         public double altMission = 0;
@@ -203,36 +204,36 @@ namespace OrX
         public Vector3d lastCoord;
         public int locCount = 0;
 
-        List<string> CoordDatabase;
-        int coordCount = 0;
-        List<string> ModuleDatabase;
+        public List<string> CoordDatabase;
+        public int coordCount = 0;
+        public List<string> ModuleDatabase;
 
-        Vector3d startLocation;
+        public Vector3d startLocation;
 
-        List<string> stageTimes;
+        public List<string> stageTimes;
         public double maxDepth = 0;
 
-        List<string> _scoreboard;
+        public List<string> _scoreboard;
         public string challengersName = string.Empty;
         public double topSurfaceSpeed = 0;
 
         public int ec = 0;
 
-        ConfigNode _file;
-        ConfigNode _mission;
-        ConfigNode _scoreboard_;
-        ConfigNode _blueprints_;
+        public ConfigNode _file;
+        public ConfigNode _mission;
+        public ConfigNode _scoreboard_;
+        public ConfigNode _blueprints_;
 
-        ConfigNode scoreboard0;
-        ConfigNode scoreboard1;
-        ConfigNode scoreboard2;
-        ConfigNode scoreboard3;
-        ConfigNode scoreboard4;
-        ConfigNode scoreboard5;
-        ConfigNode scoreboard6;
-        ConfigNode scoreboard7;
-        ConfigNode scoreboard8;
-        ConfigNode scoreboard9;
+        public ConfigNode scoreboard0;
+        public ConfigNode scoreboard1;
+        public ConfigNode scoreboard2;
+        public ConfigNode scoreboard3;
+        public ConfigNode scoreboard4;
+        public ConfigNode scoreboard5;
+        public ConfigNode scoreboard6;
+        public ConfigNode scoreboard7;
+        public ConfigNode scoreboard8;
+        public ConfigNode scoreboard9;
 
         string nameSB0 = string.Empty;
         string timeSB0 = string.Empty;
@@ -274,14 +275,14 @@ namespace OrX
         string timeSB9 = string.Empty;
         string maxSpeedSB9 = string.Empty;
 
-        bool updatingScores = false;
+        public bool updatingScores = false;
 
-        Vector3 nextLocation;
+        public Vector3 nextLocation;
         public double targetDistanceMission = 0;
         public string _targetDistance = string.Empty;
         public Vessel targetCoord;
 
-        Quaternion rot;
+        public Quaternion rot;
         public double _lat = 0f;
         public double _lon = 0f;
         public double _alt = 0f;
@@ -296,17 +297,17 @@ namespace OrX
         string _OrXV = "";
         public Vessel _lastStage;
         public Vessel _HoloKron;
-        string holoKronCraftLoc = string.Empty;
-        List<string> holoKronFiles;
-        string sphLoc = string.Empty;
-        List<string> sphFiles;
-        string vabLoc = string.Empty;
-        List<string> vabFiles;
-        bool sph = true;
-        bool holoHangar = false;
+        public string holoKronCraftLoc = string.Empty;
+        public List<string> holoKronFiles;
+        public string sphLoc = string.Empty;
+        public List<string> sphFiles;
+        public string vabLoc = string.Empty;
+        public List<string> vabFiles;
+        public bool sph = true;
+        public bool holoHangar = false;
 
         public bool saveLocalVessels = false;
-        string saveLocalLabel = "Save Local Craft";
+        public string saveLocalLabel = "Save Local Craft";
         public float localSaveRange = 1000;
 
         internal static List<ProtoCrewMember> SelectedCrewData;
@@ -330,7 +331,7 @@ namespace OrX
         public bool coordSpawn = false;
 
         public bool holoOpen = false;
-        Waypoint currentWaypoint;
+        public Waypoint currentWaypoint;
         public double mPerDegree = 0;
         public double degPerMeter = 0;
         public float scanDelay = 0;
@@ -344,7 +345,7 @@ namespace OrX
         public bool shortTrackRacing = false;
 
         public string raceType = "DAKAR RACING";
-        string loginName = "";
+        public string loginName = "";
         bool connectToKontinuum = false;
         string pasKontinuum = "";
         string _labelConnect = "Connect to Kontinuum";
@@ -353,22 +354,22 @@ namespace OrX
         bool _s = false;
 
         Vector3d playerPositon;
-        bool _KontinuumConnect = false;
+        public bool _KontinuumConnect = false;
         public string Karma = "ssadab";
         public bool _blink = false;
         public bool _blinking = false;
 
-        bool showChallengelist = false;
-        bool showGeoCacheList = false;
+        public bool showChallengelist = false;
+        public bool showGeoCacheList = false;
         public bool _showSettings = false;
-        bool _settings0 = false;
-        bool _settings1 = false;
-        bool _settings2 = false;
-        string gpsString = "";
+        public bool _settings0 = false;
+        public bool _settings1 = false;
+        public bool _settings2 = false;
+        public string gpsString = "";
         public string creatorName = "";
 
         public bool killingChallenge = false;
-        bool showCreatedHolokrons = false;
+        public bool showCreatedHolokrons = false;
 
         public string statsName = "";
         public string statsTime = "";
@@ -495,43 +496,43 @@ namespace OrX
         GUIStyle rangeColor = titleStyle;
 
         public List<string> scoreboardStats;
-        bool _extractScoreboard = false;
+        public bool _extractScoreboard = false;
         bool _d = false;
         bool _s2 = false;
         bool _modeEnabled = false;
 
-        Vector3d boidPos;
+        public Vector3d boidPos;
 
         public bool _importingScores = false;
-        string currentScoresFile = "";
-        Type partModules;
+        public string currentScoresFile = "";
+        public Type partModules;
 
         public bool getNextCoord = false;
-        bool modCheckFail = false;
+        public bool modCheckFail = false;
         public Vector2 scrollPosition = Vector2.zero;
         public Vector2 scrollPosition2 = Vector2.zero;
         public bool _placingChallenger = false;
-        bool hkSpawned = false;
-        List<string> _orxFileMods;
-        List<string> _orxFilePartModules;
-        bool disablePRE = false;
-        ConfigNode PREsettings;
+        public bool hkSpawned = false;
+        public List<string> _orxFileMods;
+        public List<string> _orxFilePartModules;
+        public bool disablePRE = false;
+        public ConfigNode PREsettings;
         public string _pKarma = string.Empty;
-        List<string> installedMods;
+        public List<string> installedMods;
         public bool _preInstalled = false;
 
         private readonly List<AvailablePart> parts = new List<AvailablePart>();
         public bool _showPartModules = false;
-        bool _scoreSaved = false;
-        bool _gateKillDelay = false;
-        bool _killPlace = false;
+        public bool _scoreSaved = false;
+        public bool _gateKillDelay = false;
+        public bool _killPlace = false;
 
         public bool _showTimer = false;
         public double _timer = 0;
         public double _missionStartTime = 0;
         public double _time = 0;
-        string _currentOrXFile = "";
-        Rigidbody _rb;
+        public string _currentOrXFile = "";
+        public Rigidbody _rb;
         public Vector3d _challengeStartLoc;
 
         public static List<string> ModWhitelist = new List<string>()
@@ -569,15 +570,19 @@ namespace OrX
         public float _saveAltitude = 1000;
         public bool _settingAltitude = false;
 
-        bool _timerOn = false;
+        public bool _timerOn = false;
         public bool _refuel = false;
         public float salt = 0;
         public Vessel _spawnedCraft;
 
-        public List<string> _enemyCraft;
+        public List<Vessel> _enemyCraft;
+
+        public bool _spawnBoss = false;
+        public bool _spawnBrute = false;
 
         #endregion
 
+        #region Core
 
         public void Awake()
         {
@@ -595,7 +600,7 @@ namespace OrX
             OrXGeoCacheCreatorList = new List<string>();
             OrXChallengeCreatorList = new List<string>();
             ModuleDatabase = new List<string>();
-            _enemyCraft = new List<string>();
+            _enemyCraft = new List<Vessel>();
 
             if (!Directory.Exists(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/"))
                 Directory.CreateDirectory(UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/");
@@ -738,6 +743,8 @@ namespace OrX
 
         public void Blank() { }
 
+        #endregion
+
         #region Kontinuum Connect
 
         // FTP
@@ -830,7 +837,6 @@ namespace OrX
 
         #endregion
 
-        #endregion
 
         #region Utilities
 
@@ -1052,7 +1058,7 @@ namespace OrX
 
                                                 if (_count == "0")
                                                 {
-                                                    _count = "";
+                                                    _count = "0";
                                                 }
                                                 else
                                                 {
@@ -1078,7 +1084,7 @@ namespace OrX
                                                         OrXLog.instance.DebugLog("[OrX Get Creations] Loaded " + _HoloKronName + " " + _hkCount + " Targets");
                                                         OrXLog.instance.DebugLog("[OrX Get Creations] " + targetCoords);
                                                         OrXChallengeList.Add(targetCoords);
-                                                        string nameToAdd = data[1] + _count;
+                                                        string nameToAdd = data[1] + "-" + _count;
 
                                                         if (!OrXChallengeNameList.Contains(nameToAdd))
                                                         {
@@ -1185,29 +1191,19 @@ namespace OrX
                 }
                 cfgsToAdd.Dispose();
             }
+            yield return new WaitForFixedUpdate();
 
-            if (challenge)
-            {
-                showGeoCacheList = false;
-            }
-            else
-            {
-                showGeoCacheList = false;
-
-                // showGeoCacheList = true;
-            }
             showCreatedHolokrons = true;
-            //PlayOrXMission = true;
-            movingCraft = false;
+            showGeoCacheList = false;
             getNextCoord = false;
             GuiEnabledOrXMissions = false;
             _showSettings = false;
             connectToKontinuum = false;
             checking = false;
+            movingCraft = false;
         }
         IEnumerator CheckInstalledMods(bool _spawn)
         {
-
             getNextCoord = false;
             movingCraft = true;
             _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + creatorName + "/" + HoloKronName + "/" + HoloKronName + "-" + hkCount + "-" + creatorName + ".orx");
@@ -2595,33 +2591,51 @@ namespace OrX
                     + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
                 startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
                 //OrXVesselMove.Instance.EndMove(true, false, true);
+                GuiEnabledOrXMissions = true;
+                OrXHCGUIEnabled = true;
+                addCoords = true;
+                movingCraft = true;
+                addingMission = true;
+
+                if (shortTrackRacing)
+                {
+                    dakarRacing = false;
+                    spawningStartGate = false;
+                    getNextCoord = true;
+                }
+
+                if (dakarRacing)
+                {
+                    saveLocalVessels = true;
+                    getNextCoord = false;
+                    //SaveConfig(HoloKronName, false);
+                }
             }
             else
             {
-                if (windRacing)
+                if (LBC)
                 {
-                    if (FlightGlobals.ActiveVessel.altitude >= 0 && FlightGlobals.ActiveVessel.atmDensity >= 0.007)
-                    {
-                        locCount += 1;
-                        lastCoord = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 5);
-                        latMission = lastCoord.x;
-                        lonMission = lastCoord.y;
-                        altMission = lastCoord.z;
-                        windIntensity = WindGUI.instance.windIntensity;
-                        windVariability = WindGUI.instance.windVariability;
-                        variationIntensity = WindGUI.instance.variationIntensity;
-                        heading = WindGUI.instance.heading;
-                        startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
+                    locCount += 1;
+                    lastCoord = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude - FlightGlobals.ActiveVessel.radarAltitude + 5);
+                    latMission = lastCoord.x;
+                    lonMission = lastCoord.y;
+                    altMission = lastCoord.z;
+                    windIntensity = WindGUI.instance.windIntensity;
+                    windVariability = WindGUI.instance.windVariability;
+                    variationIntensity = WindGUI.instance.variationIntensity;
+                    heading = WindGUI.instance.heading;
+                    startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
 
-                        teaseDelay = WindGUI.instance.teaseDelay;
-                        // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
-                        CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
-                            + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
-                    }
-                    else
-                    {
-                        OnScrnMsgUC("Unable to add coordinate to Wind Challenge if vessel is below water or not in an atmosphere");
-                    }
+                    teaseDelay = WindGUI.instance.teaseDelay;
+                    // location count, latitude, longitude, altitude, wind intensity, wind variability, wind variation intensity, heading, tease delay
+                    CoordDatabase.Add(locCount + "," + latMission + "," + lonMission + "," + altMission + ","
+                        + windIntensity + "," + windVariability + "," + variationIntensity + "," + heading + "," + teaseDelay);
+                    SaveStage();
+                    addingMission = true;
+                    getNextCoord = true;
+                    showTargets = false;
+                    movingCraft = false;
+                    OrXVesselMove.Instance.StartMove(FlightGlobals.ActiveVessel, false, 0, false, false);
                 }
 
                 if (Scuba)
@@ -2651,26 +2665,6 @@ namespace OrX
 
                 }
             }
-
-            GuiEnabledOrXMissions = true;
-            OrXHCGUIEnabled = true;
-            addCoords = true;
-            movingCraft = true;
-            addingMission = true;
-
-            if (shortTrackRacing)
-            {
-                dakarRacing = false;
-                spawningStartGate = false;
-                getNextCoord = true;
-            }
-
-            if (dakarRacing)
-            {
-                saveLocalVessels = true;
-                getNextCoord = false;
-                SaveConfig(HoloKronName, false);
-            }
         }
 
         public void SaveConfig(string holoName, bool append)
@@ -2680,6 +2674,17 @@ namespace OrX
             {
                 creatorName = challengersName;
             }
+            if (creatorName != "")
+            {
+                challengersName = creatorName;
+            }
+            ConfigNode playerData = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
+            if (playerData == null)
+            {
+                playerData = new ConfigNode();
+            }
+            playerData.SetValue("name", challengersName, true);
+            playerData.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
 
             building = true;
             buildingMission = true;
@@ -2723,6 +2728,8 @@ namespace OrX
                 _file.AddValue("Kontinuum", connectToKontinuum);
                 _file.AddNode("Mods");
                 _file.AddNode("OrX");
+                _file.AddNode("boids");
+
                 _file.Save(hConfigLoc2);
             }
             else
@@ -3032,7 +3039,7 @@ namespace OrX
 
                     if (!dakarRacing)
                     {
-                        if (!addCoords)
+                        if (!addCoords && !LBC)
                         {
                             OrXLog.instance.DebugLog("[OrX Add Mission] === SAVING LOCAL VESELS ===");
 
@@ -3071,7 +3078,7 @@ namespace OrX
                                     }
                                     parts.Dispose();
 
-                                    if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && v.Current != triggerVessel && !isKerb)
+                                    if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && v.Current != triggerVessel)
                                     {
                                         OrXLog.instance.DebugLog("[OrX Add Mission] === RANGE CHECK ===");
 
@@ -3158,16 +3165,37 @@ namespace OrX
 
                                         if (v.Current.LandedOrSplashed)
                                         {
-                                            if (_targetDistance <= localSaveRange)
+                                            if (bdaChallenge)
                                             {
-                                                _inRange = true;
+                                                if (_targetDistance <= 8000)
+                                                {
+                                                    _inRange = true;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (_targetDistance <= localSaveRange)
+                                                {
+                                                    _inRange = true;
+                                                }
+
                                             }
                                         }
                                         else
                                         {
-                                            if (_targetDistance <= localSaveRange * 4)
+                                            if (bdaChallenge)
                                             {
-                                                _inRange = true;
+                                                if (_targetDistance <= 15000)
+                                                {
+                                                    _inRange = true;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (_targetDistance <= 4000)
+                                                {
+                                                    _inRange = true;
+                                                }
                                             }
                                         }
 
@@ -3236,6 +3264,10 @@ namespace OrX
                                             {
                                                 location.AddValue("airborne", "True");
                                             }
+                                            if (v.Current.Splashed)
+                                            {
+                                                location.AddValue("splashed", "True");
+                                            }
 
                                             Quaternion or = toSave.rootPart.transform.rotation;
                                             location.AddValue("rot", or.x + "," + or.y + "," + or.z + "," + or.w);
@@ -3253,13 +3285,13 @@ namespace OrX
                                             OnScrnMsgUC("<color=#cfc100ff><b>Saving to " + HoloKronName + " " + hkCount + "</b></color>");
                                             craftConstruct.CopyTo(craftFile);
                                             //craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + v.Current.vesselName + "-" + count + ".craft");
-                                            ConfigNode _modules = _file.GetNode("Mods");
+                                            ConfigNode _modules = _file.GetNode("Modules");
                                             if (_modules == null)
                                             {
                                                 _modules = new ConfigNode();
-                                                _modules = _file.AddNode("Mods");
+                                                _modules = _file.AddNode("Modules");
                                             }
-                                            _modules = _file.GetNode("Mods");
+                                            _modules = _file.GetNode("Modules");
 
                                             foreach (ConfigNode partCheck in craftConstruct.nodes)
                                             {
@@ -3813,16 +3845,38 @@ namespace OrX
 
                                     if (v.Current.LandedOrSplashed)
                                     {
-                                        if (_targetDistance <= localSaveRange)
+                                        if (bdaChallenge)
                                         {
-                                            _inRange = true;
+                                            if (_targetDistance <= 8000)
+                                            {
+                                                _inRange = true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (_targetDistance <= localSaveRange)
+                                            {
+                                                _inRange = true;
+                                            }
+
                                         }
                                     }
                                     else
                                     {
-                                        if (_targetDistance <= localSaveRange * 4)
+                                        if (bdaChallenge)
                                         {
-                                            _inRange = true;
+                                            if (_targetDistance <= 10000)
+                                            {
+                                                _inRange = true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (_targetDistance <= 4000)
+                                            {
+                                                _inRange = true;
+                                            }
+
                                         }
                                     }
 
@@ -3887,6 +3941,10 @@ namespace OrX
                                         {
                                             location.AddValue("airborne", "True");
                                         }
+                                        if (v.Current.Splashed)
+                                        {
+                                            location.AddValue("splashed", "True");
+                                        }
 
                                         Quaternion or = toSave.rootPart.transform.rotation;
                                         location.AddValue("rot", or.x + "," + or.y + "," + or.z + "," + or.w);
@@ -3904,13 +3962,13 @@ namespace OrX
                                         OnScrnMsgUC("<color=#cfc100ff><b>Saving to " + HoloKronName + " " + hkCount + "</b></color>");
                                         craftConstruct.CopyTo(craftFile);
 
-                                        ConfigNode _modules = _file.GetNode("Mods");
+                                        ConfigNode _modules = _file.GetNode("Modules");
                                         if (_modules == null)
                                         {
                                             _modules = new ConfigNode();
-                                            _modules = _file.AddNode("Mods");
+                                            _modules = _file.AddNode("Modules");
                                         }
-                                        _modules = _file.GetNode("Mods");
+                                        _modules = _file.GetNode("Modules");
 
                                         foreach (ConfigNode partCheck in craftFile.nodes)
                                         {
@@ -4043,6 +4101,7 @@ namespace OrX
         IEnumerator EndSave()
         {
             _file.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Import/" + HoloKronName + "-" + hkCount + "-" + creatorName + ".orx");
+
             yield return new WaitForSeconds(2f);
             FlightGlobals.ForceSetActiveVessel(triggerVessel);
             ResetData();
@@ -4051,8 +4110,314 @@ namespace OrX
             buildingMission = false;
             OrXHCGUIEnabled = false;
             localSaveRange = 1000;
-            OrXPRExtension.PreOn("OrX Kontinuum");
             MainMenu();
+        }
+
+        private void SaveStage()
+        {
+            OrXLog.instance.DebugLog("[OrX Add Boids] === SAVING BOIDS ===");
+            string hConfigLoc2 = UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + creatorName + "/" + HoloKronName + "/" + HoloKronName + "-" + hkCount + "-" + creatorName + ".orx";
+            _file = ConfigNode.Load(hConfigLoc2);
+
+            int count = 0;
+
+            double _latDiff = 0;
+            double _lonDiff = 0;
+            double _altDiff = 0;
+
+            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+            while (v.MoveNext())
+            {
+                try
+                {
+                    if (v.Current == null) continue;
+
+                    if (!v.Current.rootPart.Modules.Contains<ModuleOrXMission>() && v.Current != triggerVessel)
+                    {
+                        OrXLog.instance.DebugLog("[OrX Add Boids] === RANGE CHECK ===");
+
+                        if (v.Current.altitude <= triggerVessel.altitude)
+                        {
+                            _altDiff = triggerVessel.altitude - v.Current.altitude;
+                        }
+                        else
+                        {
+                            _altDiff = v.Current.altitude - triggerVessel.altitude;
+                        }
+
+                        if (triggerVessel.latitude >= 0)
+                        {
+                            if (v.Current.latitude >= triggerVessel.latitude)
+                            {
+                                _latDiff = v.Current.latitude - triggerVessel.latitude;
+                            }
+                            else
+                            {
+                                _latDiff = triggerVessel.latitude - v.Current.latitude;
+                            }
+                        }
+                        else
+                        {
+                            if (v.Current.latitude >= 0)
+                            {
+                                _latDiff = v.Current.latitude - triggerVessel.latitude;
+                            }
+                            else
+                            {
+                                if (v.Current.latitude <= triggerVessel.latitude)
+                                {
+                                    _latDiff = v.Current.latitude - triggerVessel.latitude;
+                                }
+                                else
+                                {
+
+                                    _latDiff = triggerVessel.latitude - v.Current.latitude;
+                                }
+                            }
+                        }
+
+                        if (triggerVessel.longitude >= 0)
+                        {
+                            if (v.Current.longitude >= triggerVessel.longitude)
+                            {
+                                _lonDiff = v.Current.longitude - triggerVessel.longitude;
+                            }
+                            else
+                            {
+                                _lonDiff = triggerVessel.longitude - v.Current.latitude;
+                            }
+                        }
+                        else
+                        {
+                            if (v.Current.longitude >= 0)
+                            {
+                                _lonDiff = v.Current.longitude - triggerVessel.longitude;
+                            }
+                            else
+                            {
+                                if (v.Current.longitude <= triggerVessel.longitude)
+                                {
+                                    _lonDiff = v.Current.longitude - triggerVessel.longitude;
+                                }
+                                else
+                                {
+
+                                    _lonDiff = triggerVessel.longitude - v.Current.longitude;
+                                }
+                            }
+                        }
+
+                        OrXLog.instance.DebugLog("[OrX Add Boids] Vessel " + v.Current.vesselName + " Identified .......................");
+
+                        double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                        double _altDiffDeg = _altDiff * degPerMeter;
+                        double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                        double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+                        bool _inRange = false;
+
+                        OrXLog.instance.DebugLog("[OrX Add Boids] === RANGE: " + _targetDistance);
+
+                        if (v.Current.LandedOrSplashed)
+                        {
+                            if (bdaChallenge || LBC)
+                            {
+                                if (_targetDistance <= 8000)
+                                {
+                                    _inRange = true;
+                                }
+                            }
+                            else
+                            {
+                                if (_targetDistance <= localSaveRange)
+                                {
+                                    _inRange = true;
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            if (bdaChallenge || LBC)
+                            {
+                                if (_targetDistance <= 10000)
+                                {
+                                    _inRange = true;
+                                }
+                            }
+                            else
+                            {
+                                if (_targetDistance <= 4000)
+                                {
+                                    _inRange = true;
+                                }
+
+                            }
+                        }
+
+                        if (_inRange)
+                        {
+                            count += 1;
+
+                            Vessel toSave = v.Current;
+                            string shipDescription = "";
+                            OrXLog.instance.DebugLog("[OrX Add Boids] Saving " + v.Current.vesselName + "'s orientation .......................");
+
+                            UpVect = (toSave.transform.position - toSave.mainBody.position).normalized;
+                            EastVect = toSave.mainBody.getRFrmVel(toSave.CoM).normalized;
+                            NorthVect = Vector3.Cross(EastVect, UpVect).normalized;
+
+                            float _pitch = Vector3.Angle(toSave.ReferenceTransform.forward, UpVect);
+                            float _left = Vector3.Angle(-toSave.ReferenceTransform.right, NorthVect); // left is 90 degrees behind vessel heading
+
+                            if (Math.Sign(Vector3.Dot(-toSave.ReferenceTransform.right, EastVect)) < 0)
+                            {
+                                _left = 360 - _left; // westward headings become angles greater than 180
+                            }
+
+                            // Be sure to subtract 90 degrees from pitch and left as the vessel reference transform is offset 90 degrees
+                            // from the respective vectors due to reasons
+
+                            ShipConstruct ConstructToSave = new ShipConstruct(HoloKronName, shipDescription, v.Current.parts[0]);
+                            ConfigNode craftConstruct = new ConfigNode("craft");
+                            craftConstruct = ConstructToSave.SaveShip();
+
+                            //craftConstruct.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + HoloKronName + "Vessel" + count + ".proto");
+
+                            craftConstruct.RemoveValue("persistentId");
+                            craftConstruct.RemoveValue("steamPublishedFileId");
+                            craftConstruct.RemoveValue("rot");
+                            craftConstruct.RemoveValue("missionFlag");
+                            craftConstruct.RemoveValue("vesselType");
+                            craftConstruct.RemoveValue("OverrideDefault");
+                            craftConstruct.RemoveValue("OverrideActionControl");
+                            craftConstruct.RemoveValue("OverrideAxisControl");
+                            craftConstruct.RemoveValue("OverrideGroupNames");
+
+                            foreach (ConfigNode cn in craftConstruct.nodes)
+                            {
+                                if (cn.name == "PART")
+                                {
+                                    cn.RemoveValue("persistentId");
+                                    cn.RemoveValue("sameVesselCollision");
+                                }
+                            }
+
+                            OrXLog.instance.DebugLog("[OrX Add Boids] Saving: " + v.Current.vesselName);
+                            OnScrnMsgUC("<color=#cfc100ff><b>Saving: " + v.Current.vesselName + "</b></color>");
+                            ConfigNode _boidNode = _file.GetNode("boids");
+                            ConfigNode craftData = _boidNode.AddNode("STAGE" + locCount + "-OrXv" + count);
+                            craftData.AddValue("vesselName", v.Current.vesselName);
+                            ConfigNode location = craftData.AddNode("coords");
+                            location.AddValue("holo", hkCount);
+                            location.AddValue("pas", Password);
+                            location.AddValue("lat", v.Current.latitude);
+                            location.AddValue("lon", v.Current.longitude);
+                            location.AddValue("alt", v.Current.altitude + 1);
+                            location.AddValue("left", _left);
+                            location.AddValue("pitch", _pitch);
+                            if (!v.Current.LandedOrSplashed)
+                            {
+                                location.AddValue("airborne", "True");
+                            }
+
+                            Quaternion or = toSave.rootPart.transform.rotation;
+                            location.AddValue("rot", or.x + "," + or.y + "," + or.z + "," + or.w);
+
+                            foreach (ConfigNode.Value cv in location.values)
+                            {
+                                string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                cv.name = cvEncryptedName;
+                                cv.value = cvEncryptedValue;
+                            }
+
+
+                            ConfigNode craftFile = craftData.AddNode("craft");
+                            OnScrnMsgUC("<color=#cfc100ff><b>Saving to " + HoloKronName + " " + hkCount + "</b></color>");
+                            craftConstruct.CopyTo(craftFile);
+                            //craftFile.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + v.Current.vesselName + "-" + count + ".craft");
+                            ConfigNode _modules = _file.GetNode("Mods");
+                            if (_modules == null)
+                            {
+                                _modules = new ConfigNode();
+                                _modules = _file.AddNode("Mods");
+                            }
+                            _modules = _file.GetNode("Mods");
+
+                            foreach (ConfigNode partCheck in craftConstruct.nodes)
+                            {
+                                if (partCheck.name == "PART")
+                                {
+                                    foreach (ConfigNode partCheck2 in partCheck.nodes)
+                                    {
+                                        if (partCheck2.name == "MODULE")
+                                        {
+                                            foreach (ConfigNode.Value partCheck3 in partCheck2.values)
+                                            {
+                                                if (partCheck3.name == "name")
+                                                {
+                                                    _modules.SetValue(partCheck3.value, "PartModule", true);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ADD ENCRYPTION
+
+                            foreach (ConfigNode.Value cv in craftFile.values)
+                            {
+                                if (cv.name == "ship")
+                                {
+                                    cv.value = v.Current.vesselName;
+                                }
+
+                                string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                cv.name = cvEncryptedName;
+                                cv.value = cvEncryptedValue;
+                            }
+
+                            foreach (ConfigNode cn in craftFile.nodes)
+                            {
+                                foreach (ConfigNode.Value cv in cn.values)
+                                {
+                                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                                    cv.name = cvEncryptedName;
+                                    cv.value = cvEncryptedValue;
+                                }
+
+                                foreach (ConfigNode cn2 in cn.nodes)
+                                {
+                                    foreach (ConfigNode.Value cv2 in cn2.values)
+                                    {
+                                        if (!cv2.value.Contains("(") && !cv2.value.Contains(")"))
+                                        {
+                                            string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                                            string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                                            cv2.name = cvEncryptedName;
+                                            cv2.value = cvEncryptedValue;
+                                        }
+                                    }
+                                }
+                            }
+
+                            OrXLog.instance.DebugLog("[OrX Add Boids] === " + v.Current.vesselName + " ENCRYPTED ===");
+                            saveShip = false;
+                            OrXLog.instance.DebugLog("[OrX Add Boids] " + v.Current.vesselName + " Saved to " + HoloKronName);
+                            OnScrnMsgUC("<color=#cfc100ff><b>" + v.Current.vesselName + " Saved</b></color>");
+                            toSave.rootPart.AddModule("ModuleOrXJason", true);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+            }
+            v.Dispose();
+            _file.Save(hConfigLoc2);
         }
 
         #endregion
@@ -4933,6 +5298,12 @@ namespace OrX
                 checking = true;
                 spawnHoloKron = false;
                 tpoint = nextLocation;
+
+                if (LBC)
+                {
+                    OrXSpawnHoloKron.instance.SpawnLBC(gpsCount, HoloKronName);
+                }
+
                 OrXLog.instance.DebugLog("[OrX Get Next Coord] === CHECKING DISTANCE ===");
                 OrXTargetDistance.instance.TargetDistance(false, true, true, true, HoloKronName, nextLocation);
             }
@@ -4940,11 +5311,14 @@ namespace OrX
 
         public void StartTimer()
         {
-            _missionStartTime = FlightGlobals.ActiveVessel.missionTime;
-            _timerStageTime = "00:00:00.00";
-            _timerTotalTime = "00:00:00.00";
-            _timerOn = true;
-            StartCoroutine(StageTimer());
+            if (!_timerOn)
+            {
+                _missionStartTime = FlightGlobals.ActiveVessel.missionTime;
+                _timerStageTime = "00:00:00.00";
+                _timerTotalTime = "00:00:00.00";
+                _timerOn = true;
+                StartCoroutine(StageTimer());
+            }
         }
         public void StopTimer()
         {
@@ -7126,6 +7500,17 @@ namespace OrX
             updatingScores = false;
             movingCraft = false;
         }
+
+        public void SaveBDAcScore()
+        {
+            _HoloKron = null;
+            stageTimes = new List<string>();
+            stageTimes.Add(gpsCount + "," + topSurfaceSpeed + "," + maxDepth + "," + salt + ","
+    + _time + "," + CheatOptions.NoCrashDamage + ","
+    + CheatOptions.UnbreakableJoints + "," + CheatOptions.IgnoreMaxTemperature + ","
+    + CheatOptions.InfinitePropellant + "," + CheatOptions.InfiniteElectricity);
+            StartCoroutine(SaveScore());
+        }
         IEnumerator SaveScore()
         {
             _timerOn = false;
@@ -8653,26 +9038,6 @@ namespace OrX
             _showSettings = false;
         }
 
-        IEnumerator CheckEnemiesRoutine()
-        {
-            yield return new WaitForFixedUpdate();
-            try
-            {
-                List<Vessel>.Enumerator _enemies = FlightGlobals.VesselsLoaded.GetEnumerator();
-                while (_enemies.MoveNext())
-                {
-                    if (_enemies.Current != null)
-                    {
-                    }
-                }
-                _enemies.Dispose();
-            }
-            catch
-            {
-                StartCoroutine(CheckEnemiesRoutine());
-            }
-        }
-
         #endregion
 
         /// <summary>
@@ -8743,7 +9108,7 @@ namespace OrX
                         {
                             if (!OrXMode.instance._guiEnabled)
                             {
-                                WindowRectToolbar = new Rect(40, 50, toolWindowWidth, toolWindowHeight);
+                                WindowRectToolbar = new Rect(30, 50, toolWindowWidth, toolWindowHeight);
 
                                 if (OrXLog.instance.PREnabled())
                                 {
@@ -8754,16 +9119,36 @@ namespace OrX
 
                                 OrXHCGUIEnabled = true;
 
-                                if (!_showTimer)
+                                if (!challengeRunning)
                                 {
+                                    if (FlightGlobals.currentMainBody.pqsController.horizonDistance != OrXLog.instance._preLoadRange * 1000)
+                                    {
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Current maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Current minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Current visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Current horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+
+                                        FlightGlobals.currentMainBody.pqsController.horizonDistance = OrXLog.instance._preLoadRange * 1000;
+                                        FlightGlobals.currentMainBody.pqsController.maxDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                                        FlightGlobals.currentMainBody.pqsController.minDetailDistance = OrXLog.instance._preLoadRange * 1000;
+                                        FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue = 200;
+                                        FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue = 200;
+
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.horizonDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Adjusted maxDetailDistance: " + FlightGlobals.currentMainBody.pqsController.maxDetailDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Adjusted minDetailDistance: " + FlightGlobals.currentMainBody.pqsController.minDetailDistance + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Adjusted visRadSeaLevelValue: " + FlightGlobals.currentMainBody.pqsController.visRadSeaLevelValue + " ===");
+                                        OrXLog.instance.DebugLog("[OrX Toggle GUI Set Terrain Load Ranges] === Adjusted horizonDistance: " + FlightGlobals.currentMainBody.pqsController.collapseSeaLevelValue + " ===");
+                                    }
+
                                     if (!OrXSpawnHoloKron.instance.spawning)
                                     {
                                         if (HighLogic.LoadedSceneIsFlight)
                                         {
-                                            SetRanges(8000);
-                                            OrXLog.instance.SetTerrainLoad();
+                                            SetRanges(30000);
+                                            //OrXLog.instance.SetTerrainLoad();
                                         }
-
                                         if (!buildingMission)
                                         {
 
@@ -8795,7 +9180,6 @@ namespace OrX
                                             _showSettings = false;
                                         }
                                     }
-
                                 }
                             }
                             else
@@ -9018,7 +9402,7 @@ namespace OrX
                                     GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Start Location Distance: " + Math.Round((targetDistance / 1000), 2) + " km", rangeColor);
                                     line++;
 
-                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Stage Gate Count: " + locCount, titleStyle);
+                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Stage Count: " + locCount, titleStyle);
                                     line++;
 
                                     if (spawningStartGate)
@@ -9049,25 +9433,37 @@ namespace OrX
                                             OrXLog.instance.DebugLog("[OrX Add Stage] ===== ADDING STAGE " + OrXSpawnHoloKron.instance.stageCount + " =====");
                                             addCoords = true;
                                             startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
-                                            if (shortTrackRacing)
-                                            {
-                                                OrXLog.instance.UpdateRangesOnFGReady();
+                                            OrXLog.instance.UpdateRangesOnFGReady();
 
+                                            if (!LBC)
+                                            {
+                                                if (shortTrackRacing)
+                                                {
+
+                                                    addingMission = true;
+                                                    getNextCoord = true;
+                                                    showTargets = false;
+                                                    movingCraft = false;
+                                                    OrXVesselMove.Instance.StartMove(FlightGlobals.ActiveVessel, false, 0, false, false);
+                                                }
+                                                else
+                                                {
+                                                    if (dakarRacing)
+                                                    {
+                                                        getNextCoord = false;
+                                                        addingMission = false;
+                                                        saveLocalVessels = true;
+                                                        SaveConfig(HoloKronName, false);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
                                                 addingMission = true;
                                                 getNextCoord = true;
                                                 showTargets = false;
                                                 movingCraft = false;
                                                 OrXVesselMove.Instance.StartMove(FlightGlobals.ActiveVessel, false, 0, false, false);
-                                            }
-                                            else
-                                            {
-                                                if (dakarRacing)
-                                                {
-                                                    getNextCoord = false;
-                                                    addingMission = false;
-                                                    saveLocalVessels = true;
-                                                    SaveConfig(HoloKronName, false);
-                                                }
                                             }
                                         }
                                         if (CoordDatabase.Count != 0 && !_gateKillDelay)
@@ -9090,7 +9486,11 @@ namespace OrX
                                             addCoords = false;
                                             addingMission = true;
                                             getNextCoord = false;
-                                            _lastStage.vesselName = HoloKronName + " " + hkCount + " FINSH LINE";
+                                            _lastStage.vesselName = HoloKronName + " " + hkCount + " FINSH";
+                                            if (LBC)
+                                            {
+                                                SaveStage();
+                                            }
                                             SaveConfig(HoloKronName, false);
                                         }
 
@@ -9112,19 +9512,19 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Spawn Craft", titleStyleLarge);
+                                    GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Spawn Menu", titleStyleLarge);
                                     line++;
                                     line += 0.2f;
                                     GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Start Location Distance: " + Math.Round((targetDistance / 1000), 2) + " km", rangeColor);
                                     line++;
                                     line += 0.2f;
-                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Current Altitude: " + Math.Round(_spawnedCraft.altitude, 2) + " meters ASL", rangeColor);
+                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Current Altitude: " + Math.Round(_spawnedCraft.altitude, 2) + " meters", rangeColor);
 
                                     if (!_settingAltitude)
                                     {
                                         line++;
                                         line += 0.2f;
-                                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), toolWindowWidth - 20, 20), "PLACE CRAFT", OrXGUISkin.button))
+                                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), toolWindowWidth - 20, 20), "PLACE", OrXGUISkin.button))
                                         {
                                             if (!_killPlace)
                                             {
@@ -9134,7 +9534,7 @@ namespace OrX
                                                 _spawningVessel = true;
 
                                                 OrXLog.instance.DebugLog("[OrX Spawn Craft] ===== PLACING " + FlightGlobals.ActiveVessel.vesselName + " =====");
-                                                OrXVesselMove.Instance.KillMove(true, false);
+                                                OrXVesselMove.Instance.KillMove(true, LBC);
                                             }
                                             else
                                             {
@@ -9144,17 +9544,17 @@ namespace OrX
                                         }
                                     }
 
-                                    line++;
-                                    line += 0.4f;
-                                    _saveAltitude = GUI.HorizontalSlider(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), _saveAltitude, 2000, 4000, HighLogic.Skin.horizontalSlider, HighLogic.Skin.horizontalSliderThumb);
-                                    line += 0.4f;
-                                    GUI.Label(new Rect(0, (ContentTop + line * entryHeight) + line, WindowWidth, 20), "Radar Alt: " + String.Format("{0:0}", _saveAltitude) + " meters", centerLabelGreen);
-
-                                    line++;
-                                    line++;
-
-                                    if (!_holdVesselPos)
+                                    if (!_holdVesselPos && !FlightGlobals.ActiveVessel.rootPart.Modules.Contains<KerbalEVA>())
                                     {
+                                        line++;
+                                        line += 0.4f;
+                                        _saveAltitude = GUI.HorizontalSlider(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), _saveAltitude, 2000, 4000, HighLogic.Skin.horizontalSlider, HighLogic.Skin.horizontalSliderThumb);
+                                        line += 0.4f;
+                                        GUI.Label(new Rect(0, (ContentTop + line * entryHeight) + line, WindowWidth, 20), "Radar Alt: " + String.Format("{0:0}", _saveAltitude) + " meters", centerLabelGreen);
+
+                                        line++;
+                                        line++;
+
                                         if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), toolWindowWidth - 20, 20), "SET RADAR ALTITUDE", OrXGUISkin.button))
                                         {
                                             if (!_killPlace)
@@ -9199,7 +9599,6 @@ namespace OrX
                                                 }
                                             }
                                         }
-                                        
                                     }
 
                                     if (!triggerVessel.isActiveVessel)
@@ -9244,7 +9643,7 @@ namespace OrX
 
                                     if (bdaChallenge)
                                     {
-                                        GUI.Label(new Rect(20, 1, WindowWidth / 2, 20), "Challenge Total Time: ", titleStyleMedNoItal);
+                                        GUI.Label(new Rect(20, 1, WindowWidth / 2, 20), "Time: ", titleStyleMedNoItal);
                                         GUI.Label(new Rect(WindowWidth / 2 + 10, 1, WindowWidth / 2, 20), _timerTotalTime, titleStyleMedGreen);
                                         GUI.Label(new Rect(20, (ContentTop + (line + 0.4f) * entryHeight), WindowWidth / 2, 20), "Salt: ", titleStyleMedNoItal);
                                         GUI.Label(new Rect(WindowWidth / 2 + 10, (ContentTop + (line + 0.4f) * entryHeight) + 0.5f, WindowWidth / 2, 20), Math.Round(salt, 3).ToString(), titleStyleMedGreen);
@@ -9277,6 +9676,10 @@ namespace OrX
 
                                     if (!_extractScoreboard)
                                     {
+                                        if (!bdaChallenge)
+                                        {
+
+                                        }
                                         GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth / 2, 20), "Challenger", titleStyleMedGreen);
                                         GUI.Label(new Rect(WindowWidth / 2, ContentTop + line * entryHeight, WindowWidth / 2, 20), "Total Time", titleStyleMedGreen);
                                         GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth / 2, 20), "____________", titleStyleMedGreen);
@@ -9590,15 +9993,15 @@ namespace OrX
                                         }
                                         if (!geoCache)
                                         {
-                                            line += 0.7f;
+                                            line ++;
+                                            line += 0.2f;
+
+                                            DrawChallengerName(line);
+                                            line++;
+                                            line++;
 
                                             if (!_editor)
                                             {
-                                                line += 0.2f;
-
-                                                DrawChallengerName(line);
-                                                line++;
-                                                line++;
                                                 if (bdaChallenge)
                                                 {
                                                     DrawKontinuumLogin1(line);
@@ -9627,10 +10030,7 @@ namespace OrX
                                                 }
                                             }
 
-                                            if (outlawRacing)
-                                            {
-                                                DrawShowScoreboard(line);
-                                            }
+                                            DrawShowScoreboard(line);
 
                                             if (!_editor)
                                             {
@@ -9783,7 +10183,7 @@ namespace OrX
                                         DrawAddBlueprints(line);
                                         line++;
                                         line += 0.2f;
-                                        if (bdaChallenge)
+                                        if (bdaChallenge || LBC)
                                         {
                                             DrawSpawnVessel(line);
                                             line++;
@@ -9833,6 +10233,13 @@ namespace OrX
                                         DrawSpawnVessel(line);
                                         line += 0.2f;
                                         line++;
+                                        if (LBC)
+                                        {
+                                            DrawSpawnOrX(line);
+                                            line++;
+                                            line += 0.2f;
+                                        }
+
                                         DrawSpawnBarrier(line);
 
                                         if (!triggerVessel.isActiveVessel)
@@ -9877,13 +10284,28 @@ namespace OrX
 
                                         if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), toolWindowWidth - 20, 20), "Previous Menu", OrXGUISkin.button))
                                         {
-                                            _spawningVessel = false;
-                                            _getCenterDist = false;
-                                            _addCrew = false;
-                                            _holdVesselPos = false;
-                                            if (!triggerVessel.isActiveVessel)
+                                            if (LBC && CoordDatabase.Count >= 0)
                                             {
-                                                FlightGlobals.ForceSetActiveVessel(triggerVessel);
+                                                Reach();
+                                                if (!_HoloKron.isActiveVessel)
+                                                {
+                                                    FlightGlobals.ForceSetActiveVessel(_HoloKron);
+                                                }
+
+                                                spawningStartGate = false;
+                                                _spawningVessel = false;
+                                                getNextCoord = true;
+                                            }
+                                            else
+                                            {
+                                                _spawningVessel = false;
+                                                _getCenterDist = false;
+                                                _addCrew = false;
+                                                _holdVesselPos = false;
+                                                if (!triggerVessel.isActiveVessel)
+                                                {
+                                                    FlightGlobals.ForceSetActiveVessel(triggerVessel);
+                                                }
                                             }
                                         }
                                         line++;
@@ -9894,7 +10316,7 @@ namespace OrX
                                     GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Start Location Distance: " + Math.Round((targetDistance / 1000), 2) + " km", rangeColor);
                                     line++;
 
-                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Stage Gate Count: " + locCount, titleStyle);
+                                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Stage Count: " + locCount, titleStyle);
                                     line++;
 
                                     DrawAddCoords(line);
@@ -9987,13 +10409,6 @@ namespace OrX
                                                                 string[] data = holoNames.Current.Split(new char[] { '-' });
                                                                 hkCount = int.Parse(data[1]);
                                                                 HoloKronName = data[0];
-                                                                missionType = data[7];
-                                                                challengeType = data[8];
-                                                                if (data[8] == "OUTLAW RACING")
-                                                                { outlawRacing = true; }
-                                                                if (data[8] == "BD ARMORY")
-                                                                { bdaChallenge = true; }
-
                                                             }
                                                             else
                                                             {
@@ -10020,7 +10435,8 @@ namespace OrX
                                                                                 //OrXPRExtension.PreOff("OrX Kontinuum");
                                                                             }
                                                                             Reach();
-                                                                            hkCount = int.Parse(data2[6]);
+                                                                            missionType = data2[7];
+                                                                            challengeType = data2[8];
                                                                             showGeoCacheList = false;
                                                                             showCreatedHolokrons = false;
                                                                             showChallengelist = false;
@@ -10035,8 +10451,16 @@ namespace OrX
                                                                             {
                                                                                 geoCache = false;
                                                                             }
+                                                                            if (challengeType == "OUTLAW RACING")
+                                                                            { outlawRacing = true; }
+                                                                            if (challengeType == "BD ARMORY")
+                                                                            { bdaChallenge = true; }
+                                                                            if (challengeType == "LBC")
+                                                                            { LBC = true; }
+                                                                            OrXEnemy.instance._enemyCraft = new List<Vessel>();
+
                                                                             _challengeStartLoc = new Vector3d(latMission, lonMission, altMission);
-                                                                            OrXLog.instance.SetRange(FlightGlobals.ActiveVessel, 10000);
+                                                                            OrXLog.instance.SetRange(FlightGlobals.ActiveVessel, 65000);
                                                                             StartCoroutine(CheckInstalledMods(false));
                                                                             break;
                                                                         }
@@ -10310,7 +10734,7 @@ namespace OrX
                                 GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Altitude: " + Math.Round(_altitude, 1) + " meters", titleStyle);
                                 line++;
                                 line += 0.5f;
-                                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE", OrXGUISkin.button))
+                                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "STOP SCANNING", OrXGUISkin.button))
                                 {
                                     if (OrXLog.instance.mission)
                                     {
@@ -10394,7 +10818,7 @@ namespace OrX
 
                 if (!_showTimer)
                 {
-                    if (!_spawningVessel)
+                    if (!_spawningVessel && !challengeRunning)
                     {
                         line++;
                         line += 0.7f;
@@ -10421,7 +10845,14 @@ namespace OrX
                 if (!_killPlace)
                 {
                     movingCraft = true;
-                    OrXVesselMove.Instance.EndMove(true, false, false);
+                    if (!LBC)
+                    {
+                        OrXVesselMove.Instance.KillMove(false, true);
+                    }
+                    else 
+                    {
+                        OrXVesselMove.Instance.EndMove(true, false, false);
+                    }
                 }
                 else
                 {
@@ -10832,13 +11263,13 @@ namespace OrX
         }
         public void DrawStart(float line)
         {
-            if (!geoCache)
+            if (challengersName != "" || challengersName != string.Empty)
             {
-                if (!_editor)
+                if (!geoCache)
                 {
-                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "START CHALLENGE", OrXGUISkin.button))
+                    if (!_editor)
                     {
-                        if (challengersName != "" || challengersName != string.Empty)
+                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "START CHALLENGE", OrXGUISkin.button))
                         {
                             OrXLog.instance.DebugLog("[OrX Mission] === NAME ENTERED - STARTING ===");
                             ConfigNode playerData = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
@@ -10849,7 +11280,7 @@ namespace OrX
                             playerData.SetValue("name", challengersName, true);
                             playerData.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
 
-                            if (challengeType == "SCUBA KERB")
+                            if (challengeType == "LBC")
                             {
                                 if (!challengeRunning)
                                 {
@@ -10865,7 +11296,9 @@ namespace OrX
                                     // OrXLog.instance.ResetFocusKeys();
                                     //FlightGlobals.ForceSetActiveVessel(triggerVessel);
                                     triggerVessel = FlightGlobals.ActiveVessel;
-                                    StartCoroutine(ChallengeStartDelay());
+                                    //StartCoroutine(ChallengeStartDelay());
+
+                                    StartCoroutine(GetNextCoordRoutine());
                                 }
                             }
                             else
@@ -10894,90 +11327,98 @@ namespace OrX
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        if (!HighLogic.LoadedSceneIsFlight)
+                        {
+                            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE WINDOW", OrXGUISkin.button))
+                            {
+                                GetCreatorList(true);
+                            }
+                        }
                         else
                         {
-                            OrXLog.instance.DebugLog("[OrX Mission] === PLEASE ENTER CHALLENGER NAME ===");
+                            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SCAN FOR HOLOKRON", OrXGUISkin.button))
+                            {
+                                OrXLog.instance.DebugLog("[OrX Mission] === NAME ENTERED - STARTING ===");
 
-                            OnScrnMsgUC("Please enter a challenger name");
+                                _editor = false;
+                                Reach();
+                                challengeRunning = true;
+                                showGeoCacheList = false;
+                                showCreatedHolokrons = false;
+                                showChallengelist = false;
+                                checking = true;
+                                PlayOrXMission = false;
+                                GuiEnabledOrXMissions = false;
+                                movingCraft = false;
+                                showScores = false;
+                                ConfigNode playerData = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
+                                if (playerData == null)
+                                {
+                                    playerData = new ConfigNode();
+                                }
+                                playerData.SetValue("name", challengersName, true);
+                                playerData.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/userData.data");
+
+                                OrXTargetDistance.instance.TargetDistance(true, true, false, true, HoloKronName, _challengeStartLoc);
+                            }
                         }
                     }
                 }
                 else
                 {
-                    if (!HighLogic.LoadedSceneIsFlight)
+                    if (!_editor)
                     {
                         if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE WINDOW", OrXGUISkin.button))
                         {
-                            GetCreatorList(true);
+                            OrXLog.instance.DebugLog("[OrX Mission] === HOLO IS GEO-CACHE - CLOSING WINDOW ===");
+
+                            GuiEnabledOrXMissions = false;
+                            challengeRunning = true;
+                            geoCache = true;
+                            OrXLog.instance.ResetFocusKeys();
+                            if (FlightGlobals.ActiveVessel != triggerVessel && triggerVessel != null)
+                            {
+                                FlightGlobals.ForceSetActiveVessel(triggerVessel);
+                            }
+                            CloseGeoCache();
                         }
                     }
                     else
                     {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SCAN FOR HOLOKRON", OrXGUISkin.button))
+                        if (!HighLogic.LoadedSceneIsFlight)
                         {
-                            _editor = false;
-                            Reach();
-                            challengeRunning = true;
-                            showGeoCacheList = false;
-                            showCreatedHolokrons = false;
-                            showChallengelist = false;
-                            checking = true;
-                            PlayOrXMission = false;
-                            GuiEnabledOrXMissions = false;
-                            movingCraft = false;
-                            showScores = false;
-                            OrXTargetDistance.instance.TargetDistance(true, true, false, true, HoloKronName, _challengeStartLoc);
+                            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE WINDOW", OrXGUISkin.button))
+                            {
+                                GetCreatorList(true);
+                            }
+                        }
+                        else
+                        {
+                            if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SCAN FOR HOLOKRON", OrXGUISkin.button))
+                            {
+                                _editor = false;
+                                Reach();
+                                challengeRunning = true;
+                                showGeoCacheList = false;
+                                showCreatedHolokrons = false;
+                                showChallengelist = false;
+                                checking = true;
+                                PlayOrXMission = false;
+                                GuiEnabledOrXMissions = false;
+                                movingCraft = false;
+                                showScores = false;
+                                OrXTargetDistance.instance.TargetDistance(true, true, false, true, HoloKronName, new Vector3d(latMission, lonMission, altMission));
+                            }
                         }
                     }
                 }
             }
             else
             {
-                if (!_editor)
-                {
-                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE WINDOW", OrXGUISkin.button))
-                    {
-                        OrXLog.instance.DebugLog("[OrX Mission] === HOLO IS GEO-CACHE - CLOSING WINDOW ===");
-
-                        GuiEnabledOrXMissions = false;
-                        challengeRunning = true;
-                        geoCache = true;
-                        OrXLog.instance.ResetFocusKeys();
-                        if (FlightGlobals.ActiveVessel != triggerVessel && triggerVessel != null)
-                        {
-                            FlightGlobals.ForceSetActiveVessel(triggerVessel);
-                        }
-                        CloseGeoCache();
-                    }
-                }
-                else
-                {
-                    if (!HighLogic.LoadedSceneIsFlight)
-                    {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CLOSE WINDOW", OrXGUISkin.button))
-                        {
-                            GetCreatorList(true);
-                        }
-                    }
-                    else
-                    {
-                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SCAN FOR HOLOKRON", OrXGUISkin.button))
-                        {
-                            _editor = false;
-                            Reach();
-                            challengeRunning = true;
-                            showGeoCacheList = false;
-                            showCreatedHolokrons = false;
-                            showChallengelist = false;
-                            checking = true;
-                            PlayOrXMission = false;
-                            GuiEnabledOrXMissions = false;
-                            movingCraft = false;
-                            showScores = false;
-                            OrXTargetDistance.instance.TargetDistance(true, true, false, true, HoloKronName, new Vector3d(latMission, lonMission, altMission));
-                        }
-                    }
-                }
+                OnScrnMsgUC("Please Enter a Challenger Name");
             }
         }
 
@@ -11390,7 +11831,7 @@ namespace OrX
                     else
                     {
                         OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
-                        OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                        OrXLog.instance.DebugLog("[OrX Challenge Type] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
 
                         //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS W[ind/S] ===");
 
@@ -11399,27 +11840,30 @@ namespace OrX
             }
             else
             {
-                if (Scuba)
+                if (LBC)
                 {
-                    if (GUI.Button(bfRect, "SCUBA KERB", OrXGUISkin.button))
+                    if (GUI.Button(bfRect, "LBC", OrXGUISkin.button))
                     {
                         if (!locAdded)
                         {
-                            //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE - BD ARMORY ===");
-                            //challengeType = "BD ARMORY";
-                            OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
-                            //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
-                            //bdaChallenge = true;
-                            //windRacing = false;
-                            //Scuba = false;
-                            //outlawRacing = false;
+                            shortTrackRacing = true;
+                            challengeType = "OUTLAW RACING";
+                            raceType = "SHORT TRACK";
+                            OnScrnMsgUC("CHALLENGE TYPE CHANGED TO OUTLAW RACING");
+                            bdaChallenge = false;
+                            windRacing = false;
+                            Scuba = false;
+                            dakarRacing = false;
+                            outlawRacing = true;
+                            _airSuperiority = false;
+                            _groundAssault = true;
+                            _navalBattle = false;
                         }
                         else
                         {
                             //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS SCUBA ===");
-                            OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
-                            OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
-
+                            ///OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
+                            //OrXLog.instance.DebugLog("[OrX Challenge Type] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
                         }
                     }
                 }
@@ -11431,23 +11875,42 @@ namespace OrX
                         {
                             if (!locAdded)
                             {
-                                shortTrackRacing = true;
-                                challengeType = "OUTLAW RACING";
-                                raceType = "SHORT TRACK";
-                                OnScrnMsgUC("CHALLENGE TYPE CHANGED TO OUTLAW RACING");
-                                bdaChallenge = false;
-                                windRacing = false;
-                                Scuba = false;
-                                dakarRacing = false;
-                                outlawRacing = true;
-                                _airSuperiority = false;
-                                _groundAssault = true;
-                                _navalBattle = false;
+                                if (_pKarma == Karma)
+                                {
+                                    shortTrackRacing = false;
+                                    challengeType = "LBC";
+                                    raceType = "LBC";
+                                    OnScrnMsgUC("CHALLENGE TYPE CHANGED TO LOOT BOX CONTROVERSY");
+                                    bdaChallenge = false;
+                                    windRacing = false;
+                                    Scuba = false;
+                                    dakarRacing = false;
+                                    outlawRacing = false;
+                                    _airSuperiority = false;
+                                    _groundAssault = true;
+                                    _navalBattle = false;
+                                    LBC = true;
+                                }
+                                else
+                                {
+                                    shortTrackRacing = true;
+                                    challengeType = "OUTLAW RACING";
+                                    raceType = "SHORT TRACK";
+                                    OnScrnMsgUC("CHALLENGE TYPE CHANGED TO OUTLAW RACING");
+                                    bdaChallenge = false;
+                                    windRacing = false;
+                                    Scuba = false;
+                                    dakarRacing = false;
+                                    outlawRacing = true;
+                                    _airSuperiority = false;
+                                    _groundAssault = true;
+                                    _navalBattle = false;
+                                }
                             }
                             else
                             {
                                 //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS BD ARMORY ===");
-                                OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                OrXLog.instance.DebugLog("[OrX Challenge Type] === CHALLENGE TYPE LOCKED AS BD ARMORY ===");
                                 OnScrnMsgUC("CHALLENGE TYPE LOCKED AS BD ARMORY");
                             }
                         }
@@ -11460,35 +11923,34 @@ namespace OrX
                             {
                                 if (!locAdded)
                                 {
-                                    OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE - BD ARMORY ===");
-                                    challengeType = "BD ARMORY";
-                                    raceType = "LAND";
-                                    OnScrnMsgUC("CHALLENGE TYPE CHANGED TO BD ARMORY");
-                                    bdaChallenge = true;
-                                    windRacing = false;
-                                    Scuba = false;
-                                    outlawRacing = false;
-                                    dakarRacing = false;
-                                    _airSuperiority = false;
-                                    _groundAssault = true;
-                                    _navalBattle = false;
-
-                                    if (_pKarma == Karma)
+                                    if (OrXBDAcExtension.BDArmoryIsInstalled())
                                     {
+                                        OrXLog.instance.DebugLog("[OrX Challenge Type] === CHALLENGE TYPE - BD ARMORY ===");
+                                        challengeType = "BD ARMORY";
+                                        raceType = "LAND";
+                                        OnScrnMsgUC("CHALLENGE TYPE CHANGED TO BD ARMORY");
+                                        bdaChallenge = true;
+                                        windRacing = false;
+                                        Scuba = false;
+                                        outlawRacing = false;
+                                        dakarRacing = false;
+                                        _airSuperiority = false;
+                                        _groundAssault = true;
+                                        _navalBattle = false;
                                     }
                                     else
                                     {
-                                        //OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
-                                        //OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
+                                        OrXLog.instance.DebugLog("[OrX Challenge Type] === BDAc NOT INSTALLED ... CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                        OnScrnMsgUC("BD ARMORY IS NOT INSTALLED");
+                                        OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                                     }
                                 }
                                 else
                                 {
-                                    OrXLog.instance.DebugLog("[OrX Mission] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
+                                    OrXLog.instance.DebugLog("[OrX Challenge Type] === CHALLENGE TYPE LOCKED AS OUTLAW RACING ===");
                                     OnScrnMsgUC("CHALLENGE TYPE LOCKED AS OUTLAW RACING");
                                 }
                             }
-
                         }
                         else
                         {
@@ -11612,8 +12074,11 @@ namespace OrX
             {
                 if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "SPAWN MENU", OrXGUISkin.button))
                 {
+                    Reach();
+                    buildingMission = true;
                     _holdVesselPos = false;
                     _spawningVessel = true;
+                    _settingAltitude = false;
                     SpawnMenu();
                 }
             }
@@ -11624,14 +12089,28 @@ namespace OrX
                     Reach();
                     buildingMission = true;
                     _holdVesselPos = false;
+                    _spawningVessel = true;
+                    _settingAltitude = false;
+
                     OrXSpawnHoloKron.instance._spawnCraftFile = true;
                     OrXSpawnHoloKron.instance.CraftSelect(false, true);
                 }
             }
         }
-
-
-
+        public void DrawSpawnOrX(float line)
+        {
+            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "SPAWN INFECTED", OrXGUISkin.button))
+            {
+                Reach();
+                buildingMission = true;
+                _holdVesselPos = false;
+                _spawningOrX = true;
+                _spawningVessel = true;
+                _settingAltitude = false;
+                OrXSpawnHoloKron.instance._spawnCraftFile = true;
+                OrXSpawnHoloKron.instance.CraftSelect(false, true);
+            }
+        }
         public void DrawSpawnBarrier(float line)
         {
             if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight), "CONSTRUCT BASE", OrXGUISkin.button))
@@ -11777,7 +12256,7 @@ namespace OrX
             var saveRect = new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, entryHeight);
             if (HoloKronName != string.Empty && HoloKronName != "")
             {
-                if (!HoloKronName.Contains("."))
+                if (!HoloKronName.Contains(".") && !HoloKronName.Contains("-"))
                 {
                     if (creatorName != "" || creatorName != string.Empty)
                     {
@@ -11834,6 +12313,7 @@ namespace OrX
                                                         OrXSpawnHoloKron.instance.stageCount = 0;
                                                         startLocation = new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude);
                                                         boidPos = startLocation;
+
                                                         _file = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/OrX/Export/" + creatorName + "/" + HoloKronName + "/" + HoloKronName + "-" + hkCount + "-" + creatorName + ".orx");
                                                         if (_file == null)
                                                         {
@@ -11942,7 +12422,7 @@ namespace OrX
                 }
                 else
                 {
-                    ScreenMessages.PostScreenMessage(new ScreenMessage("HoloKron names cannot contain a '.'", 1, ScreenMessageStyle.UPPER_CENTER));
+                    ScreenMessages.PostScreenMessage(new ScreenMessage("HoloKron names cannot contain a '.' or a '-'", 1, ScreenMessageStyle.UPPER_CENTER));
                     ScreenMessages.PostScreenMessage(new ScreenMessage("Please rename your HoloKron ....", 1, ScreenMessageStyle.UPPER_CENTER));
                 }
             }

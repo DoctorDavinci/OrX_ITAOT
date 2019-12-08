@@ -9,7 +9,6 @@ namespace OrX
     {
         public bool setup = false;
         Vector3d _currentPos;
-        List<string> _parts;
 
         public override void OnStart(StartState state)
         {
@@ -21,11 +20,16 @@ namespace OrX
             base.OnStart(state);
         }
 
+        public void Update()
+        {
+
+        }
+
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
 
-            if (vessel.rootPart.Modules.Contains<ModuleOrXStage>())
+            if (spawn.OrXSpawnHoloKron.instance.spawning || spawn.OrXSpawnHoloKron.instance.spawningGoal)
             {
                 Destroy(this);
             }
@@ -34,24 +38,18 @@ namespace OrX
                 if (vessel.loaded && !setup)
                 {
                     setup = true;
-                    if (!spawn.OrXSpawnHoloKron.instance.spawning)
-                    {
-                        OrXLog.instance.SetRange(vessel, 8000);
-                        _parts = new List<string>();
 
-                        if (!vessel.isActiveVessel)
-                        {
-                            _currentPos = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude + 15);
-                            StartCoroutine(Place());
-                        }
-                    }
-                    else
+                    if (!vessel.isActiveVessel)
                     {
-                        Destroy(this);
+                        vessel.GetComponent<Rigidbody>().isKinematic = true;
+                        _currentPos = new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude + 15);
+                        StartCoroutine(Place());
                     }
                 }
             }
         }
+
+
 
         IEnumerator Place()
         {

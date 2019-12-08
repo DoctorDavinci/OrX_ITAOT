@@ -107,7 +107,6 @@ namespace OrX
 
         bool geoCache = true;
 
-
         #endregion
 
         [KSPField(unfocusedRange = 15, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "OPEN HOLOKRON"),
@@ -328,24 +327,50 @@ namespace OrX
                                     {
                                         if (_auto)
                                         {
-                                            if (_targetDistance <= 25)
+                                            if (challengeType == "LBC")
                                             {
-                                                hideGoal = true;
-                                                deploy = false;
-                                                opened = true;
-                                                //hideGoal = true;
-                                                if (missionType == "CHALLENGE" && challengeType != "BD ARMORY")
+                                                if (_targetDistance <= 5)
+                                                {
+                                                    Goal = false;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                float distance = 25;
+                                                if (missionType == "CHALLENGE")
                                                 {
                                                     geoCache = false;
                                                 }
-                                                latitude = this.vessel.latitude;
-                                                longitude = this.vessel.longitude;
-                                                altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
 
-                                                OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
-                                                OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
-                                                OrXHoloKron.instance.holoOpen = true;
-                                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                                if (challengeType == "BD ARMORY")
+                                                {
+                                                    distance = 100;
+                                                }
+
+                                                if (_targetDistance <= distance)
+                                                {
+                                                    hideGoal = true;
+                                                    deploy = false;
+                                                    opened = true;
+                                                    //hideGoal = true;
+                                                    latitude = this.vessel.latitude;
+                                                    longitude = this.vessel.longitude;
+                                                    altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                                                    Goal = false;
+                                                    if (challengeType == "BD ARMORY")
+                                                    {
+                                                        OrXHoloKron.instance.SaveBDAcScore();
+                                                        part.explosionPotential *= 0.2f;
+                                                        part.explode();
+                                                    }
+                                                    else
+                                                    {
+                                                        OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
+                                                        OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                                        OrXHoloKron.instance.holoOpen = true;
+                                                        OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                                    }
+                                                }
                                             }
                                         }
                                         else
@@ -353,9 +378,9 @@ namespace OrX
                                             if (_targetDistance <= 8)
                                             {
                                                 hideGoal = true;
+                                                Goal = false;
                                                 OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
                                                 OrXHoloKron.instance.GetNextCoord();
-                                                //OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
                                             }
                                         }
                                     }
@@ -382,10 +407,9 @@ namespace OrX
                                                     if (!asRangeShort)
                                                     {
                                                         asRangeShort = true;
-
                                                     }
 
-                                                    if (_targetDistance <= 10000)
+                                                    if (_targetDistance <= 8000)
                                                     {
                                                         _auto = true;
                                                         fml = false;
@@ -406,56 +430,27 @@ namespace OrX
 
                     if (FlightGlobals.ActiveVessel.isEVA)
                     {
-                        if (challengeType == "SCUBA KERB")
+                        if (challengeType == "LBC")
                         {
                             if (deploy)
                             {
-                                if (FlightGlobals.ActiveVessel.Splashed)
+                                if (!OrXSpawnHoloKron.instance.spawning)
                                 {
-                                    if (!OrXSpawnHoloKron.instance.spawning)
-                                    {
-                                        deploy = false;
-                                        opened = true;
-                                        //hideGoal = true;
-                                        if (missionType == "CHALLENGE")
-                                        {
-                                            geoCache = false;
-                                        }
-                                        OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
-                                        OrXHoloKron.instance.holoOpen = true;
-                                        OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
-                                    }
-                                    else
-                                    {
-                                        ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
-                                        deploy = false;
-                                        opened = false;
-
-                                    }
+                                    deploy = false;
+                                    opened = true;
+                                    hideGoal = true;
+                                    geoCache = false;
+                                    OrXLog.instance.DebugLog("[Module OrX Mission - LBC] === CLOSING '" + HoloKronName + "-" + hkCount + "-" + creator + "' BOID " + stage  + " === ");
+                                    OrXHoloKron.instance.GetNextCoord();
+                                    this.part.explosionPotential *= 0.2f;
+                                    this.part.explode();
                                 }
                                 else
                                 {
-                                    if (!OrXSpawnHoloKron.instance.spawning)
-                                    {
-                                        deploy = false;
-                                        opened = true;
-                                        //hideGoal = true;
-                                        if (missionType == "CHALLENGE")
-                                        {
-                                            geoCache = false;
-                                        }
-                                        OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
-                                        OrXHoloKron.instance.holoOpen = true;
-                                        OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                    ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to close HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
+                                    deploy = false;
+                                    opened = false;
 
-                                        ScreenMessages.PostScreenMessage(new ScreenMessage("Get into the water to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
-                                    }
-                                    else
-                                    {
-                                        ScreenMessages.PostScreenMessage(new ScreenMessage("Unable to open HoloKron while spawning ....", 4, ScreenMessageStyle.UPPER_CENTER));
-                                        deploy = false;
-                                        opened = false;
-                                    }
                                 }
                             }
                         }
@@ -501,13 +496,12 @@ namespace OrX
                                 deploy = false;
                                 OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
                                 OrXHoloKron.instance.holoOpen = true;
-                                if (missionType == "CHALLENGE" && challengeType != "BD ARMORY")
+                                if (missionType == "CHALLENGE")
                                 {
                                     geoCache = false;
                                 }
-
-                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
                                 triggerCraft = FlightGlobals.ActiveVessel;
+                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
                             }
                             else
                             {

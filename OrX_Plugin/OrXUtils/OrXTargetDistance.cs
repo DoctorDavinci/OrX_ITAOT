@@ -389,7 +389,7 @@ namespace OrX
                         }
                     }
 
-                    if (_targetDistance <= 15000)
+                    if (_targetDistance <= 20000)
                     {
                         if (checking)
                         {
@@ -594,7 +594,14 @@ namespace OrX
                 }
                 else
                 {
-                    OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.challengeType);
+                    if (OrXHoloKron.instance.LBC)
+                    {
+                        OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.challengeType);
+                    }
+                    else
+                    {
+                        OrXSpawnHoloKron.instance.StartSpawn(stageStartCoords, vect, true, false, false, HoloKronName, OrXHoloKron.instance.challengeType);
+                    }
                 }
             }
             else

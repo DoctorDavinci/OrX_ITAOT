@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using FinePrint;
+using System.Reflection;
 
 namespace OrX
 {
@@ -165,6 +166,7 @@ namespace OrX
                 GameEvents.onCrewOnEva.Add(onEVA);
                 GameEvents.onCrewBoardVessel.Add(onCrewBoarding);
                 GameEvents.onVesselLoaded.Add(onVesselLoaded);
+
                 CheckUpgrades();
                 _preEnabled = PREnabled();
             }
@@ -183,33 +185,37 @@ namespace OrX
                 ConfigNode PREnode = PREsettings.GetNode("PreSettings");
                 if (PREnode.GetValue("ModEnabled") != "False")
                 {
-                    _preInstalled = true;
                     _preEnabled = true;
                     return true;
 
                 }
                 else
                 {
-                    _preInstalled = false;
                     _preEnabled = false;
                     return false;
                 }
             }
             else
             {
+                _preInstalled = false;
                 return false;
             }
         }
         private void onVesselLoaded(Vessel data)
         {
-            if (!data.rootPart.Modules.Contains<ModuleOrXMission>() && !data.rootPart.Modules.Contains<ModuleOrXPlace>())
+            if (data.Landed && !PREnabled())
             {
-                if (!PREnabled())
+                if (!data.rootPart.Modules.Contains<ModuleOrXMission>() && !data.rootPart.Modules.Contains<ModuleOrXPlace>())
                 {
-                    SetRange(data, 25000);
-                    if (!spawn.OrXSpawnHoloKron.instance.spawning && mission && !_preEnabled)
+                    SetRange(data, 65000);
+                    if (!spawn.OrXSpawnHoloKron.instance.spawning && mission)
                     {
-                        data.rootPart.AddModule("ModuleOrXLoadedVesselPlace", true);
+                        data.rootPart.AddModule("ModuleOrXPlace", true);
+                        var _place = data.rootPart.FindModuleImplementing<ModuleOrXPlace>();
+                        _place.altitude = data.altitude + 15;
+                        _place.latitude = data.latitude;
+                        _place.longitude = data.longitude;
+                        _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0);
                     }
                 }
             }
@@ -319,64 +325,61 @@ namespace OrX
                 var pqs = FlightGlobals.currentMainBody.pqsController;
                 if (pqs != null)
                 {
-                    float _modRange = _preLoadRange * 1000;
-                    if (_modRange <= 65000)
+                    if (pqs.horizonDistance <= 130000)
                     {
-                        _modRange = 65000;
-                    }
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === visRadSeaLevelValue: " + pqs.visRadSeaLevelValue + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === collapseSeaLevelValue: " + pqs.collapseSeaLevelValue + " ===");
 
-                    pqs.horizonDistance = _modRange;
-                    pqs.maxDetailDistance = _modRange;
-                    pqs.minDetailDistance = _modRange;
-                    pqs.visRadSeaLevelValue = 200;
-                    pqs.collapseSeaLevelValue = 200;
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
-                    Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+                        float _modRange = _preLoadRange * 2000;
+                        if (_modRange <= 130000)
+                        {
+                            _modRange = 130000;
+                        }
+                        pqs.horizonDistance = _modRange;
+                        pqs.maxDetailDistance = _modRange;
+                        pqs.minDetailDistance = _modRange;
+                        pqs.visRadSeaLevelValue = 200;
+                        pqs.collapseSeaLevelValue = 200;
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === visRadSeaLevelValue: " + pqs.visRadSeaLevelValue + " ===");
+                        Debug.Log("[OrX Log Set Terrain Load Ranges] === collapseSeaLevelValue: " + pqs.collapseSeaLevelValue + " ===");
+                    }
                 }
             }
             catch { }
         }
         public void SetRange(Vessel v, float _range)
         {
-            /*
-            try
+            float _modRange = _preLoadRange * 1000;
+            if (_modRange <= 130000)
             {
-                var pqs = FlightGlobals.currentMainBody.pqsController;
-                if (pqs != null)
+                _modRange = 130000;
+
+                try
                 {
-                    if (pqs.horizonDistance != _preLoadRange * 1000)
+                    var pqs = FlightGlobals.currentMainBody.pqsController;
+                    if (pqs != null)
                     {
-                        pqs.horizonDistance = _preLoadRange * 1000;
-                        pqs.maxDetailDistance = _preLoadRange * 1000;
-                        pqs.minDetailDistance = _preLoadRange * 1000;
-                        pqs.visRadSeaLevelValue = 200;
-                        pqs.collapseSeaLevelValue = 200;
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.horizonDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === maxDetailDistance: " + pqs.maxDetailDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === minDetailDistance: " + pqs.minDetailDistance + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.visRadSeaLevelValue + " ===");
-                        Debug.Log("[OrX Log Set Terrain Load Ranges] === horizonDistance: " + pqs.collapseSeaLevelValue + " ===");
+                        if (pqs.horizonDistance <= 130000)
+                        {
+                            pqs.horizonDistance = _modRange;
+                            pqs.maxDetailDistance = _modRange;
+                            pqs.minDetailDistance = _modRange;
+                            pqs.visRadSeaLevelValue = 200;
+                            pqs.collapseSeaLevelValue = 200;
+                        }
                     }
                 }
+                catch { }
+
             }
-            catch { }
-            */
+
             Debug.Log("[OrX Log Set Range] === SETTING RANGES FOR " + v.vesselName + " ===");
-
-            float _modRange = _preLoadRange * 1000;
-            if (_modRange <= 65000)
-            {
-                _modRange = 65000;
-            }
-
             _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);
             _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
             _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
@@ -1171,6 +1174,60 @@ namespace OrX
         }
 
         #endregion
-         
+
+
+        private void SetBoolValue(string name, bool value)
+        {
+            //_vswitcher = bdacExtensions.GetProperty("").SetValue(this, value);
+
+        }
+
+        internal static Type bdacExtensions;
+        private static PropertyInfo _vswitcher;
+        private static PropertyInfo _gui;
+        private static bool _vsToggle;
+        public bool _BDAcInstalled;
+
+        public void OrXVSExtention()
+        {
+            try
+            {
+                Debug.Log("[OrX VSExtention] === TRYING ===");
+
+                bdacExtensions = AssemblyLoader.loadedAssemblies
+                     .Where(a => a.name.Contains("BDArmory")).SelectMany(a => a.assembly.GetExportedTypes())
+                     .SingleOrDefault(t => t.FullName == "BDArmory.UI.BDArmorySetup");
+
+                Debug.Log("[OrX VSExtention] === BDArmory FOUND ===");
+
+                _vswitcher = bdacExtensions.GetProperty("showVSGUI");
+                Debug.Log("[OrX VSExtention] === FOUND showVSGUI ===");
+                //PREon = preExtensions.GetMethod("PreOn", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            }
+            catch (Exception e)
+            {
+                Debug.Log("[OrX VSExtention] === ERROR === " + e);
+
+                //_present = false;
+            }
+        }
+
+        public void CloseVS()
+        {
+            /*
+            if ()
+            {
+                _vswitcher.GetValue();
+            }
+            _vswitcher.SetValue(bdacExtensions, false);
+            */
+        }
+
+
+        public bool BDAcIsInstalled()
+        {
+            return _BDAcInstalled;
+        }
     }
 }

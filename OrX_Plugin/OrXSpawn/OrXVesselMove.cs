@@ -692,10 +692,6 @@ namespace OrX.spawn
             MoveHeight = 0;
             _hoverAdjust = 0f;
             UpVect = (MovingVessel.transform.position - FlightGlobals.currentMainBody.transform.position).normalized;
-            if (OrXHoloKron.instance.triggerVessel != MovingVessel)
-            {
-                //MovingVessel.rootPart.AddModule("ModuleOrXCraftSetup", true);
-            }
 
             yield return new WaitForFixedUpdate();
 
@@ -711,13 +707,13 @@ namespace OrX.spawn
                     yield return new WaitForFixedUpdate();
                 }
             }
-            else
-            {
 
+            if (MovingVessel != OrXHoloKron.instance._HoloKron)
+            {
+                _rb = MovingVessel.GetComponent<Rigidbody>();
+                _rb.isKinematic = false;
+                _rb = null;
             }
-            _rb = MovingVessel.GetComponent<Rigidbody>();
-            _rb.isKinematic = false;
-            _rb = null;
             if (_gate)
             {
                 OrXHoloKron.instance.ChallengeAddNextCoord();
@@ -842,7 +838,14 @@ namespace OrX.spawn
                         else
                         {
                             //OrXHoloKron.instance.SpawnGoal();
-                            OrXSpawnHoloKron.instance.StartSpawn(vect, vect, true, false, false, OrXHoloKron.instance.HoloKronName, OrXHoloKron.instance.missionType);
+                            if (!OrXHoloKron.instance.LBC)
+                            {
+                                OrXSpawnHoloKron.instance.StartSpawn(vect, vect, true, false, false, OrXHoloKron.instance.HoloKronName, OrXHoloKron.instance.missionType);
+                            }
+                            else
+                            {
+                                OrXHoloKron.instance.ChallengeAddNextCoord();
+                            }
                         }
                     }
                     else

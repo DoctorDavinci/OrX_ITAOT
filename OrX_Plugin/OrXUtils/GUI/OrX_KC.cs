@@ -131,10 +131,8 @@ namespace OrX
                     ScreenMessages.PostScreenMessage(new ScreenMessage("Spawning pedestrian .....", 4, ScreenMessageStyle.UPPER_CENTER));
 
                     victimCount += 1;
-                    spawn.OrXSpawn.instance.SpawnInfected();
-
-                    //spawn.OrXSpawnHoloKron.instance.SpawnFile(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/OrX/FOrX.craft", true, true);
-                    yield return new WaitForSeconds(3);
+                    spawn.OrXSpawnHoloKron.instance.SpawnFile("", true, true);
+                    yield return new WaitForSeconds(2);
                     StartCoroutine(SpawnKarma());
                 }
                 else

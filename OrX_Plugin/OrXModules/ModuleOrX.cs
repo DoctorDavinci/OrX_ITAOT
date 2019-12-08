@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using OrX.chase;
 
 namespace OrX
 {
@@ -70,17 +69,22 @@ namespace OrX
 
         #endregion
 
+        [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "POPCORN"),
+UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
+        public bool _popcorn = false;
+
         [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
      UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
         public bool _chase = false;
 
-        [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "CHASE TEST"),
+        [KSPField(unfocusedRange = 25, guiActiveUnfocused = true, isPersistant = false, guiActiveEditor = false, guiActive = true, guiName = "SAVE ENCRYPTED"),
 UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", enabledText = "")]
-        public bool GetDragCubes = false;
+        public bool saveEncrypted = false;
 
         public enum AnimationState
         {
             None,
+            Bounds,
             Idle,
             Walk,
             Run,
@@ -93,6 +97,8 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             KerbalEVA kControl = part.FindModuleImplementing<KerbalEVA>();
             return kControl;
         }
+
+        Vector3 _localScale;
 
         public override void OnStart(StartState state)
         {
@@ -111,7 +117,7 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             unlockedScuba = true;
             trimModifier = _trimModifier;
             forward = this.part.transform.forward;
-            localScale = this.part.transform.localScale.x;
+            _localScale = this.part.transform.localScale;
             //this.part.collider.isTrigger = true;
             mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
             degPerMeter = 1 / mPerDegree;
@@ -237,25 +243,22 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                 }
             }
         }
-        int kdcCount = 0;
-        string _KDCFILE = UrlDir.ApplicationRootPath + "GameData/OrX/kerbalDragCubes.txt";
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
 
             if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
             {
-                if (GetDragCubes)
+                if (saveEncrypted)
                 {
-                    GetDragCubes = false;
-                    ConfigNode CubeFile = ConfigNode.Load(_KDCFILE);
-                    if (CubeFile == null)
-                    {
-                        CubeFile = new ConfigNode();
-                    }
-                    ConfigNode _dragCubes = part.DragCubes.SaveCubes();
-                    _dragCubes.CopyTo(CubeFile);
-                    CubeFile.Save(_KDCFILE);
+                    saveEncrypted = false;
+                    SaveEncrypted();
+                }
+
+                if (_popcorn)
+                {
+                    _popcorn = false;
+                    PopKorn();
                 }
                 if (_chase && orx)
                 {
@@ -299,6 +302,82 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                     narcosisCheck = false;
                 }
             }
+        }
+
+        private void SaveEncrypted()
+        {
+            OrXLog.instance.DebugLog("[OrX Module - Save Encrypted] === SAVING OrX ===");
+
+            Vessel toSave = FlightGlobals.ActiveVessel;
+            string shipDescription = "Infected";
+
+            ShipConstruct ConstructToSave = new ShipConstruct(toSave.vesselName, shipDescription, toSave.parts[0]);
+            ConfigNode craftConstruct = new ConfigNode("craft");
+            craftConstruct = ConstructToSave.SaveShip();
+
+            craftConstruct.RemoveValue("persistentId");
+            craftConstruct.RemoveValue("steamPublishedFileId");
+            craftConstruct.RemoveValue("rot");
+            craftConstruct.RemoveValue("missionFlag");
+            craftConstruct.RemoveValue("vesselType");
+            craftConstruct.RemoveValue("OverrideDefault");
+            craftConstruct.RemoveValue("OverrideActionControl");
+            craftConstruct.RemoveValue("OverrideAxisControl");
+            craftConstruct.RemoveValue("OverrideGroupNames");
+
+            foreach (ConfigNode cn in craftConstruct.nodes)
+            {
+                if (cn.name == "PART")
+                {
+                    cn.RemoveValue("persistentId");
+                }
+            }
+
+            OrXLog.instance.DebugLog("[OrX Module - Save Encrypted] Saving: " + toSave.vesselName);
+            OrXHoloKron.instance.OnScrnMsgUC("<color=#cfc100ff><b>Saving: " + toSave.vesselName + "</b></color>");
+            craftConstruct.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/OrX/" + toSave.vesselName + ".craft");
+
+            // ADD ENCRYPTION
+
+            foreach (ConfigNode.Value cv in craftConstruct.values)
+            {
+                if (cv.name == "ship")
+                {
+                    cv.value = toSave.vesselName;
+                }
+
+                string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                cv.name = cvEncryptedName;
+                cv.value = cvEncryptedValue;
+            }
+
+            foreach (ConfigNode cn in craftConstruct.nodes)
+            {
+                foreach (ConfigNode.Value cv in cn.values)
+                {
+                    string cvEncryptedName = OrXLog.instance.Crypt(cv.name);
+                    string cvEncryptedValue = OrXLog.instance.Crypt(cv.value);
+                    cv.name = cvEncryptedName;
+                    cv.value = cvEncryptedValue;
+                }
+
+                foreach (ConfigNode cn2 in cn.nodes)
+                {
+                    foreach (ConfigNode.Value cv2 in cn2.values)
+                    {
+                        if (!cv2.value.Contains("(") && !cv2.value.Contains(")"))
+                        {
+                            string cvEncryptedName = OrXLog.instance.Crypt(cv2.name);
+                            string cvEncryptedValue = OrXLog.instance.Crypt(cv2.value);
+                            cv2.name = cvEncryptedName;
+                            cv2.value = cvEncryptedValue;
+                        }
+                    }
+                }
+            }
+            craftConstruct.Save(UrlDir.ApplicationRootPath + "GameData/OrX/Plugin/PluginData/VesselData/OrX/" + toSave.vesselName + ".crypt");
+            //toSave.rootPart.AddModule("ModuleOrXJason", true);
         }
 
         private void CheckScuba()
@@ -450,14 +529,15 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
 
         public void RunAway()
         {
+            float _vel = TimeWarp.fixedDeltaTime;
             Vector3 _currLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)vessel.latitude, (double)vessel.longitude, (double)vessel.altitude);
             Vector3 _targetLoc = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)targetCoords.x, (double)targetCoords.y, (double)vessel.altitude);
             Vector3 _rotty = (_currLoc - _targetLoc).normalized;
-            Quaternion _lookTo = Quaternion.LookRotation((_rotty * TimeWarp.fixedDeltaTime), kerbal.fUp);
+            Quaternion _lookTo = Quaternion.LookRotation((_rotty * _vel), kerbal.fUp);
             Quaternion _rotTo = Quaternion.RotateTowards(vessel.transform.rotation, _lookTo, kerbal.turnRate);
             kerbal.part.vessel.SetRotation(_rotTo);
-            float _vel = TimeWarp.fixedDeltaTime;
-            UpdateAnims(ref _vel);
+            UpdateAnims();
+            _rb = vessel.GetComponent<Rigidbody>();
 
             if (targetDistance <= 50)
             {
@@ -467,23 +547,27 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
 
                     if (_right >= 50)
                     {
-                        vessel.GetComponent<Rigidbody>().velocity = vessel.transform.right * 15;
+                        _rb.velocity = vessel.ReferenceTransform.right * 15;
                     }
                     else
                     {
-                        vessel.GetComponent<Rigidbody>().velocity = -vessel.transform.right * 15;
+                        _rb.velocity = -vessel.ReferenceTransform.right * 15;
                     }
 
                     GetTarget(true);
                 }
                 else
                 {
-                    vessel.GetComponent<Rigidbody>().velocity = vessel.transform.up * kerbal.runSpeed * Time.fixedDeltaTime;
+                    _rb.MovePosition(_rb.position + _rotty * kerbal.runSpeed * Time.fixedDeltaTime);
+
+                    //_rb.velocity = vessel.ReferenceTransform.up * kerbal.runSpeed * Time.fixedDeltaTime;
                 }
             }
             else
             {
-                vessel.GetComponent<Rigidbody>().velocity = vessel.transform.up * kerbal.walkSpeed * Time.fixedDeltaTime;
+                _rb.MovePosition(_rb.position + _rotty * kerbal.walkSpeed * Time.fixedDeltaTime);
+
+                //_rb.velocity = vessel.ReferenceTransform.up * kerbal.walkSpeed * Time.fixedDeltaTime;
             }
         }
 
@@ -632,14 +716,12 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             kerbal.canRecover = false;
             kerbal.isRagdoll = true;
             this.vessel.UpdateCaches();
-            localScale = this.part.transform.localScale.x * 2;
             StartCoroutine(PopGoesTheKerbal());
         }
 
-        Vector3 _localScale;
         IEnumerator PopGoesTheKerbal()
         {
-            if (this.part.transform.localScale.x <= localScale)
+            if (this.part.transform.localScale.x <= _localScale.x * 2)
             {
                 yield return new WaitForSeconds(1);
                 this.part.transform.localScale += new Vector3(0.01f, 0.01f, 0.01f);
@@ -657,10 +739,10 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
         }
         IEnumerator PopKornRevival()
         {
-            if (this.part.transform.localScale.x >= localScale)
+            if (this.part.transform.localScale.x >= _localScale.x)
             {
                 yield return new WaitForSeconds(1);
-                this.part.transform.localScale -= new Vector3(0.05f, 0.05f, 0.05f);
+                this.part.transform.localScale += new Vector3(-0.01f, -0.01f, -0.01f);
                 StartCoroutine(PopKornRevival());
             }
         }
@@ -675,15 +757,14 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             kerbal.isRagdoll = true;
             this.vessel.UpdateCaches();
             //massModifier = 5;
-            localScale = this.part.transform.localScale.x / 2;
             StartCoroutine(MiniMeKerbal());
         }
         IEnumerator MiniMeKerbal()
         {
-            if (this.part.transform.localScale.x >= localScale)
+            if (this.part.transform.localScale.x >= _localScale.x)
             {
                 yield return new WaitForSeconds(1);
-                this.part.transform.localScale += new Vector3(-0.05f, -0.05f, -0.05f);
+                this.part.transform.localScale += new Vector3(-0.01f, -0.01f, -0.01f);
                 StartCoroutine(MiniMeKerbal());
             }
         }
@@ -913,6 +994,7 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                 case AnimationState.Swim: { _animState = "swim_forward"; } break;
                 case AnimationState.Run: { _animState = "wkC_run"; } break;
                 case AnimationState.Walk: { _animState = "wkC_forward"; } break;
+                case AnimationState.Bounds: { _animState = "wkC_Log_forward"; } break;
                 case AnimationState.Idle: { _animState = "idle"; } break;
             }
 
@@ -923,33 +1005,36 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                 _anim.CrossFade(_animState);
             }
         }
-        public void UpdateAnims(ref float speed)
+        public void UpdateAnims()
         {
-            if (speed == 0)
+            if (vessel.srfSpeed == 0)
             {
                 AnimState(AnimationState.Idle);
             }
             else
             {
-                if (kerbal.part.WaterContact)
+                if (kerbal.part.WaterContact && !vessel.Landed)
                 {
-                    speed *= kerbal.swimSpeed;
                     AnimState(AnimationState.Swim);
                 }
                 else if (kerbal.JetpackDeployed)
                 {
-                    speed *= 1f;
                     AnimState(AnimationState.Idle);
                 }
-                else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minRunningGee)
+                else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minRunningGee && vessel.srfSpeed >= kerbal.walkSpeed)
                 {
-                    speed *= kerbal.runSpeed;
                     AnimState(AnimationState.Run);
                 }
                 else if (FlightGlobals.currentMainBody.GeeASL >= kerbal.minWalkingGee)
                 {
-                    speed *= kerbal.walkSpeed;
                     AnimState(AnimationState.Walk);
+                }
+                else
+                {
+                    if (targetDistance >= 50)
+                    {
+                        AnimState(AnimationState.Bounds);
+                    }
                 }
             }
         }
