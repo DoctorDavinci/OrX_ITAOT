@@ -142,7 +142,7 @@ namespace OrX
                         if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Select Craft", OrXGUISkin.button))
                         {
                             _guiEnabled = false;
-                            spawn.OrXSpawnHoloKron.instance.CraftSelect(false, true);
+                            spawn.OrXSpawnHoloKron.instance.CraftSelect(false, true, false);
                         }
                     }
                     else

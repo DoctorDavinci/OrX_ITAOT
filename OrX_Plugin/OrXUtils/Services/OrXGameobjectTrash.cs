@@ -27,6 +27,7 @@ namespace OrX
 
         public void EmptyTrashBin()
         {
+            OrXLog.instance.DebugLog("[OrX Gameobject Trash] Game Objects To Destroy = " + _objectsToDestroy.Count);
             StartCoroutine(DestroyGameobjectsRoutine());
         }
 
@@ -34,7 +35,6 @@ namespace OrX
         {
             if (_objectsToDestroy.Count != 0)
             {
-                OrXLog.instance.DebugLog("[OrX Gameobject Trash] Game Objects To Destroy = " + _objectsToDestroy.Count);
 
                 if (!spawn.OrXSpawnHoloKron.instance.spawning)
                 {
@@ -58,10 +58,10 @@ namespace OrX
                     {
                         _objectsToDestroy.Remove(_toDestroy);
                         yield return new WaitForFixedUpdate();
-                        OrXLog.instance.DebugLog("[OrX Gameobject Trash] Destroying " + _toDestroy.name);
+                       // OrXLog.instance.DebugLog("[OrX Gameobject Trash] Destroying " + _toDestroy.name);
                         Destroy(_toDestroy);
                         yield return new WaitForSeconds(1);
-                        OrXLog.instance.DebugLog("[OrX Gameobject Trash] Rinse and Repeat ......");
+                       // OrXLog.instance.DebugLog("[OrX Gameobject Trash] Rinse and Repeat ......");
                         StartCoroutine(DestroyGameobjectsRoutine());
                     }
                     else

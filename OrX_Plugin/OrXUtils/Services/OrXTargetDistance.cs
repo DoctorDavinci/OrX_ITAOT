@@ -16,11 +16,6 @@ namespace OrX
         public double degPerMeter = 0;
         public float scanDelay = 0;
 
-        Vector3 UpVect;
-        Vector3 EastVect;
-        Vector3 NorthVect;
-        Vector3 targetVect;
-
         double targetDistance = 250000;
         double _latDiff = 0;
         double _lonDiff = 0;
@@ -49,7 +44,6 @@ namespace OrX
                 {
                     if (!OrXLog.instance.PREnabled())
                     {
-
                         if (b)
                         {
                             OrXHoloKron.instance.showTargets = true;
@@ -587,6 +581,7 @@ namespace OrX
             if (!s)
             {
                 OrXHoloKron.instance.showTargets = false;
+
                 OrXLog.instance.DebugLog("[OrX Holo Spawn Check] " + HoloKronName + " " + OrXHoloKron.instance.hkCount + " has not been spawned ...... SPAWNING");
                 if (primary)
                 {

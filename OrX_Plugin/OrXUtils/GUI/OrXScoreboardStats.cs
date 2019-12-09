@@ -313,6 +313,7 @@ namespace OrX
                         GUI.Label(new Rect(65, ContentTop + line * entryHeight, 100, 20), OrXHoloKron.instance.TimeSet(float.Parse(data[4])), titleStyle);
                         if (OrXHoloKron.instance.bdaChallenge)
                         {
+                            totalAirTime = data[3];
                             GUI.Label(new Rect(165, ContentTop + line * entryHeight, 100, 20), data[3], titleStyle);
                         }
                         else
@@ -344,9 +345,16 @@ namespace OrX
             GUI.Label(new Rect(370, ContentTop + line * entryHeight, 90, 20), "____________", titleStyleMed);
             line++;
             if (GUI.Button(new Rect(70, ContentTop + line * entryHeight, 90, 20), totalTime, OrXGUISkin.box)){}
-            if (GUI.Button(new Rect(170, ContentTop + line * entryHeight, 90, 20), totalAirTime, OrXGUISkin.box)) { }
-            if (GUI.Button(new Rect(270, ContentTop + line * entryHeight, 90, 20), maxSpeed.ToString(), OrXGUISkin.box)) { }
-            if (GUI.Button(new Rect(370, ContentTop + line * entryHeight, 90, 20), maxDepth.ToString(), OrXGUISkin.box)) { }
+            if (OrXHoloKron.instance.bdaChallenge)
+            {
+                if (GUI.Button(new Rect(170, ContentTop + line * entryHeight, 90, 20), totalAirTime, OrXGUISkin.box)) { }
+            }
+            else
+            {
+                if (GUI.Button(new Rect(170, ContentTop + line * entryHeight, 90, 20), totalAirTime, OrXGUISkin.box)) { }
+                if (GUI.Button(new Rect(270, ContentTop + line * entryHeight, 90, 20), maxSpeed.ToString(), OrXGUISkin.box)) { }
+                if (GUI.Button(new Rect(370, ContentTop + line * entryHeight, 90, 20), maxDepth.ToString(), OrXGUISkin.box)) { }
+            }
             line++;
             line++;
 

@@ -131,7 +131,7 @@ namespace OrX
                     ScreenMessages.PostScreenMessage(new ScreenMessage("Spawning pedestrian .....", 4, ScreenMessageStyle.UPPER_CENTER));
 
                     victimCount += 1;
-                    spawn.OrXSpawnHoloKron.instance.SpawnFile("", true, true);
+                    spawn.OrXSpawnHoloKron.instance.SpawnFile("", true, true, false);
                     yield return new WaitForSeconds(2);
                     StartCoroutine(SpawnKarma());
                 }

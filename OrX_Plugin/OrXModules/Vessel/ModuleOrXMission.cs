@@ -349,14 +349,6 @@ namespace OrX
 
                                                 if (_targetDistance <= distance)
                                                 {
-                                                    hideGoal = true;
-                                                    deploy = false;
-                                                    opened = true;
-                                                    //hideGoal = true;
-                                                    latitude = this.vessel.latitude;
-                                                    longitude = this.vessel.longitude;
-                                                    altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
-                                                    Goal = false;
                                                     if (challengeType == "BD ARMORY")
                                                     {
                                                         OrXHoloKron.instance.SaveBDAcScore();
@@ -365,6 +357,15 @@ namespace OrX
                                                     }
                                                     else
                                                     {
+                                                        hideGoal = true;
+                                                        deploy = false;
+                                                        opened = true;
+                                                        //hideGoal = true;
+                                                        latitude = this.vessel.latitude;
+                                                        longitude = this.vessel.longitude;
+                                                        altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                                                        Goal = false;
+
                                                         OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
                                                         OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
                                                         OrXHoloKron.instance.holoOpen = true;

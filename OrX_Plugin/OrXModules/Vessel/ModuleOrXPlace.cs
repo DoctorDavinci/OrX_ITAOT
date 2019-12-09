@@ -47,6 +47,7 @@ namespace OrX
                 part.force_activate();
                 vessel.IgnoreGForces(240);
                 UpVect = (vessel.ReferenceTransform.position - vessel.mainBody.position).normalized;
+                vessel.OnJustAboutToBeDestroyed += OnJustAboutToBeDestroyed;
             }
             base.OnStart(state);
         }
@@ -109,6 +110,11 @@ namespace OrX
                     p.Dispose();
                 }
             }
+        }
+
+        public void OnJustAboutToBeDestroyed()
+        {
+
         }
 
         IEnumerator GetDistance()
@@ -233,7 +239,7 @@ namespace OrX
             vessel.IgnoreGForces(240);
         }
 
-        public void PlaceCraft(bool _bda, bool _airborne, bool _splashed, bool _gate, bool _challengeStart, float _altToSubtract, float _left, float _pitch)
+        public void PlaceCraft(bool _bda, bool _airborne, bool _splashed, bool _gate, bool _owned, float _altToSubtract, float _left, float _pitch)
         {
             vessel.IgnoreGForces(240);
 
@@ -263,7 +269,7 @@ namespace OrX
 
             if (_bda)
             {
-                ActivateEngines();
+                ActivateEngines(_owned);
 
                 if (!_airborne && !_splashed)
                 {
@@ -277,7 +283,6 @@ namespace OrX
                         inRange = true;
                         ActivateBDA();
                         _rb.isKinematic = false;
-                        Destroy(this);
                     }
                     else
                     {
@@ -313,7 +318,7 @@ namespace OrX
                     vessel.angularVelocity = Vector3.zero;
                     vessel.angularMomentum = Vector3.zero;
                     vessel.SetWorldVelocity(Vector3.zero);
-                    dropRate = Mathf.Clamp((localAlt), 0.1f, 200);
+                    dropRate = Mathf.Clamp((localAlt / 2), 0.1f, 200);
 
                     if (dropRate <= 2f)
                     {
@@ -327,10 +332,9 @@ namespace OrX
                 }
             }
             _rb.isKinematic = false;
-            Destroy(this);
         }
 
-        private void ActivateEngines()
+        private void ActivateEngines(bool _owned)
         {
             List<Part>.Enumerator p = vessel.parts.GetEnumerator();
             while (p.MoveNext())
@@ -355,10 +359,13 @@ namespace OrX
                         enginesFX.Activate();
                     }
 
-                    OrXLog.instance.DebugLog("[OrX Craft Setup] ===== ADDING SALT TO " + p.Current.name + " =====");
-                    p.Current.AddModule("ModuleAddSalt", true);
-                    var _addSalt = p.Current.FindModuleImplementing<ModuleAddSalt>();
-                    _addSalt.AddSalt();
+                    if (!_owned)
+                    {
+                        OrXLog.instance.DebugLog("[OrX Craft Setup] ===== ADDING SALT TO " + p.Current.name + " =====");
+                        p.Current.AddModule("ModuleAddSalt", true);
+                        var _addSalt = p.Current.FindModuleImplementing<ModuleAddSalt>();
+                        _addSalt.AddSalt();
+                    }
                 }
             }
             p.Dispose();
