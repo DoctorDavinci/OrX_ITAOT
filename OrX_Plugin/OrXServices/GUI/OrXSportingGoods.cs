@@ -52,16 +52,6 @@ namespace OrX
             }
         }
 
-        static GUIStyle centerLabel = new GUIStyle
-        {
-            alignment = TextAnchor.UpperCenter,
-            normal = { textColor = Color.white }
-        };
-        static GUIStyle titleStyle = new GUIStyle(centerLabel)
-        {
-            fontSize = 12,
-            alignment = TextAnchor.MiddleCenter
-        };
         static GUIStyle titleStyleMedNoItal = new GUIStyle(centerLabelOrange)
         {
             fontSize = 13,
@@ -130,7 +120,7 @@ namespace OrX
                                 {
                                     if (_airSupport.Current.Contains(_airSupportNames.Current))
                                     {
-                                        spawn.OrXSpawnHoloKron.instance.SpawnFile(_airSupport.Current, true, false, true);
+                                        spawn.OrXSpawnHoloKron.instance.SpawnFile(_airSupport.Current, true, false, true, false, false, 0, 0, 0, new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
                                     }
                                 }
                             }

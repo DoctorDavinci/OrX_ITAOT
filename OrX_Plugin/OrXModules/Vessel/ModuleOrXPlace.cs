@@ -47,7 +47,8 @@ namespace OrX
                 part.force_activate();
                 vessel.IgnoreGForces(240);
                 UpVect = (vessel.ReferenceTransform.position - vessel.mainBody.position).normalized;
-                vessel.OnJustAboutToBeDestroyed += OnJustAboutToBeDestroyed;
+                mPerDegree = (((2 * (vessel.mainBody.Radius + vessel.altitude)) * Math.PI) / 360);
+                degPerMeter = 1 / mPerDegree;
             }
             base.OnStart(state);
         }
@@ -57,6 +58,7 @@ namespace OrX
             {
                 if (!inRange && vessel.loaded)
                 {
+                    vessel.Landed = true;
                     vessel.IgnoreGForces(240);
                     vessel.SetWorldVelocity(Vector3.zero);
                     this.vessel.SetPosition(vessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude));
@@ -112,11 +114,6 @@ namespace OrX
             }
         }
 
-        public void OnJustAboutToBeDestroyed()
-        {
-
-        }
-
         IEnumerator GetDistance()
         {
             if (!rotationsSet)
@@ -127,103 +124,123 @@ namespace OrX
 
             if (!inRange)
             {
-                double _latDiff = 0;
-                double _lonDiff = 0;
-                double _altDiff = 0;
-                if (FlightGlobals.ActiveVessel.altitude <= altitude)
+                if (CheckDistance(FlightGlobals.ActiveVessel) <= 8000)
                 {
-                    _altDiff = vessel.altitude - FlightGlobals.ActiveVessel.altitude;
+                    if (OrXHoloKron.instance.bdaChallenge)
+                    {
+                        if (OrXVesselLog.instance._playerCraft.Contains(FlightGlobals.ActiveVessel))
+                        {
+                            inRange = true;
+                        }
+                    }
+                    else
+                    {
+                        inRange = true;
+                    }
+                }
+
+                yield return new WaitForSeconds(5);
+
+                if (!inRange)
+                {
+                    StartCoroutine(GetDistance());
                 }
                 else
                 {
-                    _altDiff = FlightGlobals.ActiveVessel.altitude - altitude;
-                }
-
-                if (latitude >= 0)
-                {
-                    if (FlightGlobals.ActiveVessel.latitude >= latitude)
-                    {
-                        _latDiff = FlightGlobals.ActiveVessel.latitude - latitude;
-                    }
-                    else
-                    {
-                        _latDiff = latitude - FlightGlobals.ActiveVessel.latitude;
-                    }
-                }
-                else
-                {
-                    if (FlightGlobals.ActiveVessel.latitude >= 0)
-                    {
-                        _latDiff = FlightGlobals.ActiveVessel.latitude - latitude;
-                    }
-                    else
-                    {
-                        if (FlightGlobals.ActiveVessel.latitude <= latitude)
-                        {
-                            _latDiff = FlightGlobals.ActiveVessel.latitude - latitude;
-                        }
-                        else
-                        {
-
-                            _latDiff = latitude - FlightGlobals.ActiveVessel.latitude;
-                        }
-                    }
-                }
-
-                if (longitude >= 0)
-                {
-                    if (FlightGlobals.ActiveVessel.longitude >= longitude)
-                    {
-                        _lonDiff = FlightGlobals.ActiveVessel.longitude - longitude;
-                    }
-                    else
-                    {
-                        _lonDiff = longitude - FlightGlobals.ActiveVessel.latitude;
-                    }
-                }
-                else
-                {
-                    if (FlightGlobals.ActiveVessel.longitude >= 0)
-                    {
-                        _lonDiff = FlightGlobals.ActiveVessel.longitude - longitude;
-                    }
-                    else
-                    {
-                        if (FlightGlobals.ActiveVessel.longitude <= longitude)
-                        {
-                            _lonDiff = FlightGlobals.ActiveVessel.longitude - longitude;
-                        }
-                        else
-                        {
-
-                            _lonDiff = longitude - FlightGlobals.ActiveVessel.longitude;
-                        }
-                    }
-                }
-
-                double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                double _altDiffDeg = _altDiff * degPerMeter;
-                double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                targetDistance = Math.Sqrt(altAdded) * mPerDegree;
-
-                if (targetDistance <= 4000)
-                {
-                    inRange = true;
-                    yield return new WaitForFixedUpdate();
+                    vessel.Landed = false;
                     StartCoroutine(PlaceVessel());
                 }
+            }
+        }
+
+        private double CheckDistance(Vessel _player)
+        {
+            double _latDiff = 0;
+            double _lonDiff = 0;
+            double _altDiff = 0;
+
+            if (_player.altitude <= vessel.altitude)
+            {
+                _altDiff = vessel.altitude - _player.altitude;
+            }
+            else
+            {
+                _altDiff = _player.altitude - vessel.altitude;
+            }
+
+            if (vessel.latitude >= 0)
+            {
+                if (_player.latitude >= vessel.latitude)
+                {
+                    _latDiff = _player.latitude - vessel.latitude;
+                }
                 else
                 {
-                    yield return new WaitForFixedUpdate();
-                    StartCoroutine(GetDistance());
+                    _latDiff = vessel.latitude - _player.latitude;
                 }
             }
             else
             {
+                if (_player.latitude >= 0)
+                {
+                    _latDiff = _player.latitude - vessel.latitude;
+                }
+                else
+                {
+                    if (_player.latitude <= vessel.latitude)
+                    {
+                        _latDiff = _player.latitude - vessel.latitude;
+                    }
+                    else
+                    {
+
+                        _latDiff = vessel.latitude - _player.latitude;
+                    }
+                }
             }
+
+            if (vessel.longitude >= 0)
+            {
+                if (_player.longitude >= vessel.longitude)
+                {
+                    _lonDiff = _player.longitude - vessel.longitude;
+                }
+                else
+                {
+                    _lonDiff = vessel.longitude - _player.latitude;
+                }
+            }
+            else
+            {
+                if (_player.longitude >= 0)
+                {
+                    _lonDiff = _player.longitude - vessel.longitude;
+                }
+                else
+                {
+                    if (_player.longitude <= vessel.longitude)
+                    {
+                        _lonDiff = _player.longitude - vessel.longitude;
+                    }
+                    else
+                    {
+
+                        _lonDiff = vessel.longitude - _player.longitude;
+                    }
+                }
+            }
+
+            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+            double _altDiffDeg = _altDiff * degPerMeter;
+            double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+            targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+            return targetDistance;
         }
+
         public void SetRotation()
         {
+            if (left == 0 && pitch == -90) return;
+
             _fixRot = Quaternion.identity;
             vessel.IgnoreGForces(240);
             vessel.SetWorldVelocity(Vector3d.zero);
@@ -239,7 +256,7 @@ namespace OrX
             vessel.IgnoreGForces(240);
         }
 
-        public void PlaceCraft(bool _bda, bool _airborne, bool _splashed, bool _gate, bool _owned, float _altToSubtract, float _left, float _pitch)
+        public void PlaceCraft(bool _bda, bool _airborne, bool _splashed, bool _gate, bool _owned, float _altToSubtract, float _left, float _pitch, float _delay)
         {
             vessel.IgnoreGForces(240);
 
@@ -270,18 +287,18 @@ namespace OrX
             if (_bda)
             {
                 ActivateEngines(_owned);
+                ActivateBDA(_delay, _owned);
 
                 if (!_airborne && !_splashed)
                 {
                     inRange = false;
-                    ActivateBDA();
+                    StartCoroutine(GetDistance());
                 }
                 else
                 {
                     if (!_splashed)
                     {
                         inRange = true;
-                        ActivateBDA();
                         _rb.isKinematic = false;
                     }
                     else
@@ -299,36 +316,40 @@ namespace OrX
         }
         IEnumerator PlaceVessel()
         {
+            vessel.Landed = false;
             OrXLog.instance.DebugLog("[OrX Place] === PLACING " + vessel.vesselName + " ===");
             _rb = vessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
             SetRotation();
-            float localAlt = 5;
-            float dropRate = Mathf.Clamp((localAlt), 0.1f, 200);
-
+            float dropRate = Mathf.Clamp(((float)vessel.radarAltitude / 4), 0.1f, 200);
+            bool _continue = true;
             if (inRange)
             {
                 while (!vessel.LandedOrSplashed)
                 {
-                    if (localAlt <= 0.1f)
+                    if (_continue)
                     {
-                        localAlt = 0.1f;
+                        vessel.IgnoreGForces(240);
+                        vessel.angularVelocity = Vector3.zero;
+                        vessel.angularMomentum = Vector3.zero;
+                        vessel.SetWorldVelocity(Vector3.zero);
+                        dropRate = Mathf.Clamp(((float)vessel.radarAltitude / 4), 0.1f, 200);
+
+                        if (dropRate <= 0.15f)
+                        {
+                            dropRate = 0.15f;
+                        }
+
+                        vessel.Translate(dropRate * Time.fixedDeltaTime * -(vessel.ReferenceTransform.position - vessel.mainBody.position).normalized);
+
+                        yield return new WaitForFixedUpdate();
+
+                        if (vessel.radarAltitude <= 0.5f)
+                        {
+                            _continue = false;
+                            vessel.Landed = true;
+                        }
                     }
-                    vessel.IgnoreGForces(240);
-                    vessel.angularVelocity = Vector3.zero;
-                    vessel.angularMomentum = Vector3.zero;
-                    vessel.SetWorldVelocity(Vector3.zero);
-                    dropRate = Mathf.Clamp((localAlt / 2), 0.1f, 200);
-
-                    if (dropRate <= 2f)
-                    {
-                        dropRate = 2f;
-                    }
-
-                    vessel.Translate(dropRate * Time.fixedDeltaTime * -(vessel.ReferenceTransform.position - vessel.mainBody.position).normalized);
-
-                    localAlt -= dropRate * Time.fixedDeltaTime;
-                    yield return new WaitForFixedUpdate();
                 }
             }
             _rb.isKinematic = false;
@@ -359,18 +380,14 @@ namespace OrX
                         enginesFX.Activate();
                     }
 
-                    if (!_owned)
-                    {
-                        OrXLog.instance.DebugLog("[OrX Craft Setup] ===== ADDING SALT TO " + p.Current.name + " =====");
-                        p.Current.AddModule("ModuleAddSalt", true);
-                        var _addSalt = p.Current.FindModuleImplementing<ModuleAddSalt>();
-                        _addSalt.AddSalt();
-                    }
+                    p.Current.AddModule("ModuleAddSalt", true);
+                    var _addSalt = p.Current.FindModuleImplementing<ModuleAddSalt>();
+                    _addSalt.AddSalt(_owned);
                 }
             }
             p.Dispose();
         }
-        public void ActivateBDA()
+        public void ActivateBDA(float _delay, bool _owned)
         {
             List<Part>.Enumerator _parts = vessel.parts.GetEnumerator();
             while (_parts.MoveNext())
@@ -380,34 +397,93 @@ namespace OrX
                     OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND PILOT AI ON " + vessel.vesselName + " ... ACTIVATING =====");
                     _parts.Current.SendMessage("ActivatePilot");
                 }
-                else
+
+                if (_parts.Current.Modules.Contains("MissileFire") && !_owned)
                 {
-                    if (_parts.Current.Modules.Contains("MissileFire"))
+                    OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND WEAPON MANAGER ON " + vessel.vesselName + " ... SETTING TEAM =====");
+                    _parts.Current.SendMessage("NextTeam");
+                }
+            }
+            _parts.Dispose();
+            StartCoroutine(WeaponManagerDelay(_delay));
+        }
+        IEnumerator WeaponManagerDelay(float _delay)
+        {
+            float _d = _delay / 1000;
+            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== " + vessel.vesselName + " WEAPON MANAGER ENGAGEMENT DELAY: " + _d + " SECONDS =====");
+            yield return new WaitForSeconds(_d);
+            CheckPlayerLocations();
+        }
+        private void CheckPlayerLocations()
+        {
+            bool _continue = false;
+            float _altitude = 0;
+            List<Vessel>.Enumerator _playerVessels = OrXVesselLog.instance._playerCraft.GetEnumerator();
+            while (_playerVessels.MoveNext())
+            {
+                if (_playerVessels.Current != null)
+                {
+                    if (_playerVessels.Current.altitude >= _playerVessels.Current.radarAltitude)
                     {
-                        OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND WEAPON MANAGER ON " + vessel.vesselName + " ... ACTIVATING GUARD MODE =====");
-                        _parts.Current.SendMessage("ToggleGuardMode");
+                        _altitude = (float)_playerVessels.Current.radarAltitude;
+
+                        if (_playerVessels.Current.radarAltitude >= OrXTargetDistance.instance.targetDistance / 200)
+                        {
+                            _continue = true;
+                        }
                     }
                     else
                     {
-                        if (_parts.Current.Modules.Contains("ModuleRadar") || _parts.Current.Modules.Contains("ModuleSpaceRadar"))
+                        _altitude = (float)_playerVessels.Current.altitude;
+
+                        if (_playerVessels.Current.altitude >= OrXTargetDistance.instance.targetDistance / 200)
                         {
-                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND RADAR ON " + vessel.vesselName + " ... ACTIVATING =====");
-                            _parts.Current.SendMessage("EnableRadar");
+                            _continue = true;
                         }
-                        if (_parts.Current.Modules.Contains("MissileTurret"))
-                        {
-                            OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND MISSILE TURRET ON " + vessel.vesselName + " ... ACTIVATING =====");
-                            _parts.Current.SendMessage("EnableTurret");
-                        }
+                    }
+
+                    if (CheckDistance(_playerVessels.Current) <= 8000)
+                    {
+                        _continue = true;
+                    }
+                }
+            }
+            _playerVessels.Dispose();
+
+            if (_continue)
+            {
+                EngageWM();
+            }
+            else
+            {
+                StartCoroutine(WeaponManagerDelay(5 - _altitude / 100));
+            }
+        }
+        private void EngageWM()
+        {
+            List<Part>.Enumerator _parts = vessel.parts.GetEnumerator();
+            while (_parts.MoveNext())
+            {
+                if (_parts.Current.Modules.Contains("MissileFire"))
+                {
+                    OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND WEAPON MANAGER ON " + vessel.vesselName + " ... ACTIVATING GUARD MODE =====");
+                    _parts.Current.SendMessage("ToggleGuardMode");
+                }
+                else
+                {
+                    if (_parts.Current.Modules.Contains("ModuleRadar") || _parts.Current.Modules.Contains("ModuleSpaceRadar"))
+                    {
+                        OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND RADAR ON " + vessel.vesselName + " ... ACTIVATING =====");
+                        _parts.Current.SendMessage("EnableRadar");
+                    }
+                    if (_parts.Current.Modules.Contains("MissileTurret"))
+                    {
+                        OrXLog.instance.DebugLog("[OrX Craft Setup] ===== FOUND MISSILE TURRET ON " + vessel.vesselName + " ... ACTIVATING =====");
+                        _parts.Current.SendMessage("EnableTurret");
                     }
                 }
             }
             _parts.Dispose();
-
-            if (!inRange)
-            {
-                StartCoroutine(GetDistance());
-            }
         }
     }
 }

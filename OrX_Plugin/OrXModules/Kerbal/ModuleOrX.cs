@@ -118,7 +118,10 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             trimModifier = _trimModifier;
             forward = this.part.transform.forward;
             _localScale = this.part.transform.localScale;
-            //this.part.collider.isTrigger = true;
+            if (spawn.OrXSpawnHoloKron.instance.spawning)
+            {
+                kerbal.characterColliders.Initialize();
+            }
             mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
             degPerMeter = 1 / mPerDegree;
             base.OnStart(state);
@@ -288,7 +291,6 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                     }
                 }
 
-
                 if (this.vessel.Splashed)
                 {
                     SplashedCheck();
@@ -410,7 +412,7 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
                 massModifier -= 0.4f;
         }
 
-        /*
+       
         void OnCollisionEnter(Collision collision)
         {
             if (collision.gameObject != this.gameObject && !collision.gameObject.name.Contains("Kerbin"))
@@ -425,7 +427,7 @@ UI_Toggle(controlEnabled = true, scene = UI_Scene.Flight, disabledText = "", ena
             }
         }
         
-        */
+       
         IEnumerator GetDistance()
         {
             if (chasing)

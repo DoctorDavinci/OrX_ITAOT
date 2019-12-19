@@ -1,41 +1,61 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine;
 
 namespace OrX
 {
     public class ModuleOrXWMI : PartModule
     {
+        public bool _owned = true;
+        public bool _switching = false;
 
         public override void OnStart(StartState state)
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
+                part.OnJustAboutToDie += OnJustAboutToDie;
             }
             base.OnStart(state);
         }
-
-        public void Update()
+        public void OnJustAboutToDie()
         {
-            if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
+            if (!_owned)
             {
-                //this.vessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
+                OrXVesselLog.instance._enemyCraft.Remove(vessel);
+                OrXHoloKron.instance._killCount += 1;
+                OrXSounds.instance.sound_OrXFatality.Play();
+            }
+            else
+            {
+                OrXVesselLog.instance._playerCraft.Remove(vessel);
+                OrXHoloKron.instance._lifeCount += 1;
+                OrXSounds.instance.NoSaltSound();
             }
         }
-
+        public void SwitchToEnemy()
+        {
+            OrXVesselLog.instance.AddToEnemyVesselList(vessel);
+            Debug.Log("[OrX Weapon Manager Interface] === SWITCHING " + vessel.vesselName + " TO ENEMY STATUS ===");
+            _owned = false;
+        }
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-
-            if (HighLogic.LoadedSceneIsFlight && this.vessel.loaded)
+            if (OrXHoloKron.instance.bdaChallenge)
             {
-                if (this.vessel.isActiveVessel)
+                if (vessel.isActiveVessel && !_owned)
                 {
+                    if (!spawn.OrXSpawnHoloKron.instance.spawning)
+                    {
+                        OrXVesselLog.instance.CheckPlayerVesselList();
+                    }
                 }
             }
         }
-
+        
         public void CheckTeam()
         {
             List<PartModule>.Enumerator _pm = part.Modules.GetEnumerator();
@@ -54,6 +74,7 @@ namespace OrX
                                 if (fields[i].Name == "team")
                                 {
                                     fields[i].GetValue(_pm.Current);
+
                                     _pm.Current.SendMessage("NextTeam");
                                 }
                             }

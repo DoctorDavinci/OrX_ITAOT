@@ -101,11 +101,9 @@ namespace OrX
         public bool isLoaded = false;
         public int stage = 0;
         public bool triggered = false;
-        double _latDiff = 0;
-        double _lonDiff = 0;
-        double _altDiff = 0;
 
         bool geoCache = true;
+        bool gateSpawned = false;
 
         #endregion
 
@@ -119,7 +117,7 @@ namespace OrX
             {
                 if (!opened && !OrXHoloKron.instance.buildingMission && !this.vessel.isActiveVessel)
                 {
-                    OrXLog.DrawRecticle(pos, OrXLog.instance.HoloTargetTexture, new Vector2(32, 32));
+                    OrXLog.DrawRecticle(pos, OrXLog.instance.HoloTargetTexture, new Vector2(16, 16));
                 }
             }
         }
@@ -337,23 +335,23 @@ namespace OrX
                                             else
                                             {
                                                 float distance = 25;
-                                                if (missionType == "CHALLENGE")
-                                                {
-                                                    geoCache = false;
-                                                }
+                                                OrXHoloKron.instance.targetDistance = _targetDistance;
 
                                                 if (challengeType == "BD ARMORY")
                                                 {
-                                                    distance = 100;
+                                                    distance = 150;
                                                 }
 
                                                 if (_targetDistance <= distance)
                                                 {
                                                     if (challengeType == "BD ARMORY")
                                                     {
-                                                        OrXHoloKron.instance.SaveBDAcScore();
-                                                        part.explosionPotential *= 0.2f;
-                                                        part.explode();
+                                                        if (OrXVesselLog.instance._playerCraft.Contains(FlightGlobals.ActiveVessel))
+                                                        {
+                                                            OrXHoloKron.instance.SaveBDAcScore();
+                                                            part.explosionPotential *= 0.2f;
+                                                            part.explode();
+                                                        }
                                                     }
                                                     else
                                                     {
@@ -363,8 +361,12 @@ namespace OrX
                                                         //hideGoal = true;
                                                         latitude = this.vessel.latitude;
                                                         longitude = this.vessel.longitude;
-                                                        altitude = this.vessel.altitude - this.vessel.radarAltitude + 5;
+                                                        altitude = this.vessel.altitude - this.vessel.radarAltitude + 10;
                                                         Goal = false;
+                                                        if (missionType == "CHALLENGE")
+                                                        {
+                                                            geoCache = false;
+                                                        }
 
                                                         OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
                                                         OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
@@ -376,6 +378,15 @@ namespace OrX
                                         }
                                         else
                                         {
+                                            if (raceType == "DAKAR RACING" && !gateSpawned)
+                                            {
+                                                if (_targetDistance <= 1500)
+                                                {
+                                                    gateSpawned = true;
+                                                    OrXSpawnHoloKron.instance.SpawnFile(OrXSpawnHoloKron.instance.GoalPostCraft, true, false, false, false, false, stage, 0, 0, new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude));
+                                                }
+                                            }
+
                                             if (_targetDistance <= 8)
                                             {
                                                 hideGoal = true;
@@ -387,35 +398,75 @@ namespace OrX
                                     }
                                     else
                                     {
-                                        if (_targetDistance <= _asRangeLong)
+                                        if (OrXVesselLog.instance._playerCraft.Contains(FlightGlobals.ActiveVessel))
                                         {
-                                            if (!asRangeLong)
+                                            if (_targetDistance <= _asRangeLong)
                                             {
-                                                asRangeLong = true;
-
-                                            }
-
-                                            if (_targetDistance <= _asRangeMed)
-                                            {
-                                                if (!asRangeMed)
+                                                if (!asRangeLong)
                                                 {
-                                                    asRangeMed = true;
+                                                    asRangeLong = true;
 
                                                 }
 
-                                                if (_targetDistance <= _asRangeShort)
+                                                if (_targetDistance <= _asRangeMed)
                                                 {
-                                                    if (!asRangeShort)
+                                                    if (!asRangeMed)
                                                     {
-                                                        asRangeShort = true;
+                                                        asRangeMed = true;
                                                     }
 
-                                                    if (_targetDistance <= 8000)
+                                                    if (_targetDistance <= _asRangeShort)
                                                     {
-                                                        _auto = true;
-                                                        fml = false;
-                                                        OrXLog.instance.DebugLog("[Module OrX Mission - BDAc Challenge] == TARGET DISTANCE: " + _targetDistance);
-                                                        OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d());
+                                                        if (!asRangeShort)
+                                                        {
+                                                            asRangeShort = true;
+                                                        }
+
+                                                        if (_targetDistance <= 10000)
+                                                        {
+                                                            _auto = true;
+                                                            fml = false;
+                                                            OrXLog.instance.DebugLog("[Module OrX Mission - BDAc Challenge] == TARGET DISTANCE: " + _targetDistance);
+                                                            OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d(), OrXTargetDistance.instance._wmActivateDelay, stage);
+                                                        }
+                                                        else
+                                                        {
+
+                                                            if (_targetDistance <= 12000)
+                                                            {
+                                                                double _altitude = 0;
+                                                                List<Vessel>.Enumerator loggedCraft = OrXVesselLog.instance._playerCraft.GetEnumerator();
+                                                                while (loggedCraft.MoveNext())
+                                                                {
+                                                                    if (loggedCraft.Current != null)
+                                                                    {
+                                                                        if (loggedCraft.Current.altitude <= loggedCraft.Current.radarAltitude)
+                                                                        {
+                                                                            if (_altitude <= loggedCraft.Current.altitude)
+                                                                            {
+                                                                                _altitude = loggedCraft.Current.altitude;
+                                                                            }
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            if (_altitude <= loggedCraft.Current.radarAltitude)
+                                                                            {
+                                                                                _altitude = loggedCraft.Current.radarAltitude;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                                loggedCraft.Dispose();
+
+                                                                if (_targetDistance <= 10000 + _altitude)
+                                                                {
+                                                                    _auto = true;
+                                                                    fml = false;
+                                                                    OrXLog.instance.DebugLog("[Module OrX Mission - BDAc Challenge] == TARGET DISTANCE: " + _targetDistance);
+                                                                    OrXSpawnHoloKron.instance.SpawnLocal(true, HoloKronName, new Vector3d(), OrXTargetDistance.instance._wmActivateDelay, stage);
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }

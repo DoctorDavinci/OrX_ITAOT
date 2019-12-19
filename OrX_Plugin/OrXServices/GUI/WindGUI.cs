@@ -351,18 +351,12 @@ namespace OrX
 
         #region Wind GUI
 
-        static GUIStyle centerLabel = new GUIStyle
-        {
-            alignment = TextAnchor.UpperCenter,
-            normal = { textColor = Color.white }
-        };
         static GUIStyle titleStyle = new GUIStyle(centerLabelYellow)
         {
             fontSize = 11,
             alignment = TextAnchor.UpperCenter,
             normal = { textColor = Color.yellow }
         };
-        static GUIStyle titleStyleL = new GUIStyle(centerLabel) { fontSize = 14, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         static GUIStyle leftLabel = new GUIStyle() { alignment = TextAnchor.UpperLeft, normal = { textColor = Color.white } };
 
         static GUIStyle centerLabelYellow = new GUIStyle

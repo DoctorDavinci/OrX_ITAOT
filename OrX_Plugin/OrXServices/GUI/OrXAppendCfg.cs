@@ -30,7 +30,6 @@ namespace OrX
         public bool append = false;
         public bool save = false;
         public bool cancel = false;
-        public int hkCount = 0;
         private void Awake()
         {
             if (instance) Destroy(instance);
@@ -85,9 +84,8 @@ namespace OrX
             _windowRect.height = _windowHeight;
         }
 
-        public void EnableGui(int _hkCount, string holoName)
+        public void EnableGui(string holoName)
         {
-            hkCount = _hkCount;
             _HoloKronName = holoName;
             OrXHoloKron.instance.OrXHCGUIEnabled = false;
             save = false;
@@ -120,9 +118,7 @@ namespace OrX
                 alignment = TextAnchor.MiddleCenter
             };
 
-            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight),
-                _HoloKronName + " contains " + hkCount + " HoloKrons",
-                titleStyle);
+            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, entryHeight), _HoloKronName + " exists", titleStyle);
         }
 
         private void DrawTitle2(float line)
@@ -171,17 +167,13 @@ namespace OrX
                 {
                     if (OrXHoloKron.instance.spawningStartGate)
                     {
-                        OrXHoloKron.instance.hkCount = hkCount;
-                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false);
+                        spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false, new Vector3d());
                     }
                     else
                     {
-                        OrXHoloKron.instance.hkCount = hkCount;
                         OrXHoloKron.instance.SaveConfig(_HoloKronName, true);
                         DisableGui();
                     }
-
-                    OrXHoloKron.instance.hkCount = hkCount;
                 }
                 else
                 {
@@ -202,7 +194,7 @@ namespace OrX
                 }
                 else
                 {
-                    if (OrXHoloKron.instance.CheckExports(HoloKronName))
+                    if (OrXUtilities.instance.CheckExports(HoloKronName))
                     {
                         OrXHoloKron.instance.OnScrnMsgUC(HoloKronName + " also exists .....");
                         OrXHoloKron.instance.OnScrnMsgUC("What would you like to do?");
@@ -215,7 +207,7 @@ namespace OrX
                         if (OrXHoloKron.instance.spawningStartGate)
                         {
                             OrXHoloKron.instance.hkCount = 0;
-                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false);
+                            spawn.OrXVesselMove.Instance.StartMove(OrXHoloKron.instance._HoloKron, false, 0, false, false, new Vector3d());
                         }
                         else
                         {

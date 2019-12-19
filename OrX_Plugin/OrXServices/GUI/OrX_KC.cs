@@ -24,45 +24,10 @@ namespace OrX
         private float _windowHeight = 250;
         private static Rect _windowRect;
         public static GUISkin OrXGUISkin = HighLogic.Skin;
-
-        private void Awake()
-        {
-            if (instance) Destroy(instance);
-            instance = this;
-        }
-        
-        private void Start()
-        {
-            _windowRect = new Rect((Screen.width / 4) * 2 - (WindowWidth * 3) + 10, 10, WindowWidth, _windowHeight);
-            salt = 0;
-        }
-
-        private void OnGUI()
-        {
-            if (GuiEnabledOrX_KC)
-            {
-                GUI.backgroundColor = XKCDColors.DarkGrey;
-                GUI.contentColor = XKCDColors.DarkGrey;
-                GUI.color = XKCDColors.DarkGrey;
-
-                _windowRect = GUI.Window(416937212, _windowRect, GuiWindowOrX_KC, "");
-            }
-        }
-
         public float salt = 0;
         public bool _Karma = false;
         public int victimCount = 0;
 
-        static GUIStyle centerLabel = new GUIStyle
-        {
-            alignment = TextAnchor.UpperCenter,
-            normal = { textColor = Color.white }
-        };
-        static GUIStyle titleStyle = new GUIStyle(centerLabel)
-        {
-            fontSize = 12,
-            alignment = TextAnchor.MiddleCenter
-        };
         static GUIStyle titleStyleMedNoItal = new GUIStyle(centerLabelOrange)
         {
             fontSize = 13,
@@ -87,6 +52,28 @@ namespace OrX
             normal = { textColor = XKCDColors.BoogerGreen }
         };
 
+        private void Awake()
+        {
+            if (instance) Destroy(instance);
+            instance = this;
+        }
+        private void Start()
+        {
+            _windowRect = new Rect((Screen.width / 4) * 2 - (WindowWidth * 3) + 10, 10, WindowWidth, _windowHeight);
+            salt = 0;
+        }
+        private void OnGUI()
+        {
+            if (GuiEnabledOrX_KC)
+            {
+                GUI.backgroundColor = XKCDColors.DarkGrey;
+                GUI.contentColor = XKCDColors.DarkGrey;
+                GUI.color = XKCDColors.DarkGrey;
+
+                _windowRect = GUI.Window(416937212, _windowRect, GuiWindowOrX_KC, "");
+            }
+        }
+
         public void ToggleKarma(bool _karma)
         {
             if (GuiEnabledOrX_KC)
@@ -106,7 +93,6 @@ namespace OrX
                 }
             }
         }
-
         private void GuiWindowOrX_KC(int OrX_KC)
         {
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
@@ -121,7 +107,6 @@ namespace OrX
             _windowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             _windowRect.height = _windowHeight;
         }
-
         IEnumerator SpawnKarma()
         {
             if (_Karma)
@@ -131,7 +116,7 @@ namespace OrX
                     ScreenMessages.PostScreenMessage(new ScreenMessage("Spawning pedestrian .....", 4, ScreenMessageStyle.UPPER_CENTER));
 
                     victimCount += 1;
-                    spawn.OrXSpawnHoloKron.instance.SpawnFile("", true, true, false);
+                    spawn.OrXSpawnHoloKron.instance.SpawnFile("", true, true, false, false, false, 0, 0, 0, new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
                     yield return new WaitForSeconds(2);
                     StartCoroutine(SpawnKarma());
                 }

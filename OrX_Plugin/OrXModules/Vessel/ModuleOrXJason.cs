@@ -8,7 +8,6 @@ namespace OrX
 {
     public class ModuleOrXJason : PartModule
     {
-
         public bool hideGoal = false;
         public bool setup = false;
         private static float maxfade = 0f;

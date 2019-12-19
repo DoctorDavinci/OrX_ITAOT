@@ -87,7 +87,7 @@ namespace OrX
         private static VesselRanges.Situation _vesselOther;
         public bool _debugLog = false;
         public bool _mode = false;
-        public float _preLoadRange = 65;
+        public float _preLoadRange = 75;
         public bool _preInstalled = false;
         public bool _preEnabled = false;
         bool cDamage = false;
@@ -103,14 +103,16 @@ namespace OrX
             Debug.Log("[OrX Log - The Awakening] === ADDING MODULES ===");
             ConfigNode EVA = new ConfigNode("MODULE");
             ConfigNode OrXStage = new ConfigNode("MODULE");
+            ConfigNode OrXWMI = new ConfigNode("MODULE");
 
             EVA.AddValue("name", "ModuleOrX");
             OrXStage.AddValue("name", "ModuleOrXStage");
+            OrXWMI.AddValue("name", "ModuleOrXWMI");
 
             try
             {
                 PartLoader.getPartInfoByName("kerbalEVA").partPrefab.AddModule(EVA);
-                Debug.Log("[OrX Log] === ADDED ORX MODULE TO 'kerbalEVA' ===");
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX MODULE TO 'kerbalEVA' ===");
             }
             catch
             {
@@ -119,7 +121,7 @@ namespace OrX
             try
             {
                 PartLoader.getPartInfoByName("kerbalEVAfemale").partPrefab.AddModule(EVA);
-                Debug.Log("[OrX Log] === ADDED ORX MODULE TO 'kerbalEVAfemale' ===");
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX MODULE TO 'kerbalEVAfemale' ===");
             }
             catch
             {
@@ -128,13 +130,20 @@ namespace OrX
             try
             {
                 PartLoader.getPartInfoByName("MassiveBooster").partPrefab.AddModule(OrXStage);
-                Debug.Log("[OrX Log] === ADDED STAGE MODULE TO 'MassiveBooster' ===");
+                Debug.Log("[OrX Log - The Awakening] === ADDED STAGE MODULE TO 'MassiveBooster' ===");
             }
             catch
             {
-                //OrXLog.instance.DebugLog("[OrX Log] === ADDED OrX MODULE to kerbalEVA ===");
             }
-
+            
+            try
+            {
+                PartLoader.getPartInfoByName("missileController").partPrefab.AddModule(OrXWMI);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX WMI MODULE TO 'missileController' ===");
+            }
+            catch
+            {
+            }
         }
         private void Start()
         {
@@ -182,7 +191,7 @@ namespace OrX
 
         private void onPartDecouple(Part data)
         {
-            SetRange(data.vessel, 65000);
+            SetRange(data.vessel, 75000);
         }
 
         public bool PREnabled()
@@ -212,7 +221,7 @@ namespace OrX
         }
         private void onVesselLoaded(Vessel data)
         {
-            OrXHoloKron.instance.SetRanges(65000);
+            OrXUtilities.instance.SetRanges(75000);
 
             if (data.Landed && !PREnabled())
             {
@@ -226,7 +235,7 @@ namespace OrX
                         _place.altitude = data.altitude + 15;
                         _place.latitude = data.latitude;
                         _place.longitude = data.longitude;
-                        _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0);
+                        _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0, 0);
                     }
                 }
             }
@@ -267,7 +276,6 @@ namespace OrX
                 else
                 {
                     //EVAUnlockWS();
-                    OrXVesselLog.instance.CheckPlayerVesselList(data, false);
 
                     if (!FlightGlobals.ActiveVessel.isEVA)
                     {
@@ -354,34 +362,46 @@ namespace OrX
                             FloatingOrigin.fetch.threshold = _modRange;
                             FloatingOrigin.fetch.thresholdSqr = _modRange * _modRange;
                             Debug.Log("[OrX Log Set Range] === FLOATING ORIGIN THRESHOLD: " + FloatingOrigin.fetch.threshold + " meters =====");
-
                         }
                     }
                 }
                 catch { }
             }
 
-            //Debug.Log("[OrX Log Set Range] === SETTING RANGES FOR " + v.vesselName + " ===");
-            _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);
-            _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
-            _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
-
-            _vesselRanges = new VesselRanges
-            {
-                escaping = _vesselOther,
-                flying = _vesselFlying,
-                landed = _vesselLanded,
-                orbit = _vesselOther,
-                prelaunch = _vesselLanded,
-                splashed = _vesselLanded,
-                subOrbital = _vesselOther
-            };
-
             if (v.vesselRanges.landed.load <= _preLoadRange * 950f)
             {
-                //OrXLog.instance.DebugLog("[OrX Log Set Ranges] === " + v.vesselName + " Current Landed Load Range: " + v.vesselRanges.landed.load + " ... CHANGING TO " + _range + " ===");
+                _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);
+                _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
+                _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
+
+                _vesselRanges = new VesselRanges
+                {
+                    escaping = _vesselOther,
+                    flying = _vesselFlying,
+                    landed = _vesselLanded,
+                    orbit = _vesselOther,
+                    prelaunch = _vesselLanded,
+                    splashed = _vesselLanded,
+                    subOrbital = _vesselOther
+                };
+
                 v.vesselRanges = new VesselRanges(_vesselRanges);
             }
+        }
+        public void SetGoalRange(Vessel v)
+        {
+            _vesselRanges = new VesselRanges
+            {
+                escaping = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                flying = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                landed = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                orbit = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                prelaunch = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                splashed = new VesselRanges.Situation(10000, 10000, 10000, 10000),
+                subOrbital = new VesselRanges.Situation(10000, 10000, 10000, 10000)
+            };
+
+            v.vesselRanges = new VesselRanges(_vesselRanges);
         }
 
         private Texture2D redDot;

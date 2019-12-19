@@ -46,7 +46,7 @@ namespace OrX
                      .Where(a => a.name.Contains("BDArmory")).SelectMany(a => a.assembly.GetExportedTypes())
                      .SingleOrDefault(t => t.FullName == "BDArmory.UI.BDArmorySetup");
                 Debug.Log("[OrX VSExtention - SetBDAcVSGUI] === BD ARMORY SETUP FOUND ===");
-
+                /*
                 _vswitcher = vsExtensions.GetProperty("showVSGUI");
                 Debug.Log("[OrX VSExtention - SetBDAcVSGUI] === FOUND showVSGUI: " + _vswitcher.Name + " ===");
 
@@ -56,7 +56,7 @@ namespace OrX
                 {
                     Debug.Log("[OrX VSExtention - SetBDAcVSGUI] === CLOSING VS GUI ===");
                     _vswitcher.SetValue(vsGUI, false);
-                }
+                }*/
             }
             catch (Exception e)
             {
