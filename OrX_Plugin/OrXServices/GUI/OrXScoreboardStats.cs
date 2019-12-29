@@ -30,7 +30,7 @@ namespace OrX
         double maxDepth = 0;
         string totalTime = "";
         bool cheats = false;
-        public float _airTimeMod = 0.15f;
+        public float _airTimeMod = 0.25f;
         string creatorName = "";
         string HoloKronName = "";
         int hkCount = 0;
@@ -109,10 +109,7 @@ namespace OrX
         }
         public GUIStyle _switchAirTimeStyle(string _airTime, string _stageTime)
         {
-            float _air = float.Parse(_airTime);
-            float time = float.Parse(_stageTime);
-
-            if (_air >= time * _airTimeMod)
+            if (float.Parse(_airTime) >= float.Parse(_stageTime) * _airTimeMod)
             {
                 return titleStyleWarning;
             }
@@ -281,6 +278,7 @@ namespace OrX
         {
             GUI.DragWindow(new Rect(0, 0, WindowWidth, DraggableHeight));
             float line = 0;
+
             if (!_showModList)
             {
                 _contentWidth = WindowWidth - 2 * LeftIndent;

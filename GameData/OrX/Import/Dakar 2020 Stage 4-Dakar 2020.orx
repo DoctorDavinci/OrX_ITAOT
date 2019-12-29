@@ -1,0 +1,121 @@
+name = Dakar 2020 Stage 4
+group = Dakar 2020
+0
+{
+	name = Dakar 2020 Stage 4
+	group = Dakar 2020
+	count = 0
+	Kontinuum = False
+	Mods
+	{
+	}
+	OrX
+	{
+		OrXHoloKronCoords0
+		{
+			SOI = Kerbin
+			spawned = False
+			extras = False
+			unlocked = False
+			tech = 
+			missionName = Dakar 2020 Stage 4
+			missionType = CHALLENGE
+			challengeType = OUTLAW RACING
+			raceType = DAKAR RACING
+			gold = 
+			silver = 
+			bronze = 
+			completed = False
+			count = 0
+			lat = -5.9206187762786673
+			lon = -143.19924115141572
+			alt = 930.83122021390591
+			chance = 0
+			missionDescription0 = Stage 4 of the Dakar 2020
+			missionDescription1 = 
+			missionDescription2 = Good Luck
+			missionDescription3 = 
+			missionDescription4 = 
+			missionDescription5 = 
+			missionDescription6 = 
+			missionDescription7 = 
+			missionDescription8 = 
+			missionDescription9 = 
+			Targets = Kerbin,Dakar 2020 Stage 4,Dakar 2020,-5.92061877627867,-143.199241151416,930.831220213906,0,CHALLENGE,OUTLAW RACING:Kerbin,Dakar 2020 Stage 4,Dakar 2020,-5.92061877627867,-143.199241151416,930.831220213906,0,CHALLENGE,OUTLAW RACING
+		}
+	}
+	boids
+	{
+	}
+	data
+	{
+	}
+	mission0
+	{
+		psa = gheradea
+		stage1 = 1,-8.15403905329031,-142.402299877737,843.481971610338,10,50,50,0,20
+		scoreboard
+		{
+			scoreboard0
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard1
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard2
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard3
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard4
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard5
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard6
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard7
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard8
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard9
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+		}
+	}
+}

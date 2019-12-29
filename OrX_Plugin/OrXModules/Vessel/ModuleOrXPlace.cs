@@ -35,7 +35,7 @@ namespace OrX
         public double altitude = 0;
         public double latitude = 0;
         public double longitude = 0;
-        float altToSub = 0;
+        float _dropSpeed = 0;
 
         Vector3 UpVect;
         Quaternion _fixRot;
@@ -259,11 +259,17 @@ namespace OrX
         public void PlaceCraft(bool _bda, bool _airborne, bool _splashed, bool _gate, bool _owned, float _altToSubtract, float _left, float _pitch, float _delay)
         {
             vessel.IgnoreGForces(240);
-
+            bool _flip = false;
             _rb = vessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
 
             UpVect = (vessel.ReferenceTransform.position - vessel.mainBody.position).normalized;
+
+            if (_pitch == 180)
+            {
+                _flip = true;
+            }
+
             left = _left;
             pitch = _pitch - 90;
 
@@ -271,15 +277,33 @@ namespace OrX
             {
                 left -= 360;
             }
+            if (left <= -360)
+            {
+                left += 360;
+            }
 
-            if (vessel.rootPart.Modules.Contains<ModuleOrXStage>())
+            if (vessel.rootPart.Modules.Contains<ModuleOrXStage>() && OrXHoloKron.instance.buildingMission)
             {
                 left -= 90;
             }
 
-            SetRotation();
+            if (!_gate)
+            {
+                SetRotation();
+            }
+            _dropSpeed = ((float)vessel.radarAltitude);
 
-            altToSub = _altToSubtract;
+            if (_flip)
+            {
+                _fixRot = Quaternion.identity;
+                vessel.IgnoreGForces(240);
+                vessel.SetWorldVelocity(Vector3d.zero);
+                _fixRot = Quaternion.AngleAxis(180, vessel.ReferenceTransform.right) * vessel.ReferenceTransform.rotation;
+                vessel.SetRotation(_fixRot, true);
+                _fixRot = Quaternion.AngleAxis(90, UpVect) * vessel.ReferenceTransform.rotation;
+                vessel.SetRotation(_fixRot, true);
+            }
+            
             vessel.IgnoreGForces(240);
             vessel.angularVelocity = Vector3.zero;
             vessel.angularMomentum = Vector3.zero;
@@ -321,7 +345,7 @@ namespace OrX
             _rb = vessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
             SetRotation();
-            float dropRate = Mathf.Clamp(((float)vessel.radarAltitude / 4), 0.1f, 200);
+            float dropRate = Mathf.Clamp(_dropSpeed / 2, 0.1f, 200);
             bool _continue = true;
             if (inRange)
             {
@@ -333,15 +357,19 @@ namespace OrX
                         vessel.angularVelocity = Vector3.zero;
                         vessel.angularMomentum = Vector3.zero;
                         vessel.SetWorldVelocity(Vector3.zero);
-                        dropRate = Mathf.Clamp(((float)vessel.radarAltitude / 4), 0.1f, 200);
+                        dropRate = Mathf.Clamp(_dropSpeed / 2, 0.2f, 200);
 
-                        if (dropRate <= 0.15f)
+                        if (dropRate <= 0.2f)
                         {
-                            dropRate = 0.15f;
+                            dropRate = 0.2f;
+                        }
+                        if (_dropSpeed <= 2)
+                        {
+                            _dropSpeed = 2;
                         }
 
                         vessel.Translate(dropRate * Time.fixedDeltaTime * -(vessel.ReferenceTransform.position - vessel.mainBody.position).normalized);
-
+                        _dropSpeed -= dropRate * Time.fixedDeltaTime;
                         yield return new WaitForFixedUpdate();
 
                         if (vessel.radarAltitude <= 0.5f)

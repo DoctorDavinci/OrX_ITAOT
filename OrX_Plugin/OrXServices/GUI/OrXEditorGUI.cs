@@ -86,22 +86,22 @@ namespace OrX
         }
         private void Start()
         {
-            _windowRect = new Rect((Screen.width / 2) - (WindowWidth / 2), (Screen.height / 2) - (_windowHeight / 2), WindowWidth, _windowHeight);
+            _windowRect = new Rect(Screen.width - (WindowWidth + 50), 50, WindowWidth, _windowHeight);
         }
         private void OnGUI()
         {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (!FlightGlobals.ready || PauseMenu.isOpen) return;
+            }
+
             GUI.backgroundColor = XKCDColors.DarkGrey;
             GUI.contentColor = XKCDColors.DarkGrey;
             GUI.color = XKCDColors.DarkGrey;
 
-            if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready)
-            {
-                if (PauseMenu.isOpen) return;
-            }
-
             if (_guiEnabled)
             {
-                _windowRect = GUI.Window(529344475, _windowRect, OrXEditorGUI, "");
+                _windowRect = GUI.Window(529342975, _windowRect, OrXEditorGUI, "");
             }
         }
 
@@ -111,32 +111,42 @@ namespace OrX
             float line = 0;
             _contentWidth = WindowWidth - 2 * LeftIndent;
 
-
             if (_tuneCraft)
             {
                 GUI.Label(new Rect(0, 0, WindowWidth, 20), "Kontinuum Craft Tuning", titleStyleL);
-                line++;
-                line += 0.2f;
 
                 if (_tuning)
                 {
-                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Craft Being Tuned", centerLabel);
-                    line += 0.2f;
-                    line++;
-                    GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), crafttosave, centerLabelW);
-                    line++;
-                    line += 0.2f;
-
-                    if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Save Craft Variant", OrXGUISkin.button))
+                    if (!HighLogic.LoadedSceneIsEditor)
                     {
-                        if (HighLogic.LoadedSceneIsFlight)
+                        GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Craft Being Tuned", centerLabel);
+                        line += 0.2f;
+                        line++;
+                        GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), crafttosave, centerLabelW);
+                        line++;
+                        line += 0.4f;
+
+                        if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Save Craft Variant", OrXGUISkin.button))
                         {
-                            SaveCraftVariant(tunedCraft);
+                            if (HighLogic.LoadedSceneIsFlight)
+                            {
+                                StartCoroutine(SaveCraftVariant(tunedCraft));
+                            }
                         }
+                    }
+                    else
+                    {
+                        _craftSelected = false;
+                        _tuning = false;
+                        _tuneCraft = false;
+                        _guiEnabled = false;
+                        _count = 0;
                     }
                 }
                 else
                 {
+                    line++;
+
                     if (!_craftSelected)
                     {
                         if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Select Craft", OrXGUISkin.button))
@@ -160,30 +170,39 @@ namespace OrX
             else
             {
                 GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum", titleStyleL);
+                
+                line++;
+               
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "MAIN MENU", OrXGUISkin.button))
+                {
+                    OrXHoloKron.instance.MainMenu();
+                    _craftSelected = false;
+                    _tuning = false;
+                    _tuneCraft = false;
+                    _guiEnabled = false;
+                    _count = 0;
+                    OrXHoloKron.instance.OrXHCGUIEnabled = true;
+                }
                 line++;
                 line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Craft Tuning", OrXGUISkin.button))
+                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "CRAFT TUNING", OrXGUISkin.button))
                 {
                     _tuneCraft = true;
                 }
-                line++;
-                line += 0.2f;
 
-                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "HoloKrons", OrXGUISkin.button))
-                {
-                    
-                }
+                /*
                 line++;
                 line += 0.2f;
                 if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Missions", OrXGUISkin.button))
                 {
                 }
+                */
             }
             line++;
             line += 0.2f;
 
-            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Close Menu", OrXGUISkin.button))
+            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "CLOSE", OrXGUISkin.button))
             {
                 _craftSelected = false;
                 _tuning = false;
@@ -203,7 +222,7 @@ namespace OrX
             _count += 1;
             int partCount = 0;
             string shipDescription = toSave.vesselName + " Variant " + _count;
-            OrXLog.instance.DebugLog("[OrX Save Craft Variant] Saving " + toSave.vesselName + " .......................");
+            Debug.Log("[OrX Save Craft Variant] Saving " + toSave.vesselName + " .......................");
             ShipConstruct ConstructToSave = new ShipConstruct(toSave.vesselName + " Variant " + _count, shipDescription, toSave.parts[0]);
             ConfigNode craftConstruct = new ConfigNode("craft");
             craftConstruct = ConstructToSave.SaveShip();

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FinePrint;
 using System.Reflection;
+using KSP.UI.Screens;
 
 namespace OrX
 {
@@ -85,7 +86,7 @@ namespace OrX
         private static VesselRanges.Situation _vesselLanded;
         private static VesselRanges.Situation _vesselFlying;
         private static VesselRanges.Situation _vesselOther;
-        public bool _debugLog = false;
+        public bool _debugLog = true;
         public bool _mode = false;
         public float _preLoadRange = 75;
         public bool _preInstalled = false;
@@ -104,10 +105,12 @@ namespace OrX
             ConfigNode EVA = new ConfigNode("MODULE");
             ConfigNode OrXStage = new ConfigNode("MODULE");
             ConfigNode OrXWMI = new ConfigNode("MODULE");
+            ConfigNode OrXBFC = new ConfigNode("MODULE");
 
             EVA.AddValue("name", "ModuleOrX");
             OrXStage.AddValue("name", "ModuleOrXStage");
             OrXWMI.AddValue("name", "ModuleOrXWMI");
+            OrXBFC.AddValue("name", "ModuleOrXBFC");
 
             try
             {
@@ -144,6 +147,50 @@ namespace OrX
             catch
             {
             }
+
+            try
+            {
+                PartLoader.getPartInfoByName("StandardCtrlSrf").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'StandardCtrlSrf' ===");
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                PartLoader.getPartInfoByName("smallCtrlSrf").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'smallCtrlSrf' ===");
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                PartLoader.getPartInfoByName("elevon2").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'elevon2' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("elevon3").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'elevon3' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("elevon5").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'elevon5' ===");
+            }
+            catch
+            {
+            }
+
         }
         private void Start()
         {
@@ -179,6 +226,7 @@ namespace OrX
                 GameEvents.onVesselWasModified.Add(onVesselChange);
                 GameEvents.onVesselPartCountChanged.Add(onVesselChange);
                 GameEvents.onPartDeCouple.Add(onPartDecouple);
+                GameEvents.onEditorLoad.Add(onEditorLoad);
 
                 CheckUpgrades();
                 _preEnabled = PREnabled();
@@ -186,6 +234,23 @@ namespace OrX
             else
             {
                 Debug.Log("[OrX Log] === WRONG KSP VERSION ===");
+            }
+        }
+
+        private void onEditorLoad(ShipConstruct data0, CraftBrowserDialog.LoadType data1)
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+            {
+                List<Part>.Enumerator _part = EditorLogic.fetch.ship.Parts.GetEnumerator();
+                while (_part.MoveNext())
+                {
+                    if (_part.Current.Modules.Contains<KerbalEVA>())
+                    {
+                        
+                        //EditorLogic.DeletePart(_part.Current);
+                    }
+                }
+                _part.Dispose();
             }
         }
 

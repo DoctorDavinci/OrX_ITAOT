@@ -16,21 +16,24 @@ namespace OrX
         {
             if (HighLogic.LoadedSceneIsFlight)
             {
-               // part.force_activate();
-               /*
-                List<Part>.Enumerator p = vessel.parts.GetEnumerator();
-                while (p.MoveNext())
-                {
-                    if (p.Current != null && p.Current != vessel.rootPart)
-                    {
-                        p.Current.AddModule("ModuleOrXStage");
-                    }
-                }
-                p.Dispose();
-
-                */
+                part.force_activate();
             }
             base.OnStart(state);
+        }
+
+        public override void OnFixedUpdate()
+        {
+            base.OnFixedUpdate();
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (OrXHoloKron.instance.buildingMission && OrXHoloKron.instance.dakarRacing)
+                {
+                    if (this.vessel.LandedOrSplashed && !OrXHoloKron.instance.movingCraft)
+                    {
+                        part.AddModule("ModuleOrXJason", true);
+                    }
+                }
+            }
         }
     }
 }

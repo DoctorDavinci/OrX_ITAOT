@@ -125,6 +125,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OrXModules\ModuleOrXBFC.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXDakarGate.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXWMI.cs" />
     <Compile Include="OrXModules\Vessel\ModuleAddSalt.cs" />

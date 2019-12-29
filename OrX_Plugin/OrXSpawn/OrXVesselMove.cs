@@ -10,6 +10,8 @@ namespace OrX.spawn
     public class OrXVesselMove : MonoBehaviour
     {
         public static OrXVesselMove Instance;
+        Vector3d targetPosition;
+        double _distance = 0;
 
         #region Variables
 
@@ -141,7 +143,7 @@ namespace OrX.spawn
 
             Vector3 forward = North();//Vector3.ProjectOnPlane((movingVessel.CoM)-FlightCamera.fetch.mainCamera.transform.position, up).normalized;
 
-            float radius = _alt;
+            float radius = 1;
 
             Vector3 offsetVector = (radius * radiusFactor * forward);
             offsetVector = Quaternion.AngleAxis(angle, UpVect) * offsetVector;
@@ -449,14 +451,13 @@ namespace OrX.spawn
             double _altDiffDeg = _altDiff * degPerMeter;
             return Math.Sqrt((_altDiffDeg * _altDiffDeg) + diffSqr) * mPerDegree;
         }
-        Vector3d targetPosition;
         public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _placingGate, bool _external, Vector3d _targetPos)
         {
-            OrXLog.instance.SetFocusKeys();
-            if (_external)
+            if (!_external)
             {
-                OrXHoloKron.instance.Reach();
+                _lineRender.enabled = true;
             }
+            OrXLog.instance.SetFocusKeys();
             targetPosition = _targetPos;
             _externalControl = _external;
             MovingVessel = new Vessel();
@@ -466,13 +467,15 @@ namespace OrX.spawn
             _moveMode = MoveModes.Normal;
             MovingVessel = v;
             IsMovingVessel = true;
+            _distance = CheckDistance(null, targetPosition);
+
             if (MovingVessel == OrXHoloKron.instance._HoloKron)
             {
                 MoveHeight = 10;
             }
             else
             {
-                MoveHeight = (float)MovingVessel.radarAltitude + _alt;
+                MoveHeight = 10 + _alt;
             }
             mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
             degPerMeter = 1 / mPerDegree;
@@ -483,7 +486,6 @@ namespace OrX.spawn
             _rb = MovingVessel.GetComponent<Rigidbody>();
             _rb.isKinematic = true;
             _moving = true;
-            _lineRender.enabled = true;
             if (_placingGate)
             {
                 OrXHoloKron.instance.spawningStartGate = true;
@@ -494,9 +496,16 @@ namespace OrX.spawn
             }
             else
             {
-                OrXHoloKron.instance._spawningVessel = true;
-                OrXHoloKron.instance.getNextCoord = true;
-                OrXHoloKron.instance.OrXHCGUIEnabled = true;
+                if (_external)
+                {
+                    OrXHoloKron.instance.Reach();
+                }
+                else
+                {
+                    OrXHoloKron.instance._spawningVessel = true;
+                    OrXHoloKron.instance.getNextCoord = true;
+                    OrXHoloKron.instance.OrXHCGUIEnabled = true;
+                }
             }
 
             if (MovingVessel != FlightGlobals.ActiveVessel)
@@ -504,34 +513,8 @@ namespace OrX.spawn
                 Debug.Log("[OrX Vessel Move] ===== SETTING ACTIVE VESSEL =====");
                 FlightGlobals.ForceSetActiveVessel(MovingVessel);
             }
-
-            if (_external)
-            {
-                StartCoroutine(MoveHeightAutoAdjust(null, _targetPos,CheckDistance(null, _targetPos)));
-            }
         }
 
-        IEnumerator MoveHeightAutoAdjust(Vessel _target , Vector3d _targetPos, double _dist)
-        {
-            if (CheckDistance(_target, _targetPos) >= 15 && _moving)
-            {
-                yield return new WaitForFixedUpdate();
-
-                if (CheckDistance(_target, _targetPos) >= _dist * 0.6)
-                {
-                    MoveHeight += 0.1f;
-                }
-                else
-                {
-                    if (CheckDistance(_target, _targetPos) <= _dist * 0.4)
-                    {
-                        MoveHeight -= 0.1f;
-                    }
-                }
-
-                StartCoroutine(MoveHeightAutoAdjust(_target, _targetPos, _dist));
-            }
-        }
         private void UpdateMove()
         {
             if (!_moving) return;
@@ -552,15 +535,40 @@ namespace OrX.spawn
 
             _hoverAdjust = 0;
 
-            if (MovingVessel.radarAltitude <= 10)
+            if (_externalControl)
+            {
+                if (MovingVessel.radarAltitude >= MovingVessel.altitude)
+                {
+                    MoveHeight = (float)MovingVessel.radarAltitude - (float)MovingVessel.altitude;
+                }
+
+                if (MoveHeight <= 10)
+                {
+                    MoveHeight = 10;
+                }
+
+                if (_distance >= 15 && _moving)
+                {
+                    if (CheckDistance(null, targetPosition) >= _distance * 0.5)
+                    {
+                        MoveHeight += 0.1f;
+                    }
+                    else
+                    {
+                        MoveHeight -= 0.1f;
+                    }
+                }
+            }
+
+            if (MoveHeight <= 10)
             {
                 MoveSpeed = (float)MovingVessel.radarAltitude / 3;
             }
             else
             {
-                if (MovingVessel.radarAltitude >= 50)
+                if (MoveHeight >= 50)
                 {
-                    if (MovingVessel.radarAltitude >= 100)
+                    if (MoveHeight >= 100)
                     {
                         _lineRender.material.SetColor("_EmissiveColor", XKCDColors.BluePurple);
                         MoveSpeed = 100 + ((float)MovingVessel.radarAltitude / 10);
@@ -810,6 +818,7 @@ namespace OrX.spawn
         }
         IEnumerator KillMoveRoutine(bool _place, bool _gate)
         {
+            MovingVessel.ActionGroups.SetGroup(KSPActionGroup.Brakes, true);
             _moving = false;
             _externalControl = false;
             //MovingVessel.SetWorldVelocity(Vector3.zero);
@@ -871,8 +880,19 @@ namespace OrX.spawn
                     }
                     else
                     {
-                        FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
-                        OrXHoloKron.instance.SpawnMenu();
+                        if (OrXHoloKron.instance._spawnByOrX)
+                        {
+                            FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
+                            OrXHoloKron.instance.movingCraft = false;
+                        }
+                        else
+                        {
+                            FlightGlobals.ForceSetActiveVessel(OrXHoloKron.instance.triggerVessel);
+                            if (OrXHoloKron.instance.bdaChallenge)
+                            {
+                                OrXHoloKron.instance.SpawnMenu();
+                            }
+                        }
                     }
                     OrXLog.instance.ResetFocusKeys();
                 }

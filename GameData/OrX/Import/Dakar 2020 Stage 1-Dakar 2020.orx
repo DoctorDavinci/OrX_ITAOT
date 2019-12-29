@@ -1,0 +1,121 @@
+name = Dakar 2020 Stage 1
+group = Dakar 2020
+0
+{
+	name = Dakar 2020 Stage 1
+	group = Dakar 2020
+	count = 0
+	Kontinuum = False
+	Mods
+	{
+	}
+	OrX
+	{
+		OrXHoloKronCoords0
+		{
+			SOI = Kerbin
+			spawned = False
+			extras = False
+			unlocked = False
+			tech = 
+			missionName = Dakar 2020 Stage 1
+			missionType = CHALLENGE
+			challengeType = OUTLAW RACING
+			raceType = DAKAR RACING
+			gold = 
+			silver = 
+			bronze = 
+			completed = False
+			count = 0
+			lat = -6.5971327451276958
+			lon = -144.03256182909985
+			alt = 796.12595837039407
+			chance = 0
+			missionDescription0 = Located deep in the desert, this
+			missionDescription1 = Dakar challenge requires a lot of
+			missionDescription2 = navigation ... A straight line is NOT
+			missionDescription3 = the way to go
+			missionDescription4 = 
+			missionDescription5 = Have fun and share your experience
+			missionDescription6 = on the forum
+			missionDescription7 = 
+			missionDescription8 = Good Luck
+			missionDescription9 = 
+			Targets = Kerbin,Dakar 2020 Stage 1,Dakar 2020,-6.5971327451277,-144.0325618291,796.125958370394,0,CHALLENGE,OUTLAW RACING:Kerbin,Dakar 2020 Stage 1,Dakar 2020,-6.5971327451277,-144.0325618291,796.125958370394,0,CHALLENGE,OUTLAW RACING
+		}
+	}
+	boids
+	{
+	}
+	data
+	{
+	}
+	mission0
+	{
+		psa = gheradea
+		stage1 = 1,-6.49352444621272,-141.674855339424,1304.04664024792,10,50,50,0,20
+		scoreboard
+		{
+			scoreboard0
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard1
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard2
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard3
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard4
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard5
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard6
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard7
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard8
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+			scoreboard9
+			{
+				neam = tyem<>p
+				iloameTtt = 
+				mpaSedex = 
+			}
+		}
+	}
+}

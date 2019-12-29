@@ -129,7 +129,6 @@ namespace OrX
             if (HighLogic.LoadedSceneIsFlight)
             {
                 part.force_activate();
-                //pos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latitude, (double)longitude, (double)altitude);
                 tLevel = 0;
                 part.SetOpacity(tLevel);
                 HoloKronName = OrXHoloKron.instance.HoloKronName;
@@ -139,7 +138,6 @@ namespace OrX
                 foreach (Collider c in part.GetComponents<Collider>())
                 {
                     c.enabled = false;
-                    //Destroy(c);
                 }
             }
         }
@@ -320,6 +318,7 @@ namespace OrX
                                     double _altDiffDeg = _altDiff * OrXTargetDistance.instance.degPerMeter;
                                     double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
                                     double _targetDistance = Math.Sqrt(altAdded) * OrXTargetDistance.instance.mPerDegree;
+                                    //OrXHoloKron.instance.targetDistance = _targetDistance;
 
                                     if (!fml)
                                     {
@@ -335,7 +334,6 @@ namespace OrX
                                             else
                                             {
                                                 float distance = 25;
-                                                OrXHoloKron.instance.targetDistance = _targetDistance;
 
                                                 if (challengeType == "BD ARMORY")
                                                 {
@@ -367,11 +365,14 @@ namespace OrX
                                                         {
                                                             geoCache = false;
                                                         }
-
+                                                        else
+                                                        {
+                                                            geoCache = true;
+                                                        }
                                                         OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
-                                                        OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
+                                                        OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "' === ");
                                                         OrXHoloKron.instance.holoOpen = true;
-                                                        OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                                        OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName, hkCount, this.vessel, FlightGlobals.ActiveVessel);
                                                     }
                                                 }
                                             }
@@ -380,19 +381,21 @@ namespace OrX
                                         {
                                             if (raceType == "DAKAR RACING" && !gateSpawned)
                                             {
-                                                if (_targetDistance <= 1500)
+                                                if (_targetDistance <= 800)
                                                 {
                                                     gateSpawned = true;
-                                                    OrXSpawnHoloKron.instance.SpawnFile(OrXSpawnHoloKron.instance.GoalPostCraft, true, false, false, false, false, stage, 0, 0, new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude));
+                                                    StartCoroutine(GateCheck());
                                                 }
                                             }
 
                                             if (_targetDistance <= 8)
                                             {
+                                                OrXHoloKron.instance._getCenterDist = false;
                                                 hideGoal = true;
                                                 Goal = false;
                                                 OrXLog.instance.DebugLog("== STAGE " + stage + " TARGET DISTANCE: " + _targetDistance);
                                                 OrXHoloKron.instance.GetNextCoord();
+                                                //StartCoroutine(GateCheck());
                                             }
                                         }
                                     }
@@ -526,7 +529,7 @@ namespace OrX
                                     OrXHoloKron.instance._challengeStartLoc = new Vector3d(latitude, longitude, altitude);
                                     OrXLog.instance.DebugLog("[Module OrX Mission] === OPENING '" + HoloKronName + "-" + hkCount + "-" + creator + "' === ");
                                     OrXHoloKron.instance.holoOpen = true;
-                                    OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                    OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName, hkCount, this.vessel, FlightGlobals.ActiveVessel);
                                     ScreenMessages.PostScreenMessage(new ScreenMessage("Get into a vehicle to start the challenge", 4, ScreenMessageStyle.UPPER_CENTER));
                                 }
                                 else
@@ -553,7 +556,7 @@ namespace OrX
                                     geoCache = false;
                                 }
                                 triggerCraft = FlightGlobals.ActiveVessel;
-                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName + "-" + hkCount + "-" + creator, hkCount, this.vessel, FlightGlobals.ActiveVessel);
+                                OrXHoloKron.instance.OpenHoloKron(geoCache, HoloKronName, hkCount, this.vessel, FlightGlobals.ActiveVessel);
                             }
                             else
                             {
@@ -563,6 +566,131 @@ namespace OrX
                             }
                         }
                     }
+                }
+            }
+            else
+            {
+
+            }
+        }
+
+        IEnumerator GateCheck()
+        {
+            double _latDiff = 0;
+            double _lonDiff = 0;
+            double _altDiff = 0;
+            bool _gateFound = false;
+
+            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
+            while (v.MoveNext())
+            {
+                if (v.Current != null && v.Current.loaded && !v.Current.packed)
+                {
+                    if (v.Current.rootPart.Modules.Contains<ModuleOrXStage>() && v.Current.parts.Count >= 3)
+                    {
+                        if (vessel.altitude <= v.Current.altitude)
+                        {
+                            _altDiff = v.Current.altitude - vessel.altitude;
+                        }
+                        else
+                        {
+                            _altDiff = vessel.altitude - v.Current.altitude;
+                        }
+
+                        if (v.Current.altitude >= 0)
+                        {
+                            if (vessel.latitude >= v.Current.latitude)
+                            {
+                                _latDiff = vessel.latitude - v.Current.latitude;
+                            }
+                            else
+                            {
+                                _latDiff = v.Current.latitude - vessel.latitude;
+                            }
+                        }
+                        else
+                        {
+                            if (vessel.latitude >= 0)
+                            {
+                                _latDiff = vessel.latitude - v.Current.latitude;
+                            }
+                            else
+                            {
+                                if (vessel.latitude <= v.Current.latitude)
+                                {
+                                    _latDiff = vessel.latitude - v.Current.latitude;
+                                }
+                                else
+                                {
+
+                                    _latDiff = v.Current.latitude - vessel.latitude;
+                                }
+                            }
+                        }
+
+                        if (v.Current.longitude >= 0)
+                        {
+                            if (vessel.longitude >= v.Current.longitude)
+                            {
+                                _lonDiff = vessel.longitude - v.Current.longitude;
+                            }
+                            else
+                            {
+                                _lonDiff = v.Current.longitude - vessel.longitude;
+                            }
+                        }
+                        else
+                        {
+                            if (vessel.longitude >= 0)
+                            {
+                                _lonDiff = vessel.longitude - v.Current.longitude;
+                            }
+                            else
+                            {
+                                if (vessel.longitude <= v.Current.longitude)
+                                {
+                                    _lonDiff = vessel.longitude - v.Current.longitude;
+                                }
+                                else
+                                {
+
+                                    _lonDiff = v.Current.latitude - vessel.longitude;
+                                }
+                            }
+                        }
+
+                        double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
+                        double _altDiffDeg = _altDiff * (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
+                        double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
+                        double _targetDistance = Math.Sqrt(altAdded) * (1 / (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360));
+
+                        if (_targetDistance <= 20)
+                        {
+                            if (hideGoal && !Goal)
+                            {
+                                v.Current.rootPart.AddModule("ModuleOrXJason", true);
+                                OrXLog.instance.DebugLog("[OrX OrX Mission - Gate Check] === Gate found ... calling Jason ===");
+                                _gateFound = true;
+                                break;
+                            }
+                            else
+                            {
+                                OrXLog.instance.DebugLog("[OrX OrX Mission - Gate Check] === Gate found ===");
+                                _gateFound = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            v.Dispose();
+
+            if (!_gateFound)
+            {
+                if (!hideGoal && Goal)
+                {
+                    yield return new WaitForFixedUpdate();
+                    OrXSpawnHoloKron.instance.SpawnFile(OrXSpawnHoloKron.instance.GoalPostCraft, true, false, false, false, false, stage, 0, 0, new Vector3d(vessel.latitude, vessel.longitude, vessel.altitude));
                 }
             }
             else
