@@ -5,6 +5,7 @@ using FinePrint;
 using System.Collections.Generic;
 using System.Linq;
 using OrX.spawn;
+using System.Device.Location;
 
 namespace OrX
 {
@@ -12,14 +13,9 @@ namespace OrX
     public class OrXTargetDistance : MonoBehaviour
     {
         public static OrXTargetDistance instance;
-        public double mPerDegree = 0;
-        public double degPerMeter = 0;
         public float scanDelay = 0;
-
-        public double targetDistance = 250000;
-        double _latDiff = 0;
-        double _lonDiff = 0;
-        double _altDiff = 0;
+        public double _radius = 0;
+        public double targetDistance = 0;
         double _latMission = 0;
         double _lonMission = 0;
         double _altMission = 0;
@@ -28,6 +24,7 @@ namespace OrX
         public float _wmActivateDelay = 0;
         public bool _randomSpawned = false;
         bool _continue = false;
+
         private void Awake()
         {
             if (instance) Destroy(instance);
@@ -90,8 +87,7 @@ namespace OrX
 
             if (_continue)
             {
-                mPerDegree = (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
-                degPerMeter = 1 / mPerDegree;
+                _radius = FlightGlobals.ActiveVessel.mainBody.Radius / 1000;
                 _randomSpawned = false;
                 _airsupportSpawned = false;
 
@@ -156,7 +152,6 @@ namespace OrX
             {
                 yield return new WaitForFixedUpdate();
                 scanDelay = 5;
-                //string hcn = "";
                 int coordCount = 0;
 
                 if (!b)
@@ -168,6 +163,7 @@ namespace OrX
                         OrXLog.instance.DebugLog("[OrX Geo-Cache Distance] OrX Coords List Count = " + OrXHoloKron.instance.OrXCoordsList.Count + " ..........");
                         OrXHoloKron.instance.checking = true;
                         coordCount = OrXHoloKron.instance.OrXCoordsList.Count;
+                        string _holoName = "";
 
                         List<string>.Enumerator coordinate = OrXHoloKron.instance.OrXCoordsList.GetEnumerator();
                         while (coordinate.MoveNext())
@@ -199,7 +195,6 @@ namespace OrX
                                 else
                                 {
                                     OrXLog.instance.DebugLog("[OrX Geo-Cache Distance] " + coordinate.Current + " was empty ..........");
-
                                 }
                             }
                             catch
@@ -209,86 +204,13 @@ namespace OrX
 
                             yield return new WaitForFixedUpdate();
 
-                            if (FlightGlobals.ActiveVessel.altitude <= _altMission)
-                            {
-                                _altDiff = _altMission - FlightGlobals.ActiveVessel.altitude;
-                            }
-                            else
-                            {
-                                _altDiff = FlightGlobals.ActiveVessel.altitude - _altMission;
-                            }
-
-                            if (_latMission >= 0)
-                            {
-                                if (FlightGlobals.ActiveVessel.latitude >= _latMission)
-                                {
-                                    _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                                }
-                                else
-                                {
-                                    _latDiff = _latMission - FlightGlobals.ActiveVessel.latitude;
-                                }
-                            }
-                            else
-                            {
-                                if (FlightGlobals.ActiveVessel.latitude >= 0)
-                                {
-                                    _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                                }
-                                else
-                                {
-                                    if (FlightGlobals.ActiveVessel.latitude <= _latMission)
-                                    {
-                                        _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                                    }
-                                    else
-                                    {
-
-                                        _latDiff = _latMission - FlightGlobals.ActiveVessel.latitude;
-                                    }
-                                }
-                            }
-
-                            if (_lonMission >= 0)
-                            {
-                                if (FlightGlobals.ActiveVessel.longitude >= _lonMission)
-                                {
-                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                                }
-                                else
-                                {
-                                    _lonDiff = _lonMission - FlightGlobals.ActiveVessel.latitude;
-                                }
-                            }
-                            else
-                            {
-                                if (FlightGlobals.ActiveVessel.longitude >= 0)
-                                {
-                                    _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                                }
-                                else
-                                {
-                                    if (FlightGlobals.ActiveVessel.longitude <= _lonMission)
-                                    {
-                                        _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                                    }
-                                    else
-                                    {
-
-                                        _lonDiff = _lonMission - FlightGlobals.ActiveVessel.longitude;
-                                    }
-                                }
-                            }
-
-                            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                            double _altDiffDeg = _altDiff * degPerMeter;
-                            double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                            double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
+                            double _targetDistance = OrXUtilities.instance.GetDistance(FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.latitude, _lonMission, _latMission, (FlightGlobals.ActiveVessel.altitude + _altMission) / 2);
 
                             if (targetDistance >= _targetDistance)
                             {
                                 targetDistance = _targetDistance;
                                 OrXHoloKron.instance.targetDistance = _targetDistance;
+                                _holoName = HoloKronName;
                             }
                         }
                         coordinate.Dispose();
@@ -309,23 +231,22 @@ namespace OrX
                                         if (TargetCoords[i] != null && TargetCoords[i].Length > 0)
                                         {
                                             string[] data = TargetCoords[i].Split(new char[] { ',' });
-                                            if (data[1] == HoloKronName)
+                                            if (data[1] == _holoName)
                                             {
-                                                //HoloKronName = data[1];
                                                 _latMission = double.Parse(data[3]);
                                                 _lonMission = double.Parse(data[4]);
                                                 _altMission = double.Parse(data[5]);
 
                                                 if (targetDistance <= 5000)
                                                 {
-                                                    OrXLog.instance.DebugLog("[OrX Geo-Cache Distance] === " + HoloKronName + " Distance in Meters: " + targetDistance);
+                                                    OrXLog.instance.DebugLog("[OrX Geo-Cache Distance] === " + _holoName + " Distance in Meters: " + targetDistance);
                                                     missionCoords = new Vector3d(_latMission, _lonMission, _altMission);
                                                     checking = true;
                                                     _continue = false;
                                                     b = true;
                                                     OrXHoloKron.instance.checking = false;
                                                     OrXHoloKron.instance.Reach();
-                                                    CheckIfHoloSpawned(HoloKronName, missionCoords, missionCoords, true, false);
+                                                    CheckIfHoloSpawned(_holoName, missionCoords, missionCoords, true, false);
                                                 }
                                                 else
                                                 {
@@ -360,85 +281,8 @@ namespace OrX
                 else
                 {
                     coordCount += 1;
-
-                    if (FlightGlobals.ActiveVessel.altitude <= _altMission)
-                    {
-                        _altDiff = _altMission - FlightGlobals.ActiveVessel.altitude;
-                    }
-                    else
-                    {
-                        _altDiff = FlightGlobals.ActiveVessel.altitude - _altMission;
-                    }
-
-                    if (_latMission >= 0)
-                    {
-                        if (FlightGlobals.ActiveVessel.latitude >= _latMission)
-                        {
-                            _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                        }
-                        else
-                        {
-                            _latDiff = _latMission - FlightGlobals.ActiveVessel.latitude;
-                        }
-                    }
-                    else
-                    {
-                        if (FlightGlobals.ActiveVessel.latitude >= 0)
-                        {
-                            _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                        }
-                        else
-                        {
-                            if (FlightGlobals.ActiveVessel.latitude <= _latMission)
-                            {
-                                _latDiff = FlightGlobals.ActiveVessel.latitude - _latMission;
-                            }
-                            else
-                            {
-
-                                _latDiff = _latMission - FlightGlobals.ActiveVessel.latitude;
-                            }
-                        }
-                    }
-
-                    if (_lonMission >= 0)
-                    {
-                        if (FlightGlobals.ActiveVessel.longitude >= _lonMission)
-                        {
-                            _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                        }
-                        else
-                        {
-                            _lonDiff = _lonMission - FlightGlobals.ActiveVessel.latitude;
-                        }
-                    }
-                    else
-                    {
-                        if (FlightGlobals.ActiveVessel.longitude >= 0)
-                        {
-                            _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                        }
-                        else
-                        {
-                            if (FlightGlobals.ActiveVessel.longitude <= _lonMission)
-                            {
-                                _lonDiff = FlightGlobals.ActiveVessel.longitude - _lonMission;
-                            }
-                            else
-                            {
-
-                                _lonDiff = _lonMission - FlightGlobals.ActiveVessel.longitude;
-                            }
-                        }
-                    }
-
-                    double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                    double _altDiffDeg = _altDiff * degPerMeter;
-                    double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                    double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
-
-                    targetDistance = _targetDistance;
-                    OrXHoloKron.instance.targetDistance = _targetDistance;
+                    targetDistance = OrXUtilities.instance.GetDistance(FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.latitude, _lonMission, _latMission, (FlightGlobals.ActiveVessel.altitude + _altMission) / 2); 
+                    OrXHoloKron.instance.targetDistance = targetDistance;
 
                     if (OrXHoloKron.instance.challengeRunning)
                     {
@@ -453,7 +297,7 @@ namespace OrX
                         }
                     }
 
-                    if (_targetDistance <= 20000)
+                    if (targetDistance <= 20000)
                     {
                         if (checking)
                         {
@@ -461,11 +305,10 @@ namespace OrX
                             {
                                 if (OrXVesselLog.instance._playerCraft.Contains(FlightGlobals.ActiveVessel))
                                 {
-                                    Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
-
+                                    Vector3d stageStartCoords = OrXUtilities.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
                                     OrXHoloKron.instance.checking = false;
                                     OrXLog.instance.DebugLog("[OrX Target Distance - Goal] === TARGET Name: " + HoloKronName);
-                                    OrXLog.instance.DebugLog("[OrX Target Distance - Goal] === TARGET Distance in Meters: " + _targetDistance);
+                                    OrXLog.instance.DebugLog("[OrX Target Distance - Goal] === TARGET Distance in Meters: " + targetDistance);
                                     checking = false;
                                     CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
                                 }
@@ -474,11 +317,11 @@ namespace OrX
                             {
                                 if (_continue)
                                 {
-                                    if (_targetDistance <= 4000)
+                                    if (targetDistance <= 4000)
                                     {
                                         _continue = false;
-                                        Vector3d stageStartCoords = OrXSpawnHoloKron.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
-                                        OrXLog.instance.DebugLog("[OrX HoloKron Distance] === " + HoloKronName + " Distance in Meters: " + _targetDistance);
+                                        Vector3d stageStartCoords = OrXUtilities.instance.WorldPositionToGeoCoords(new Vector3d(_latMission, _lonMission, _altMission), FlightGlobals.currentMainBody);
+                                        OrXLog.instance.DebugLog("[OrX HoloKron Distance] === " + HoloKronName + " Distance in Meters: " + targetDistance);
                                         CheckIfHoloSpawned(HoloKronName, stageStartCoords, missionCoords, primary, Goal);
                                     }
                                 }
@@ -489,7 +332,7 @@ namespace OrX
                         }
                         else
                         {
-                            if (_targetDistance <= 50 && OrXHoloKron.instance.checking)
+                            if (targetDistance <= 50 && OrXHoloKron.instance.checking)
                             {
                                 OrXHoloKron.instance.checking = false;
 
@@ -514,11 +357,11 @@ namespace OrX
                                 {
                                     if (_playerVessels.Current != null)
                                     {
-                                        if (_targetDistance <= 60000)
+                                        if (targetDistance <= 60000)
                                         {
                                             if (_playerVessels.Current.altitude >= _playerVessels.Current.radarAltitude)
                                             {
-                                                if (_playerVessels.Current.radarAltitude >= _targetDistance / 100)
+                                                if (_playerVessels.Current.radarAltitude >= targetDistance / 100)
                                                 {
                                                     _randomSpawned = true;
                                                     _continue = true;
@@ -526,7 +369,7 @@ namespace OrX
                                             }
                                             else
                                             {
-                                                if (_playerVessels.Current.altitude >= _targetDistance / 100)
+                                                if (_playerVessels.Current.altitude >= targetDistance / 100)
                                                 {
                                                     _randomSpawned = true;
                                                     _continue = true;
@@ -538,13 +381,13 @@ namespace OrX
                                         {
                                             if (OrXSpawnHoloKron.instance._interceptorCount != 0 && !_randomSpawned)
                                             {
-                                                if (_targetDistance <= 100000)
+                                                if (targetDistance <= 100000)
                                                 {
                                                     double spawnChance;
 
                                                     if (_playerVessels.Current.altitude >= _playerVessels.Current.radarAltitude)
                                                     {
-                                                        spawnChance = (((100000 - _targetDistance) / 10000) * OrXSpawnHoloKron.instance._interceptorCount) * 500;
+                                                        spawnChance = (((100000 - targetDistance) / 10000) * OrXSpawnHoloKron.instance._interceptorCount) * 5;
                                                         if (_playerVessels.Current.radarAltitude <= spawnChance)
                                                         {
                                                             _continue = true;
@@ -552,7 +395,7 @@ namespace OrX
                                                     }
                                                     else
                                                     {
-                                                        spawnChance = (((100000 - _targetDistance) / 10000) * OrXSpawnHoloKron.instance._interceptorCount) * 500;
+                                                        spawnChance = (((100000 - targetDistance) / 10000) * OrXSpawnHoloKron.instance._interceptorCount) * 5;
                                                         if (_playerVessels.Current.altitude <= spawnChance)
                                                         {
                                                             _continue = true;
@@ -570,15 +413,15 @@ namespace OrX
                                     if (!_randomSpawned)
                                     {
                                         _randomSpawned = true;
-                                        OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Random Air Support] === TARGET Distance in Meters: " + _targetDistance);
-                                        _wmActivateDelay = (100000 - ((float)_targetDistance)) * 2;
+                                        OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Random Air Support] === TARGET Distance in Meters: " + targetDistance);
+                                        _wmActivateDelay = (100000 - ((float)targetDistance)) * 2;
                                         OrXSpawnHoloKron.instance.SpawnRandomAirSupport(_wmActivateDelay);
                                     }
                                     else
                                     {
-                                        OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Air Support] === TARGET Distance in Meters: " + _targetDistance);
+                                        OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Air Support] === TARGET Distance in Meters: " + targetDistance);
                                         _airsupportSpawned = true;
-                                        _wmActivateDelay = 60000 - ((float)_targetDistance);
+                                        _wmActivateDelay = 60000 - ((float)targetDistance);
                                         OrXSpawnHoloKron.instance.SpawnAirSupport(false, true, HoloKronName, new Vector3d(), _wmActivateDelay);
                                     }
                                 }
@@ -599,8 +442,6 @@ namespace OrX
                     OrXHoloKron.instance.MainMenu();
                 }
                 yield return new WaitForFixedUpdate();
-                OrXHoloKron.instance.targetDistance = targetDistance;
-                OrXHoloKron.instance._altitude = _altMission;
 
                 if (OrXHoloKron.instance.checking)
                 {
@@ -643,11 +484,6 @@ namespace OrX
         {
             bool s = false;
             bool rescan = false;
-            double _latDiff = 0;
-            double _lonDiff = 0;
-            double _altDiff = 0;
-            OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Check] === Checking for vessels within 10 meters of HoloKron to be spawned ===");
-
             List<Vessel>.Enumerator v = FlightGlobals.VesselsLoaded.GetEnumerator();
             while (v.MoveNext())
             {
@@ -657,83 +493,7 @@ namespace OrX
                     {
                         if (v.Current.vesselName == HoloKronName)
                         {
-                            if (vect.z <= v.Current.altitude)
-                            {
-                                _altDiff = v.Current.altitude - vect.z;
-                            }
-                            else
-                            {
-                                _altDiff = vect.z - v.Current.altitude;
-                            }
-
-                            if (v.Current.altitude >= 0)
-                            {
-                                if (vect.x >= v.Current.latitude)
-                                {
-                                    _latDiff = vect.x - v.Current.latitude;
-                                }
-                                else
-                                {
-                                    _latDiff = v.Current.latitude - vect.x;
-                                }
-                            }
-                            else
-                            {
-                                if (vect.x >= 0)
-                                {
-                                    _latDiff = vect.x - v.Current.latitude;
-                                }
-                                else
-                                {
-                                    if (vect.x <= v.Current.latitude)
-                                    {
-                                        _latDiff = vect.x - v.Current.latitude;
-                                    }
-                                    else
-                                    {
-
-                                        _latDiff = v.Current.latitude - vect.x;
-                                    }
-                                }
-                            }
-
-                            if (v.Current.longitude >= 0)
-                            {
-                                if (vect.y >= v.Current.longitude)
-                                {
-                                    _lonDiff = vect.y - v.Current.longitude;
-                                }
-                                else
-                                {
-                                    _lonDiff = v.Current.longitude - vect.y;
-                                }
-                            }
-                            else
-                            {
-                                if (vect.y >= 0)
-                                {
-                                    _lonDiff = vect.y - v.Current.longitude;
-                                }
-                                else
-                                {
-                                    if (vect.y <= v.Current.longitude)
-                                    {
-                                        _lonDiff = vect.y - v.Current.longitude;
-                                    }
-                                    else
-                                    {
-
-                                        _lonDiff = v.Current.latitude - vect.y;
-                                    }
-                                }
-                            }
-
-                            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                            double _altDiffDeg = _altDiff * degPerMeter;
-                            double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                            double _targetDistance = Math.Sqrt(altAdded) * mPerDegree;
-
-                            if (_targetDistance <= 10)
+                            if (OrXUtilities.instance.GetDistance(FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.latitude, _lonMission, _latMission, (FlightGlobals.ActiveVessel.altitude + _altMission) / 2) <= 10)
                             {
                                 OrXLog.instance.DebugLog("[OrX Target Distance - Spawn Check] === Vessel found ... unable to spawn ===");
                                 s = true;

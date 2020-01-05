@@ -46,23 +46,10 @@ namespace OrX.spawn
         {
             loadingCraft = true;
             Vector3 worldPos = SpawnCoords;
-            Vector3 gpsPos = WorldPositionToGeoCoords(worldPos, FlightGlobals.currentMainBody);
+            Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(worldPos, FlightGlobals.currentMainBody);
             yield return new WaitForFixedUpdate();
             SpawnVesselFromCraftFile(craftUrl, gpsPos, 90, 0, crewData);
         }
-
-        public static Vector3d WorldPositionToGeoCoords(Vector3d worldPosition, CelestialBody body)
-        {
-            if (!body)
-            {
-                return Vector3d.zero;
-            }
-            double lat = body.GetLatitude(worldPosition);
-            double longi = body.GetLongitude(worldPosition);
-            double alt = body.GetAltitude(worldPosition);
-            return new Vector3d(lat, longi, alt);
-        }
-
 
         private void SpawnVesselFromCraftFile(string craftURL, Vector3d gpsCoords, float heading, float pitch, List<ProtoCrewMember> crewData = null)
         {

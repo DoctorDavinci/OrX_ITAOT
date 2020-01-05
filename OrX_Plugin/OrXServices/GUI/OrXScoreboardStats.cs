@@ -293,8 +293,7 @@ namespace OrX
                 }
 
                 line++;
-
-                GUI.Label(new Rect(10, ContentTop + line * entryHeight, 60, 20), "Stage", titleStyleMedYellow);
+                GUI.Label(new Rect(10, ContentTop + line * entryHeight, 60, 20), "Gate", titleStyleMedYellow);
                 GUI.Label(new Rect(65, ContentTop + line * entryHeight, 100, 20), "Time", titleStyleMedYellow);
                 if (bda)
                 {

@@ -45,6 +45,7 @@
     <Reference Include="System.Core">
       <HintPath>..\..\..\..\..\Games\ksp-win64-1.8.1\KSP_win64\KSP_x64_Data\Managed\System.Core.dll</HintPath>
     </Reference>
+    <Reference Include="System.Device" />
     <Reference Include="UnityEngine">
       <HintPath>F:\KSP131Surafce AI\KSP_x64_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
@@ -92,6 +93,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Games\ksp-win64-1.8.1\KSP_win64\KSP_x64_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.ScreenCaptureModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\Games\ksp-win64-1.8.1\KSP_win64\KSP_x64_Data\Managed\UnityEngine.ScreenCaptureModule.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.TerrainModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Games\ksp-win64-1.8.1\KSP_win64\KSP_x64_Data\Managed\UnityEngine.TerrainModule.dll</HintPath>
@@ -125,7 +130,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="OrXModules\ModuleOrXBFC.cs" />
+    <Compile Include="OrXModules\Vessel\ModuleOrXBFC.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXDakarGate.cs" />
     <Compile Include="OrXModules\Vessel\ModuleOrXWMI.cs" />
     <Compile Include="OrXModules\Vessel\ModuleAddSalt.cs" />

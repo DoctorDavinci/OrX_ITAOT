@@ -661,7 +661,7 @@ namespace OrX.spawn
             }
 
             Vector3d tpoint = FlightGlobals.currentMainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt);
-            Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+            Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
 
             OrXLog.instance.DebugLog("[Spawn OrX Craft File] Altitude: " + gpsPos.z);
 
@@ -1123,12 +1123,7 @@ namespace OrX.spawn
 
             if (primary)
             {
-                _alt += 10;
-
-                if (OrXHoloKron.instance.bdaChallenge)
-                {
-                    _alt += 60;
-                }
+                _alt += 40;
 
                 OrXLog.instance.DebugLog("[Spawn OrX HoloKron] Spawning " + HoloKronName + " " + OrXHoloKron.instance.hkCount);
             }
@@ -1146,6 +1141,7 @@ namespace OrX.spawn
                 }
                 else
                 {
+                    _alt += 40;
                     empty = false;
                 }
                 stageCount += 1;
@@ -1155,21 +1151,15 @@ namespace OrX.spawn
 
             if (empty)
             {
-                //_alt += 4;
                 tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt)
                     + FlightGlobals.ActiveVessel.transform.forward * 3f;
             }
             else
             {
-                if (spawnGate)
-                {
-                    //_alt += 4;
-                }
-                //_alt += 5;
                 tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_lat, (double)_lon, (double)_alt);
             }
 
-            Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+            Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
 
             OrXLog.instance.DebugLog("[Spawn OrX HoloKron] Altitude: " + gpsPos.z);
 
@@ -1821,7 +1811,7 @@ namespace OrX.spawn
                                     yield return new WaitForFixedUpdate();
 
                                     Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
-                                    Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+                                    Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
                                     Orbit orbit = null;
 
                                     OrXLog.instance.DebugLog("[OrX Spawn LBC Vessels] Altitude: " + gpsPos.z);
@@ -2505,7 +2495,7 @@ namespace OrX.spawn
                                     }
 
                                     Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
-                                    Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+                                    Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
                                     Orbit orbit = null;
                                     bool landed = false;
                                     if (!landed)
@@ -3186,7 +3176,7 @@ namespace OrX.spawn
                                     yield return new WaitForFixedUpdate();
 
                                     Vector3d tpoint = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)_la, (double)_lo, (double)_al + (_altToSubtract * 3));
-                                    Vector3 gpsPos = WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
+                                    Vector3 gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(tpoint, FlightGlobals.currentMainBody);
                                     Orbit orbit = null;
 
                                     OrXLog.instance.DebugLog("[OrX Spawn Air Support] Altitude: " + gpsPos.z);
@@ -3514,7 +3504,7 @@ namespace OrX.spawn
                 craftBrowser = null;
                 openingCraftBrowser = false;
 
-                //Vector3d gpsPos = WorldPositionToGeoCoords(new Vector3d(_HoloKron.latitude, _HoloKron.longitude, _HoloKron.altitude), FlightGlobals.currentMainBody);
+                //Vector3d gpsPos = OrXUtilities.instance.WorldPositionToGeoCoords(new Vector3d(_HoloKron.latitude, _HoloKron.longitude, _HoloKron.altitude), FlightGlobals.currentMainBody);
                 //OrXSpawnHoloKron.instance.SpawnStartingGate();
             }
             else
@@ -3542,121 +3532,6 @@ namespace OrX.spawn
             }
             spawningGoal = false;
             spawning = false;
-        }
-
-        public bool VesselCheck(Vector3d _spawnLoc)
-        {
-            double _latDiff = 0;
-            double _lonDiff = 0;
-            double _altDiff = 0;
-            bool _gateFound = false;
-
-            List<Vessel>.Enumerator v = FlightGlobals.Vessels.GetEnumerator();
-            while (v.MoveNext())
-            {
-                if (v.Current != null && v.Current.loaded && !v.Current.packed)
-                {
-                    if (v.Current.rootPart.Modules.Contains<ModuleOrXStage>() && v.Current.parts.Count >= 3)
-                    {
-                        if (_spawnLoc.z <= v.Current.altitude)
-                        {
-                            _altDiff = v.Current.altitude - _spawnLoc.z;
-                        }
-                        else
-                        {
-                            _altDiff = _spawnLoc.z - v.Current.altitude;
-                        }
-
-                        if (v.Current.altitude >= 0)
-                        {
-                            if (_spawnLoc.x >= v.Current.latitude)
-                            {
-                                _latDiff = _spawnLoc.x - v.Current.latitude;
-                            }
-                            else
-                            {
-                                _latDiff = v.Current.latitude - _spawnLoc.x;
-                            }
-                        }
-                        else
-                        {
-                            if (_spawnLoc.x >= 0)
-                            {
-                                _latDiff = _spawnLoc.x - v.Current.latitude;
-                            }
-                            else
-                            {
-                                if (_spawnLoc.x <= v.Current.latitude)
-                                {
-                                    _latDiff = _spawnLoc.x - v.Current.latitude;
-                                }
-                                else
-                                {
-
-                                    _latDiff = v.Current.latitude - _spawnLoc.z;
-                                }
-                            }
-                        }
-
-                        if (v.Current.longitude >= 0)
-                        {
-                            if (_spawnLoc.y >= v.Current.longitude)
-                            {
-                                _lonDiff = _spawnLoc.y - v.Current.longitude;
-                            }
-                            else
-                            {
-                                _lonDiff = v.Current.longitude - _spawnLoc.y;
-                            }
-                        }
-                        else
-                        {
-                            if (_spawnLoc.y >= 0)
-                            {
-                                _lonDiff = _spawnLoc.y - v.Current.longitude;
-                            }
-                            else
-                            {
-                                if (_spawnLoc.y <= v.Current.longitude)
-                                {
-                                    _lonDiff = _spawnLoc.y - v.Current.longitude;
-                                }
-                                else
-                                {
-
-                                    _lonDiff = v.Current.latitude - _spawnLoc.z;
-                                }
-                            }
-                        }
-
-                        double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-                        double _altDiffDeg = _altDiff * (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360);
-                        double altAdded = (_altDiffDeg * _altDiffDeg) + diffSqr;
-                        double _targetDistance = Math.Sqrt(altAdded) * (1 / (((2 * (FlightGlobals.ActiveVessel.mainBody.Radius + FlightGlobals.ActiveVessel.altitude)) * Math.PI) / 360));
-
-                        if (_targetDistance <= 10)
-                        {
-                            _gateFound = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            v.Dispose();
-            return _gateFound;
-        }
-
-        public Vector3d WorldPositionToGeoCoords(Vector3d worldPosition, CelestialBody body)
-        {
-            if (!body)
-            {
-                return Vector3d.zero;
-            }
-            double lat = body.GetLatitude(worldPosition);
-            double longi = body.GetLongitude(worldPosition);
-            double alt = body.GetAltitude(worldPosition);
-            OrXLog.instance.DebugLog("[Spawn OrX HoloKron] Lat: " + lat + " - Lon:" + longi + " - Alt: " + alt);
-            return new Vector3d(lat, longi, alt);
         }
     }
 }

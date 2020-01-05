@@ -122,19 +122,6 @@ namespace OrX.spawn
 
         #region Utilities
 
-        private Vector3d WorldPositionToGeoCoords(Vector3d worldPosition, CelestialBody body)
-        {
-            if (!body)
-            {
-                OrXLog.instance.DebugLog("[OrX Vessel Move] ===== WorldPositionToGeoCoords CelestialBody is null =====");
-                return Vector3d.zero;
-            }
-
-            double lat = body.GetLatitude(worldPosition);
-            double longi = body.GetLongitude(worldPosition);
-            double alt = body.GetAltitude(worldPosition);
-            return new Vector3d(lat, longi, alt);
-        }
         private Vector3 GetBoundPoint(int index, int totalPoints, float radiusFactor)
         {
             float angleIncrement = 360 / (float)totalPoints;
@@ -354,103 +341,6 @@ namespace OrX.spawn
                 }
             }
         }
-        private double CheckDistance(Vessel _target, Vector3d _targetPos)
-        {
-            double _latDiff;
-            double _lonDiff;
-            double _altDiff;
-            double lat;
-            double lon;
-            double alt;
-
-            if (_target != null)
-            {
-                lat = _target.latitude;
-                lon = _target.longitude;
-                alt = _target.altitude;
-            }
-            else
-            {
-                lat = _targetPos.x;
-                lon = _targetPos.y;
-                alt = _targetPos.z;
-            }
-
-            if (alt <= MovingVessel.altitude)
-            {
-                _altDiff = MovingVessel.altitude - alt;
-            }
-            else
-            {
-                _altDiff = alt - MovingVessel.altitude;
-            }
-
-            if (MovingVessel.latitude >= 0)
-            {
-                if (lat >= MovingVessel.latitude)
-                {
-                    _latDiff = lat - MovingVessel.latitude;
-                }
-                else
-                {
-                    _latDiff = MovingVessel.latitude - lat;
-                }
-            }
-            else
-            {
-                if (lat >= 0)
-                {
-                    _latDiff = lat - MovingVessel.latitude;
-                }
-                else
-                {
-                    if (lat <= MovingVessel.latitude)
-                    {
-                        _latDiff = lat - MovingVessel.latitude;
-                    }
-                    else
-                    {
-
-                        _latDiff = MovingVessel.latitude - lat;
-                    }
-                }
-            }
-
-            if (MovingVessel.longitude >= 0)
-            {
-                if (lon >= MovingVessel.longitude)
-                {
-                    _lonDiff = lon - MovingVessel.longitude;
-                }
-                else
-                {
-                    _lonDiff = MovingVessel.longitude - lon;
-                }
-            }
-            else
-            {
-                if (lon >= 0)
-                {
-                    _lonDiff = lon - MovingVessel.longitude;
-                }
-                else
-                {
-                    if (lon <= MovingVessel.longitude)
-                    {
-                        _lonDiff = lon - MovingVessel.longitude;
-                    }
-                    else
-                    {
-
-                        _lonDiff = MovingVessel.longitude - lon;
-                    }
-                }
-            }
-
-            double diffSqr = (_latDiff * _latDiff) + (_lonDiff * _lonDiff);
-            double _altDiffDeg = _altDiff * degPerMeter;
-            return Math.Sqrt((_altDiffDeg * _altDiffDeg) + diffSqr) * mPerDegree;
-        }
         public void StartMove(Vessel v, bool _spawningLocal, float _altitude, bool _placingGate, bool _external, Vector3d _targetPos)
         {
             if (!_external)
@@ -467,7 +357,7 @@ namespace OrX.spawn
             _moveMode = MoveModes.Normal;
             MovingVessel = v;
             IsMovingVessel = true;
-            _distance = CheckDistance(null, targetPosition);
+            _distance = OrXUtilities.instance.GetDistance(MovingVessel.longitude, MovingVessel.latitude, _targetPos.y, _targetPos.x, (MovingVessel.altitude + _targetPos.z) / 2);// CheckDistance(null, targetPosition);
 
             if (MovingVessel == OrXHoloKron.instance._HoloKron)
             {
@@ -514,7 +404,6 @@ namespace OrX.spawn
                 FlightGlobals.ForceSetActiveVessel(MovingVessel);
             }
         }
-
         private void UpdateMove()
         {
             if (!_moving) return;
@@ -549,7 +438,7 @@ namespace OrX.spawn
 
                 if (_distance >= 15 && _moving)
                 {
-                    if (CheckDistance(null, targetPosition) >= _distance * 0.5)
+                    if (OrXUtilities.instance.GetDistance(MovingVessel.longitude, MovingVessel.latitude, targetPosition.y, targetPosition.x, (MovingVessel.altitude + targetPosition.z) / 2) >= _distance * 0.5)
                     {
                         MoveHeight += 0.1f;
                     }
@@ -737,7 +626,7 @@ namespace OrX.spawn
 
             PQS bodyPQS = MovingVessel.mainBody.pqsController;
 
-            Vector3d geoCoords = WorldPositionToGeoCoords(MovingVessel.GetWorldPos3D() + (_currMoveVelocity * Time.fixedDeltaTime), MovingVessel.mainBody);
+            Vector3d geoCoords = OrXUtilities.instance.WorldPositionToGeoCoords(MovingVessel.GetWorldPos3D() + (_currMoveVelocity * Time.fixedDeltaTime), MovingVessel.mainBody);
             double lat = geoCoords.x;
             double lng = geoCoords.y;
 
@@ -771,16 +660,18 @@ namespace OrX.spawn
 
             if (_externalControl)
             {
+                double _dist = OrXUtilities.instance.GetDistance(MovingVessel.longitude, MovingVessel.latitude, targetPosition.y, targetPosition.x, (MovingVessel.altitude + targetPosition.z) / 2);
+                
                 if (OrXHoloKron.instance.triggerVessel != MovingVessel)
                 {
-                    if (CheckDistance(null, targetPosition) <= MoveHeight)
+                    if (_dist <= MoveHeight)
                     {
                         KillMove(true, false);
                     }
                 }
                 else
                 {
-                    if (CheckDistance(null, targetPosition) <= MoveHeight)
+                    if (_dist <= MoveHeight)
                     {
                         if (OrXHoloKron.instance._placingChallenger)
                         {
@@ -911,7 +802,6 @@ namespace OrX.spawn
             }
             MovingVessel = new Vessel();
         }
-
         public void EndMove(bool addingCoords, bool _spawningLocal, bool _gate)
         {
             spawningLocal = _spawningLocal;

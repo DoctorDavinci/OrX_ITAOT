@@ -165,7 +165,7 @@ OrX Scuba Kerb gives your kerbals the ability to explore the depths of the ocean
 
 
 ------------------------------------------------------------------
---OrX W[ind/S] -- (HIGHLY EXPERIMENTAL - CURRENTLY UNAVAILABLE)
+--OrX W[ind/S] -- (HIGHLY EXPERIMENTAL)
 ------------------------------------------------------------------
 
 By filtering a low AC current through a signal generator using the W[ind/S] formula in relation with the Tesla Equation ( TL = Mc^2 ) and then passing the resulting signal through a Ferro-fluid composed of Buckyballs, Magnetite and Soy sandwiched between multiple layers of Carbon Nanotube sheeting (a SAIL ... S-ratio Accumulated Inductance Laminate), oscillations are generated within the SAIL causing it to move

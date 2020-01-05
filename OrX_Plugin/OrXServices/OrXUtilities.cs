@@ -21,10 +21,29 @@ namespace OrX
 
         #region Utilities
 
-        public double GetDegreesPerMeter(CelestialBody _body, double _altitude)
+        public static double Radians(double x)
         {
-            double mPerDegree = (((2 * (_body.Radius + _altitude)) * Math.PI) / 360);
-            return 1 / mPerDegree;
+            return x * Math.PI / 180;
+        }
+        public double GetDistance(double lon1, double lat1, double lon2, double lat2, double _alt)
+        {
+            double dlon = Radians(lon2 - lon1);
+            double dlat = Radians(lat2 - lat1);
+
+            double a = (Math.Sin(dlat / 2) * Math.Sin(dlat / 2)) + Math.Cos(Radians(lat1)) * Math.Cos(Radians(lat2)) * (Math.Sin(dlon / 2) * Math.Sin(dlon / 2));
+            double angle = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return angle * (FlightGlobals.ActiveVessel.mainBody.Radius + _alt);
+        }
+        public Vector3d WorldPositionToGeoCoords(Vector3d worldPosition, CelestialBody body)
+        {
+            if (!body)
+            {
+                return Vector3d.zero;
+            }
+            double lat = body.GetLatitude(worldPosition);
+            double longi = body.GetLongitude(worldPosition);
+            double alt = body.GetAltitude(worldPosition);
+            return new Vector3d(lat, longi, alt);
         }
 
         public void GetCreatorList(bool _challenge)
@@ -101,7 +120,6 @@ namespace OrX
                     OrXHoloKron.instance.MainMenu();
                     OrXHoloKron.instance.OnScrnMsgUC("No Geo-Cache found .....");
                 }
-
             }
             else
             {
@@ -399,14 +417,14 @@ namespace OrX
         }
         public void DeleteHoloKron(string _groupName, string _holoName)
         {
-            string holoKronLoc = UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + _groupName + "/" + _holoName + "/";
+            string holoKronLoc = UrlDir.ApplicationRootPath + "GameData/OrX/HoloKron/" + _groupName + "/";
             List<string> files = new List<string>(Directory.GetFiles(holoKronLoc, "*.*", SearchOption.AllDirectories));
             if (files != null)
             {
                 List<string>.Enumerator _file = files.GetEnumerator();
                 while (_file.MoveNext())
                 {
-                    if (_file.Current != null)
+                    if (_file.Current != null && _file.Current.Contains(_holoName))
                     {
                         File.Delete(_file.Current);
                     }
@@ -549,7 +567,7 @@ namespace OrX
                         Debug.Log("[OrX Check Installed Mods] === IN EDITOR SCENE ... OPENING HOLOKRON ===");
                         OrXHoloKron.instance.OpenHoloKron(OrXHoloKron.instance.geoCache, OrXHoloKron.instance.HoloKronName, OrXHoloKron.instance.hkCount, null, null);
                     }
-                    OrXSounds.instance.KnowMore();
+                    //OrXSounds.instance.KnowMore();
                 }
             }
             else

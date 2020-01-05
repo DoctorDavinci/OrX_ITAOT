@@ -93,6 +93,7 @@ namespace OrX
         public bool _preEnabled = false;
         bool cDamage = false;
         bool uJoints = false;
+        bool preChecked = false;
 
         #endregion
 
@@ -191,6 +192,79 @@ namespace OrX
             {
             }
 
+            try
+            {
+                PartLoader.getPartInfoByName("largeFanBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'largeFanBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("largeHeliBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'largeHeliBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("largePropeller").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'largePropeller' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("mediumFanBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'mediumFanBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("mediumHeliBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'mediumHeliBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("mediumPropeller").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'mediumPropeller' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("smallFanBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'smallFanBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("smallHeliBlade").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'smallHeliBlade' ===");
+            }
+            catch
+            {
+            }
+            try
+            {
+                PartLoader.getPartInfoByName("smallPropeller").partPrefab.AddModule(OrXBFC);
+                Debug.Log("[OrX Log - The Awakening] === ADDED ORX BFC MODULE TO 'smallPropeller' ===");
+            }
+            catch
+            {
+            }
+
         }
         private void Start()
         {
@@ -253,7 +327,6 @@ namespace OrX
                 _part.Dispose();
             }
         }
-
         private void onPartDecouple(Part data)
         {
             SetRange(data.vessel, 75000);
@@ -261,26 +334,34 @@ namespace OrX
 
         public bool PREnabled()
         {
-            ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
-            if (PREsettings != null)
+            if (!preChecked)
             {
-                _preInstalled = true;
-                ConfigNode PREnode = PREsettings.GetNode("PreSettings");
-                if (PREnode.GetValue("ModEnabled") != "False")
+                ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
+                if (PREsettings != null)
                 {
-                    _preEnabled = true;
-                    return true;
+                    _preInstalled = true;
+                    ConfigNode PREnode = PREsettings.GetNode("PreSettings");
+                    if (PREnode.GetValue("ModEnabled") != "False")
+                    {
+                        _preEnabled = true;
+                        return true;
 
+                    }
+                    else
+                    {
+                        _preEnabled = false;
+                        return false;
+                    }
                 }
                 else
                 {
-                    _preEnabled = false;
+                    preChecked = true;
+                    _preInstalled = false;
                     return false;
                 }
             }
             else
             {
-                _preInstalled = false;
                 return false;
             }
         }
@@ -295,12 +376,15 @@ namespace OrX
                     if (!spawn.OrXSpawnHoloKron.instance.spawning && (OrXHoloKron.instance.showTargets 
                         || OrXHoloKron.instance.OrXHCGUIEnabled || OrXHoloKron.instance.checking))
                     {
-                        data.rootPart.AddModule("ModuleOrXPlace", true);
-                        var _place = data.rootPart.FindModuleImplementing<ModuleOrXPlace>();
-                        _place.altitude = data.altitude + 15;
-                        _place.latitude = data.latitude;
-                        _place.longitude = data.longitude;
-                        _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0, 0);
+                        if (!data.HoldPhysics)
+                        {
+                            data.rootPart.AddModule("ModuleOrXPlace", true);
+                            var _place = data.rootPart.FindModuleImplementing<ModuleOrXPlace>();
+                            _place.altitude = data.altitude + 15;
+                            _place.latitude = data.latitude;
+                            _place.longitude = data.longitude;
+                            _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0, 0);
+                        }
                     }
                 }
             }
@@ -380,13 +464,20 @@ namespace OrX
 
         public void GetPRERanges()
         {
-            ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
-            if (PREsettings != null)
+            if (!preChecked)
             {
-                OrXHoloKron.instance._preInstalled = true;
-                ConfigNode PREnode = PREsettings.GetNode("PreSettings");
-                _preLoadRange = float.Parse(PREnode.GetValue("GlobalRange")) * 1000;
-                DebugLog("[OrX Log] === PRE IS INSTALLED ... RANGES SET TO " + _preLoadRange + " meters ===");
+                ConfigNode PREsettings = ConfigNode.Load(UrlDir.ApplicationRootPath + "GameData/PhysicsRangeExtender/settings.cfg");
+                if (PREsettings != null)
+                {
+                    OrXHoloKron.instance._preInstalled = true;
+                    ConfigNode PREnode = PREsettings.GetNode("PreSettings");
+                    _preLoadRange = float.Parse(PREnode.GetValue("GlobalRange")) * 1000;
+                    DebugLog("[OrX Log] === PRE IS INSTALLED ... RANGES SET TO " + _preLoadRange + " meters ===");
+                }
+                else
+                {
+                    preChecked = true;
+                }
             }
         }
         public void NoDamage(bool _true)
@@ -406,12 +497,11 @@ namespace OrX
         }
         public void SetRange(Vessel v, float _range)
         {
-            float _modRange = _preLoadRange * 2000;
+            float _modRange = 10000;
 
-            if (_preLoadRange * 2000 <= 13000)
+            if (OrXHoloKron.instance.bdaChallenge)
             {
-                _modRange = 13000;
-
+                _modRange = _preLoadRange * 1000;
                 try
                 {
                     var pqs = FlightGlobals.currentMainBody.pqsController;
@@ -431,26 +521,30 @@ namespace OrX
                     }
                 }
                 catch { }
-            }
 
-            if (v.vesselRanges.landed.load <= _preLoadRange * 950f)
-            {
-                _vesselLanded = new VesselRanges.Situation(_preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000, _preLoadRange * 1000);
-                _vesselFlying = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
-                _vesselOther = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
-
-                _vesselRanges = new VesselRanges
+                if (v.vesselRanges.landed.load <= _modRange * 950f)
                 {
-                    escaping = _vesselOther,
-                    flying = _vesselFlying,
-                    landed = _vesselLanded,
-                    orbit = _vesselOther,
-                    prelaunch = _vesselLanded,
-                    splashed = _vesselLanded,
-                    subOrbital = _vesselOther
-                };
+                    _vesselLanded = new VesselRanges.Situation(_modRange, _modRange, _modRange, _modRange);
+                    _vesselFlying = new VesselRanges.Situation(_modRange * 4, _modRange * 4, _modRange * 4, _modRange * 4);
+                    _vesselOther = new VesselRanges.Situation(_modRange * 10, _modRange * 10, _modRange * 10, _modRange * 10);
 
-                v.vesselRanges = new VesselRanges(_vesselRanges);
+                    _vesselRanges = new VesselRanges
+                    {
+                        escaping = _vesselOther,
+                        flying = _vesselFlying,
+                        landed = _vesselLanded,
+                        orbit = _vesselOther,
+                        prelaunch = _vesselLanded,
+                        splashed = _vesselFlying,
+                        subOrbital = _vesselOther
+                    };
+
+                    v.vesselRanges = new VesselRanges(_vesselRanges);
+                }
+            }
+            else
+            {
+                SetGoalRange(v);
             }
         }
         public void SetGoalRange(Vessel v)
