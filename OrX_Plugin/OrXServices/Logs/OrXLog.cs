@@ -378,12 +378,14 @@ namespace OrX
                     {
                         if (!data.HoldPhysics)
                         {
+/*
                             data.rootPart.AddModule("ModuleOrXPlace", true);
                             var _place = data.rootPart.FindModuleImplementing<ModuleOrXPlace>();
                             _place.altitude = data.altitude + 15;
                             _place.latitude = data.latitude;
                             _place.longitude = data.longitude;
                             _place.PlaceCraft(OrXHoloKron.instance.bdaChallenge, !data.LandedOrSplashed, data.Splashed, data.rootPart.Modules.Contains<ModuleOrXStage>(), false, 0, 0, 0, 0);
+                        */
                         }
                     }
                 }

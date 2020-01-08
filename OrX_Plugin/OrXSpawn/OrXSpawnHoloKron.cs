@@ -1450,8 +1450,9 @@ namespace OrX.spawn
                                 mom._auto = true;
                                 mom.fml = false;
                                 mom.Goal = true;
-                                //OrXHoloKron.instance.GetShortTrackCenter(OrXHoloKron.instance._challengeStartLoc);
                                 OrXHoloKron.instance._HoloKron = holoCube;
+                               // OrXTargetDistance.instance.TargetDistance(primary, b, false, true, HoloKronName, new Vector3d(_lat, _lon, _alt));
+                                OrXHoloKron.instance.ScanMenu();
                             }
                         }
                     }

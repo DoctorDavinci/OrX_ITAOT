@@ -491,6 +491,11 @@ namespace OrX
 
         #endregion
 
+        bool stopwatch = false;
+        bool pauseStopWatch = false;
+
+
+
         #region GUI Styles
 
         static GUIStyle leftLabel = new GUIStyle()
@@ -2742,20 +2747,13 @@ namespace OrX
 
         public void ScanForHoloKron()
         {
-            
-            triggerVessel = FlightGlobals.ActiveVessel;
-            _editor = false;
             Reach();
-            challengeRunning = true;
-            showGeoCacheList = false;
-            showCreatedHolokrons = false;
-            showChallengelist = false;
-            checking = true;
-            GuiEnabledOrXMissions = false;
-            showScores = false;
-            movingCraft = false;
+            triggerVessel = FlightGlobals.ActiveVessel;
+            ScanMenu();
+
             OrXTargetDistance.instance.TargetDistance(true, true, false, true, HoloKronName, _challengeStartLoc);
         }
+
         public void OpenHoloKron(bool _geoCache, string holoName, int _hkCount_, Vessel holoKron, Vessel player)
         {
             StartCoroutine(OpenHoloKronRoutine(_geoCache, holoName, _hkCount_, holoKron, player));
@@ -3581,7 +3579,12 @@ namespace OrX
             Game _thisGame = HighLogic.CurrentGame.Updated();
             _thisGame.startScene = GameScenes.FLIGHT;
             GamePersistence.SaveGame(_thisGame, HoloKronName + " START", HighLogic.SaveFolder, SaveMode.OVERWRITE);
-
+            string screenshot = UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " START.png";
+            if (File.Exists(screenshot))
+            {
+                File.Delete(screenshot);
+                yield return new WaitForFixedUpdate();
+            }
             worldPos = FlightGlobals.ActiveVessel.mainBody.GetWorldSurfacePosition((double)latMission, (double)lonMission, (double)altMission);
             showTargets = true;
             OrXTargetDistance.instance.TargetDistance(false, true, true, true, HoloKronName, nextLocation);
@@ -3965,7 +3968,7 @@ namespace OrX
                 }
                 yield return new WaitForFixedUpdate();
 
-                missionTime += Time.deltaTime;
+                missionTime += Time.fixedDeltaTime * TimeWarp.CurrentRate;
                 _timerTotalTime = OrXUtilities.instance.TimeSet(missionTime);
                 StartCoroutine(StageTimer());
             }
@@ -7035,40 +7038,13 @@ namespace OrX
         }
         IEnumerator ScreenshotFinishDelay()
         {
+            string screenshot = UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " FINISH.png";
+            if (File.Exists(screenshot))
+            {
+                File.Delete(screenshot);
+            }
             yield return new WaitForSeconds(2);
-            ScreenCapture.CaptureScreenshot(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " FINISH.png");
-            yield return new WaitForFixedUpdate();
-            if (File.Exists(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " START.png"))
-            {
-                if (!File.Exists(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " START - " + _entryCount + ".png"))
-                {
-                    File.Copy(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " START.png",
-                        UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " START - " + _entryCount + ".png");
-                }
-                else
-                {
-                    File.Delete(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " START - " + _entryCount + ".png");
-                    yield return new WaitForFixedUpdate();
-                    File.Copy(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " START.png",
-                        UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " START - " + _entryCount + ".png");
-                }
-            }
-
-            if (File.Exists(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " FINISH.png"))
-            {
-                if (!File.Exists(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " FINISH - " + _entryCount + ".png"))
-                {
-                    File.Copy(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " FINISH.png",
-                        UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " FINISH - " + _entryCount + ".png");
-                }
-                else
-                {
-                    File.Delete(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " FINISH - " + _entryCount + ".png");
-                    yield return new WaitForFixedUpdate();
-                    File.Copy(UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + " FINISH.png",
-                        UrlDir.ApplicationRootPath + "Screenshots/" + HoloKronName + "/" + HoloKronName + " FINISH - " + _entryCount + ".png");
-                }
-            }
+            ScreenCapture.CaptureScreenshot(screenshot);
         }
 
         private void AmendScoreboard(string challengerNameImport, string _time_, bool nameAlreadyPresent, double t, ConfigNode scoresNode)
@@ -8842,6 +8818,19 @@ namespace OrX
             connectToKontinuum = false;
             _showSettings = false;
         }
+        public void ScanMenu()
+        {
+            checking = true;
+            GuiEnabledOrXMissions = false;
+            _editor = false;
+            challengeRunning = false;
+            showGeoCacheList = false;
+            showCreatedHolokrons = false;
+            showChallengelist = false;
+            showScores = false;
+            mrKleen = false;
+            movingCraft = false;
+        }
 
         #endregion
 
@@ -9030,12 +9019,18 @@ namespace OrX
 
             if (_showSettings)
             {
-                GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum Settings", titleStyleLarge);
+                if (!stopwatch)
+                {
+                    GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Kontinuum Settings", titleStyleLarge);
+                }
+                else
+                {
+                    GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Stop Watch", titleStyleLarge);
+                }
                 line++;
 
                 if (!_showMode)
                 {
-
                     if (HighLogic.LoadedSceneIsFlight)
                     {
                         if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Mr Kleen's Magic Eraser", OrXGUISkin.button))
@@ -9510,78 +9505,166 @@ namespace OrX
                                     {
                                         if (outlawRacing)
                                         {
-                                            GUI.Label(new Rect(20, 1, WindowWidth / 2, 20), "Challenge Total Time: ", titleStyleMedNoItal);
-                                            GUI.Label(new Rect(WindowWidth / 2 + 10, 1, WindowWidth / 2, 20), _timerTotalTime, titleStyleMedGreen);
-                                            if (shortTrackRacing)
+                                            if (challengeRunning)
                                             {
-                                                GUI.Label(new Rect(20, (ContentTop + (line + 0.4f) * entryHeight), WindowWidth / 2, 20), "Previous Stage Time: ", titleStyleMedNoItal);
-                                                GUI.Label(new Rect(WindowWidth / 2 + 10, (ContentTop + (line + 0.4f) * entryHeight) + 0.5f, WindowWidth / 2, 20), _timerStageTime, titleStyleMedGreen);
-                                                line++;
-                                            }
-                                            GUI.Label(new Rect(23, ContentTop + (line + 0.4f) * entryHeight, WindowWidth / 2, 20), "Next Stage Distance: ", titleStyleMedNoItal);
-                                            GUI.Label(new Rect(WindowWidth / 2, ContentTop + (line + 0.4f) * entryHeight, WindowWidth / 2, 20), "" + Math.Round((targetDistance * distanceDisplayMod), 1), titleStyleMedGreen);
-
-                                            if (GUI.Button(new Rect(WindowWidth - 50, ContentTop + (line + 0.5f) * entryHeight, 35, 18), distanceDisplayLabel, OrXGUISkin.box))
-                                            {
-                                                if (!mph)
+                                                GUI.Label(new Rect(20, 1, WindowWidth / 2, 20), "Challenge Total Time: ", titleStyleMedNoItal);
+                                                GUI.Label(new Rect(WindowWidth / 2 + 10, 1, WindowWidth / 2, 20), _timerTotalTime, titleStyleMedGreen);
+                                                if (shortTrackRacing)
                                                 {
-                                                    speedDisplayLabel = "mph";
-                                                    speedDisplayMod = 2.23694f;
-                                                    distanceDisplayLabel = "mi";
-                                                    distanceDisplayMod = 0.000621f;
-                                                    mph = true;
+                                                    GUI.Label(new Rect(20, (ContentTop + (line + 0.4f) * entryHeight), WindowWidth / 2, 20), "Previous Stage Time: ", titleStyleMedNoItal);
+                                                    GUI.Label(new Rect(WindowWidth / 2 + 10, (ContentTop + (line + 0.4f) * entryHeight) + 0.5f, WindowWidth / 2, 20), _timerStageTime, titleStyleMedGreen);
+                                                    line++;
                                                 }
-                                                else
+                                                GUI.Label(new Rect(23, ContentTop + (line + 0.4f) * entryHeight, WindowWidth / 2, 20), "Next Stage Distance: ", titleStyleMedNoItal);
+                                                GUI.Label(new Rect(WindowWidth / 2, ContentTop + (line + 0.4f) * entryHeight, WindowWidth / 2, 20), "" + Math.Round((targetDistance * distanceDisplayMod), 1), titleStyleMedGreen);
+
+                                                if (GUI.Button(new Rect(WindowWidth - 50, ContentTop + (line + 0.5f) * entryHeight, 35, 18), distanceDisplayLabel, OrXGUISkin.box))
                                                 {
-                                                    speedDisplayLabel = "kph";
-                                                    speedDisplayMod = 3.6f;
-                                                    distanceDisplayLabel = "km";
-                                                    distanceDisplayMod = 0.001f;
-                                                    mph = false;
+                                                    if (!mph)
+                                                    {
+                                                        speedDisplayLabel = "mph";
+                                                        speedDisplayMod = 2.23694f;
+                                                        distanceDisplayLabel = "mi";
+                                                        distanceDisplayMod = 0.000621f;
+                                                        mph = true;
+                                                    }
+                                                    else
+                                                    {
+                                                        speedDisplayLabel = "kph";
+                                                        speedDisplayMod = 3.6f;
+                                                        distanceDisplayLabel = "km";
+                                                        distanceDisplayMod = 0.001f;
+                                                        mph = false;
+                                                    }
+                                                }
+
+                                                line++;
+
+                                                //if (GUI.Button(new Rect(12, ContentTop + (line + 0.3f) * entryHeight, 40, 18), "set", OrXGUISkin.box)) { };
+
+                                                GUI.Label(new Rect(39, ContentTop + (line + 0.3f) * entryHeight, WindowWidth / 2, 20), "Current Speed: ", titleStyleMedNoItal);
+                                                GUI.Label(new Rect(WindowWidth / 2, ContentTop + (line + 0.3f) * entryHeight, WindowWidth / 2, 20), "" + Math.Round((FlightGlobals.ActiveVessel.horizontalSrfSpeed * speedDisplayMod), 0), titleStyleMedGreen);
+
+                                                if (GUI.Button(new Rect(WindowWidth - 50, ContentTop + (line + 0.3f) * entryHeight, 35, 18), speedDisplayLabel, OrXGUISkin.box))
+                                                {
+                                                    if (!mph)
+                                                    {
+                                                        speedDisplayLabel = "mph";
+                                                        speedDisplayMod = 2.23694f;
+                                                        distanceDisplayLabel = "mi";
+                                                        distanceDisplayMod = 0.000621f;
+                                                        mph = true;
+                                                    }
+                                                    else
+                                                    {
+                                                        speedDisplayLabel = "kph";
+                                                        speedDisplayMod = 3.6f;
+                                                        distanceDisplayLabel = "km";
+                                                        distanceDisplayMod = 0.001f;
+                                                        mph = false;
+                                                    }
+                                                }
+
+
+                                                /*
+                                                if (OrXLog.instance._debugLog)
+                                                {
+                                                    line++;
+                                                    line += 0.2f;
+
+                                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "RESET FLOATING POINT", OrXGUISkin.button))
+                                                    {
+                                                        OrXLog.instance.DebugLog("[OrX RESET FLOATING POINT] === RESET FLOATING POINT ===");
+                                                        FloatingOrigin.SetOffset(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
+                                                    }
+                                                }
+                                                */
+                                            }
+                                            else
+                                            {
+                                                GUI.Label(new Rect(30, 1, WindowWidth / 2, 20), "HoloKron Distance: ", titleStyleMedNoItal);
+                                                GUI.Label(new Rect(WindowWidth / 2, 1, WindowWidth / 2, 20), "" + Math.Round((targetDistance * distanceDisplayMod), 1), titleStyleMedGreen);
+                                                if (GUI.Button(new Rect(WindowWidth - 45, 2, 35, 18), distanceDisplayLabel, OrXGUISkin.box))
+                                                {
+                                                }
+
+                                                line++;
+                                                line += 0.2f;
+                                                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "STOP SCANNING", OrXGUISkin.button))
+                                                {
+                                                    if (OrXLog.instance.mission)
+                                                    {
+                                                        mrKleen = true;
+                                                    }
+                                                    else
+                                                    {
+                                                        challengeRunning = false;
+                                                        OnScrnMsgUC("Exiting " + HoloKronName + " " + hkCount + " challenge .....");
+                                                        locCount = 0;
+                                                        locAdded = false;
+                                                        building = false;
+                                                        buildingMission = false;
+                                                        addCoords = false;
+                                                        MainMenu();
+                                                        ResetData();
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (stopwatch)
+                                        {
+                                            GUI.Label(new Rect(0, 0, WindowWidth, 20), "OrX Stop Watch", titleStyleMedNoItal);
+                                            line += 0.3f;
+                                            GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), _timerTotalTime, titleStyleMedGreen);
+                                            line++;
+                                            line += 0.2f;
+                                            if (!_timing)
+                                            {
+                                                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Start Timer", OrXGUISkin.button))
+                                                {
+                                                    _timing = true;
+                                                    _timerOn = true;
+                                                    StartCoroutine(StageTimer());
+                                                    OrXLog.instance.DebugLog("[OrX Stop Watch] === START ===");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Stop Timer", OrXGUISkin.box))
+                                                {
+                                                    _timing = false;
+                                                    _timerOn = false;
+                                                    OrXLog.instance.DebugLog("[OrX Stop Watch] === STOP ===");
                                                 }
                                             }
 
                                             line++;
+                                            line += 0.2f;
 
-                                            //if (GUI.Button(new Rect(8, ContentTop + (line + 0.3f) * entryHeight, 40, 18), "--------", OrXGUISkin.box)) { };
-
-                                            GUI.Label(new Rect(39, ContentTop + (line + 0.3f) * entryHeight, WindowWidth / 2, 20), "Current Speed: ", titleStyleMedNoItal);
-                                            GUI.Label(new Rect(WindowWidth / 2, ContentTop + (line + 0.3f) * entryHeight, WindowWidth / 2, 20), "" + Math.Round((FlightGlobals.ActiveVessel.horizontalSrfSpeed * speedDisplayMod), 0), titleStyleMedGreen);
-
-                                            if (GUI.Button(new Rect(WindowWidth - 50, ContentTop + (line + 0.3f) * entryHeight, 35, 18), speedDisplayLabel, OrXGUISkin.box))
+                                            if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, (WindowWidth / 2) - 15, 20), "Reset", OrXGUISkin.button))
                                             {
-                                                if (!mph)
-                                                {
-                                                    speedDisplayLabel = "mph";
-                                                    speedDisplayMod = 2.23694f;
-                                                    distanceDisplayLabel = "mi";
-                                                    distanceDisplayMod = 0.000621f;
-                                                    mph = true;
-                                                }
-                                                else
-                                                {
-                                                    speedDisplayLabel = "kph";
-                                                    speedDisplayMod = 3.6f;
-                                                    distanceDisplayLabel = "km";
-                                                    distanceDisplayMod = 0.001f;
-                                                    mph = false;
-                                                }
+                                                _timing = false;
+                                                _timerOn = false;
+                                                _time = 0;
+                                                missionTime = 0;
+                                                _timerStageTime = "00:00:00.00";
+                                                _timerTotalTime = "00:00:00.00";
+                                                OrXLog.instance.DebugLog("[OrX Stop Watch] === RESET ===");
                                             }
 
-
-                                            /*
-                                            if (OrXLog.instance._debugLog)
+                                            if (GUI.Button(new Rect((WindowWidth / 2) + 5, ContentTop + line * entryHeight, (WindowWidth / 2) - 15, 20), "Close", OrXGUISkin.button))
                                             {
-                                                line++;
-                                                line += 0.2f;
-
-                                                if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "RESET FLOATING POINT", OrXGUISkin.button))
-                                                {
-                                                    OrXLog.instance.DebugLog("[OrX RESET FLOATING POINT] === RESET FLOATING POINT ===");
-                                                    FloatingOrigin.SetOffset(new Vector3d(FlightGlobals.ActiveVessel.latitude, FlightGlobals.ActiveVessel.longitude, FlightGlobals.ActiveVessel.altitude));
-                                                }
+                                                _timing = false;
+                                                _timerOn = false;
+                                                _time = 0;
+                                                missionTime = 0;
+                                                _timerStageTime = "00:00:00.00";
+                                                _timerTotalTime = "00:00:00.00";
+                                                OrXLog.instance.DebugLog("[OrX Stop Watch] === EXIT ===");
+                                                stopwatch = false;
+                                                MainMenu();
                                             }
-                                            */
                                         }
                                     }
                                 }
@@ -10382,8 +10465,12 @@ namespace OrX
                             {
                                 if (targetDistance <= 100000)
                                 {
-                                    GUI.Label(new Rect(0, 1, WindowWidth / 2, 20), "HoloKron Distance: ", titleStyleMedNoItal);
-                                    GUI.Label(new Rect(WindowWidth / 2 + 10, ContentTop + line * entryHeight, WindowWidth / 2, 20), Math.Round((targetDistance / 1000), 0) + " km", titleStyleMedGreen);
+                                    GUI.Label(new Rect(30, 1, WindowWidth / 2, 20), "HoloKron Distance: ", titleStyleMedNoItal);
+                                    GUI.Label(new Rect(WindowWidth / 2, 1, WindowWidth / 2, 20), "" + Math.Round((targetDistance * distanceDisplayMod), 1), titleStyleMedGreen);
+                                    if (GUI.Button(new Rect(WindowWidth - 45, 2, 35, 18), distanceDisplayLabel, OrXGUISkin.box))
+                                    {
+                                    }
+
                                     if (bdaChallenge)
                                     {
                                         line++;
@@ -10404,7 +10491,7 @@ namespace OrX
                                     GUI.Label(new Rect(0, ContentTop + line * entryHeight, WindowWidth, 20), "Rescan in " + Math.Round(scanDelay, 0) + " seconds", titleStyleMedYellow);
                                 }
                                 line++;
-                                line += 0.5f;
+                                line += 0.2f;
 
                                 if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), toolWindowWidth - 20, 20), "Stop HoloKron Scan", OrXGUISkin.button))
                                 {
@@ -10682,13 +10769,6 @@ namespace OrX
                                     }
                                     line++;
 
-                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SCAN FOR GEO-CACHE", OrXGUISkin.button))
-                                    {
-                                        OrXUtilities.instance.ProcessHoloFiles();
-                                    }
-                                    line++;
-                                    line += 0.2f;
-
                                     if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Previous Menu", OrXGUISkin.button))
                                     {
                                         if (showCreatedHolokrons)
@@ -10704,7 +10784,7 @@ namespace OrX
                                 }
                                 else
                                 {
-                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "KONTINUUM KONNECT", OrXGUISkin.button))
+                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Kontinuum Konnect", OrXGUISkin.button))
                                     {
                                         if (OrXLog.instance._preInstalled)
                                         {
@@ -10737,7 +10817,15 @@ namespace OrX
                                     }
                                     line++;
                                     line += 0.2f;
-                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "HOLOKRON LIST", OrXGUISkin.button))
+                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Scan for Geo-Cache", OrXGUISkin.button))
+                                    {
+                                        Reach();
+                                        OrXUtilities.instance.ProcessHoloFiles();
+                                    }
+                                    line++;
+                                    line += 0.2f;
+
+                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "HoloKron Group List", OrXGUISkin.button))
                                     {
                                         if (HighLogic.LoadedSceneIsFlight)
                                         {
@@ -10762,7 +10850,7 @@ namespace OrX
                                     line += 0.2f;
                                     if (HighLogic.LoadedSceneIsFlight)
                                     {
-                                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "CREATE HOLOKRON", OrXGUISkin.button))
+                                        if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Create HoloKron", OrXGUISkin.button))
                                         {
                                             if (OrXLog.instance._preInstalled)
                                             {
@@ -10788,13 +10876,20 @@ namespace OrX
                                         line++;
                                         line += 0.2f;
                                     }
-                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "SETTINGS", OrXGUISkin.button))
+                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Stop Watch", OrXGUISkin.button))
+                                    {
+                                        ShowStopWatch();
+                                    }
+                                    line++;
+                                    line += 0.2f;
+                                    if (GUI.Button(new Rect(10, ContentTop + (line * entryHeight), WindowWidth - 20, 20), "Settings", OrXGUISkin.button))
                                     {
                                         _showSettings = true;
                                     }
                                     line++;
                                     line += 0.2f;
-                                    if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "CLOSE MENU", OrXGUISkin.button))
+
+                                    if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "Close Menu", OrXGUISkin.button))
                                     {
                                         OrXHCGUIEnabled = false;
                                         ResetData();
@@ -10806,8 +10901,11 @@ namespace OrX
                         {
                             if (!mrKleen)
                             {
-                                GUI.Label(new Rect(20, 1, WindowWidth / 2, 20), "HoloKron Distance: ", titleStyleMedNoItal);
-                                GUI.Label(new Rect(WindowWidth / 2 + 10, 1, WindowWidth / 2, 20), Math.Round((targetDistance / 1000), 1) + " km", titleStyleMedGreen);
+                                GUI.Label(new Rect(30, 1, WindowWidth / 2, 20), "HoloKron Distance: ", titleStyleMedNoItal);
+                                GUI.Label(new Rect(WindowWidth / 2, 1, WindowWidth / 2, 20), "" + Math.Round((targetDistance * distanceDisplayMod), 1), titleStyleMedGreen);
+                                if (GUI.Button(new Rect(WindowWidth - 45, 2, 35, 18), distanceDisplayLabel, OrXGUISkin.box))
+                                {
+                                }
                                 line += 0.5f;
                                 if (bdaChallenge)
                                 {
@@ -10909,7 +11007,7 @@ namespace OrX
                     {
                         line++;
                         line += 0.7f;
-                        if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "THE KURGAN MANUAL", OrXGUISkin.button))
+                        if (GUI.Button(new Rect(10, ContentTop + line * entryHeight, WindowWidth - 20, 20), "The Kurgan Manual", OrXGUISkin.button))
                         {
                             OrXUserManual.instance.guiEnabled = true;
                         }
@@ -10919,6 +11017,24 @@ namespace OrX
 
             toolWindowHeight = ContentTop + line * entryHeight + entryHeight + (entryHeight / 2);
             WindowRectToolbar.height = toolWindowHeight;
+        }
+
+        private void ShowStopWatch()
+        {
+            _time = 0;
+            missionTime = 0;
+            _timerStageTime = "00:00:00.00";
+            _timerTotalTime = "00:00:00.00";
+
+            GuiEnabledOrXMissions = true;
+            _showSettings = false;
+            connectToKontinuum = false;
+            getNextCoord = false;
+            movingCraft = true;
+            stopwatch = true;
+            outlawRacing = false;
+            bdaChallenge = false;
+            _showTimer = true;
         }
 
         bool mph = false;
